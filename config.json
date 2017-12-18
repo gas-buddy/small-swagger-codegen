@@ -1,0 +1,34 @@
+{
+  "specs": {
+    "IdentityApi": {
+      "spec": "@gasbuddy/identity-api-spec",
+      "className": "IdentityAPI",
+      "basePath": "identity"
+    },
+    "LovesApi": {
+      "spec": "@gasbuddy/loves-api-spec",
+      "className": "LovesAPI",
+      "basePath": "loves"
+    },
+    "LoyaltyApi": {
+      "spec": "@gasbuddy/loyalty-api-spec",
+      "className": "LoyaltyAPI",
+      "basePath": "loyalty"
+    },
+    "MobileOrchestrationApi": {
+      "spec": "@gasbuddy/mobile-orchestration-api-spec",
+      "className": "MobileOrchestrationAPI",
+      "basePath": "mobile-orchestration"
+    },
+    "PaymentApi": {
+      "spec": "@gasbuddy/payment-api-spec",
+      "className": "PaymentAPI",
+      "basePath": "payment"
+    },
+    "VehicleApi": {
+      "spec": "@gasbuddy/vehicle-api-spec",
+      "className":"VehicleAPI",
+      "basePath": "vehicle"
+    }
+  }
+}
