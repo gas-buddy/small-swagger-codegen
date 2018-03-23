@@ -6,6 +6,17 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "engines": {
+    "node": ">=8.9"
+  },
   "author": "",
-  "license": "ISC"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@gasbuddy/payment-api-spec": "^5.12.0",
+    "lodash": "^4.16.4"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.4.5",
+    "babel-preset-gasbuddy": "^3.3.0"
+  }
 }
