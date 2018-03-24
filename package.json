@@ -12,6 +12,7 @@
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
+    "@gasbuddy/mobile-orchestration-api-spec": "^9.5.0",
     "@gasbuddy/payment-api-spec": "^5.12.0",
     "lodash": "^4.16.4"
   },

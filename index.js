@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import assert from 'assert';
 import spec from '@gasbuddy/payment-api-spec';
+// import spec from '@gasbuddy/mobile-orchestration-api-spec';
 
 
 const HTTP_METHODS = [
@@ -15,6 +16,14 @@ const HTTP_METHODS = [
 //////////////////////////////////////////////////////////////////////
 // Helpers
 //////////////////////////////////////////////////////////////////////
+function describe(it) {
+  return 'Object:\n' + require('util').inspect(it, {depth:10, colors:true, breakLength:150}) + "\n";
+}
+
+function log(it) {
+  console.log(describe(it));
+}
+
 function resolveRef(ref, refTarget) {
   const split = ref.split('/');
   assert(split[0] === '#', 'No support for refs that don\'t start with #');
@@ -27,6 +36,9 @@ function resolveRef(ref, refTarget) {
 }
 
 function objectByResolvingRef(obj, refTarget) {
+  if (!obj) {
+    return obj;
+  }
   if (!obj.$ref) {
     return { ...obj };
   }
@@ -57,22 +69,27 @@ function mapType(type) {
 }
 
 function typeFromRef(ref) {
-  return _.split(ref, '/').pop();
+  const lastItem = _.split(ref, '/').pop();
+  return classNameFromComponents([lastItem]);
+}
+
+function nameFromComponents(components) {
+  return _.camelCase(components.join('/'));
 }
 
 function classNameFromComponents(components) {
-  return _.upperFirst(_.camelCase(components.join('/')));
+  return _.upperFirst(nameFromComponents(components));
 }
 
 //////////////////////////////////////////////////////////////////////
 // Methods
 //////////////////////////////////////////////////////////////////////
 
-function processResponseOrParam(obj) {
+function processResponseOrParam(obj, refTarget) {
   if (!obj) {
     return obj;
   }
-  obj = { ...obj };
+  obj = objectByResolvingRef(obj, refTarget);
   if (obj.name) {
     obj.name = _.camelCase(obj.name);
   }
@@ -84,82 +101,108 @@ function processResponseOrParam(obj) {
   return obj;
 }
 
-function methodFromSpec(path, pathParams, method, methodSpec) {
+function methodFromSpec(path, pathParams, method, methodSpec, refTarget) {
   if (!methodSpec) {
     return undefined;
   }
   const name = _.camelCase(`${path}/${method}`);
   let params = _.concat(pathParams || [], methodSpec.parameters || []);
-  params = _.map(params, processResponseOrParam);
+  params = _.map(params, p => processResponseOrParam(p, refTarget));
   const goodResponseKey = _.find(Object.keys(methodSpec.responses), k => k[0] === '2');
-  const response = processResponseOrParam(methodSpec.responses[goodResponseKey]);
+  const response = processResponseOrParam(methodSpec.responses[goodResponseKey], refTarget);
   const description = methodSpec.description;
   return { name, description, method, path, params, response };
 }
 
-function methodsFromPath(path, spec) {
+function methodsFromPath(path, spec, refTarget) {
   return _.flatMap(HTTP_METHODS, m => methodFromSpec(
     path,
     spec.parameters,
     m,
-    spec[m]
+    spec[m],
+    refTarget
   ));
 }
 
-function methodsFromPaths(paths) {
-  return _(paths)
+function methodsFromPaths(paths, refTarget) {
+  const methods = _(paths)
     .flatMap((pathSpec, path) => {
-      return methodsFromPath(path, pathSpec);
+      return methodsFromPath(path, pathSpec, refTarget);
     })
     .filter()
     .sortBy('name')
     .value();
+  verifyMethods(methods);
+  return methods;
+}
+
+function verifyMethods(methods) {
+  const typeless = _.filter(methods, method => {
+    const params = _.concat(method.params || [], method.response);
+    return _.find(params, param => !param.type);
+  });
+  assert(typeless.length < 1, `Found params without types: ${describe(typeless)}`);
 }
 
 
 //////////////////////////////////////////////////////////////////////
 // Models
 //////////////////////////////////////////////////////////////////////
-function modelsFromSchema(schema, defaultName, refTarget) {
-  const model = {};
+
+function nameAndModelsFromSchema(schema, defaultName, refTarget) {
   if (schema.$ref) {
-    model.name = typeFromRef(schema.$ref);
-    model.schema = objectByResolvingRef(schema, refTarget);
-  } else {
-    model.name = defaultName;
-    model.schema = { ...schema };
+    defaultName = typeFromRef(schema.$ref);
   }
+  schema = objectByResolvingRef(schema, refTarget);
+
+  if (schema.type === 'array') {
+    const newSchema = schema.items;
+    const nameAndSubModels = nameAndModelsFromSchema(newSchema, defaultName, refTarget);
+    return {
+      name: `[${nameAndSubModels.name}]`,
+      models: nameAndSubModels.models
+    };
+  } else if (schema.enum) {
+    schema.valueType = schema.type;
+    schema.type = 'enum';
+  } else if (schema.type === 'string') {
+    if (schema.format === 'date' || schema.format ==='date-time') {
+      return { name: 'Date' };
+    } else {
+      return { name: 'String' };
+    }
+  } else if (schema.type === 'boolean') {
+    return { name: 'Bool' };
+  } else if (schema.type === 'integer') {
+    return { name: 'Int' };
+  } else if (schema.type === 'number') {
+    return { name: 'Double' };
+  }
+
+  const model = {
+    schema,
+    name: defaultName
+  };
+
   delete model.schema.description;
-  const properties = model.schema.properties;
-  const subModels = _.flatMap(properties, (property, propertyName) => {
+  const properties = { ...model.schema.properties };
+  const subModels = _.flatMap(model.schema.properties, (property, propertyName) => {
     const newDefaultName = classNameFromComponents([
       model.name,
       propertyName
     ]);
-    let subModels = [];
-    if (property.$ref) {
-      subModels = modelsFromSchema(property, newDefaultName, refTarget);
-      const subModel = subModels[0];
+    let nameAndSubModels = { models:[] };
+      nameAndSubModels = nameAndModelsFromSchema(property, newDefaultName, refTarget);
       properties[propertyName] = {
-        type: `${subModel.name}`
+        type: `${nameAndSubModels.name}`
       };
-    } else if (property.type === 'object') {
-      subModels = modelsFromSchema(property, newDefaultName, refTarget);
-      const subModel = subModels[0];
-      properties[propertyName] = {
-        type: `${subModel.name}`
-      };
-    } else if (property.type === 'array') {
-      const newSchema = property.items;
-      subModels = modelsFromSchema(newSchema, newDefaultName, refTarget);
-      const subModel = subModels[0];
-      properties[propertyName] = {
-        type: `[${subModel.name}]`
-      };
-    }
-    return subModels;
+    return nameAndSubModels.models || [];
   });
-  return _.concat(model, subModels);
+  model.schema.properties = properties;
+  return {
+    name: model.name,
+    models: _.concat(model, subModels)
+  };
 }
 
 function modelsFromParam(param, method, refTarget) {
@@ -170,7 +213,7 @@ function modelsFromParam(param, method, refTarget) {
     method.name,
     param.name || 'response'
   ]);
-  return modelsFromSchema(param.schema, defaultName, refTarget);
+  return nameAndModelsFromSchema(param.schema, defaultName, refTarget).models;
 }
 
 function modelsFromMethod(method, refTarget) {
@@ -185,10 +228,25 @@ function modelsFromMethods(methods, refTarget) {
         .uniqWith(_.isEqual)
         .sortBy('name')
         .value();
-  console.log(require('util').inspect(models, {depth:10, colors:true, breakLength:100}));
+  verifyModels(models);
+  return models;
+}
+
+function verifyModels(models) {
   const names = _.map(models, m => m.name);
   assert(_.isEqual(names, _.uniq(names)), `Duplicate names! ${names}`);
-  return models;
+  _.each(models, model => {
+    const description = describe(model);
+    assert(model.name && model.name !== '', `Model is missing a name: ${description}`);
+  });
+  const noSchemas = _.filter(models, model => {
+    return !model.schema;
+  });
+  assert(noSchemas.length < 1, `Found models without schemas: ${describe(noSchemas)}`);
+  const nonObjects = _.filter(models, model => {
+    return model.schema.type !== 'object' && model.schema.type !== 'enum';
+  });
+  assert(nonObjects.length < 1, `Found non-object-or-enum models: ${describe(nonObjects)}`);
 }
 
 
@@ -196,8 +254,10 @@ function modelsFromMethods(methods, refTarget) {
 // Script
 //////////////////////////////////////////////////////////////////////
 
-const methods = methodsFromPaths(spec.paths);
+
+const methods = methodsFromPaths(spec.paths, spec);
 const models = modelsFromMethods(methods, spec);
 const template = { methods, models };
-console.log(require('util').inspect(template, {depth:10, colors:true, breakLength:100}));
-// console.log(require('util').inspect(template.models, {depth:10, colors:true, breakLength:100}));
+
+// console.log(JSON.stringify(template, null, 2));
+log(template);
