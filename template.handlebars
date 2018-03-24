@@ -1,0 +1,37 @@
+import Foundation
+
+class Api {
+{{#each methods}}
+    static func {{name}}(
+    {{#each params}}
+    {{name}}: {{type}},
+    {{/each}}
+    completion: (Error?, {{response.type}}) -> Void
+    ) {
+        // {{method}} {{path}}
+    }
+{{/each}}
+}
+
+
+{{#each models}}
+
+  open class {{name}} {
+  {{#with schema}}
+    {{#each properties}}
+      public var {{@key}}: {{type}}
+    {{/each}}
+    
+    public init(
+    {{#each properties}}
+      {{@key}}: {{type}}{{#unless @last}},{{/unless}}
+    {{/each}}
+    ) {
+    {{#each properties}}
+      self.{{@key}} = {{@key}}
+    {{/each}}
+    }
+  {{/with}}
+  }
+
+{{/each}}

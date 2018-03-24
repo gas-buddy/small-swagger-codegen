@@ -1,5 +1,7 @@
+import fs from 'fs';
 import _ from 'lodash';
 import assert from 'assert';
+import handlebars from 'handlebars';
 import spec from '@gasbuddy/payment-api-spec';
 // import spec from '@gasbuddy/mobile-orchestration-api-spec';
 
@@ -267,8 +269,8 @@ function verifyModels(models) {
   ]]);
 }
 
-function verify(template) {
-  const error = verifyMethods(template.methods) + verifyModels(template.models);
+function verify(data) {
+  const error = verifyMethods(data.methods) + verifyModels(data.models);
   console.log(error);
   if (!_.isEmpty(error)) {
     assert(false, error);
@@ -282,8 +284,14 @@ function verify(template) {
 
 const methods = methodsFromPaths(spec.paths, spec);
 const models = modelsFromMethods(methods, spec);
-const template = { methods, models };
-verify(template);
+const data = { methods, models };
+verify(data);
 
-// console.log(JSON.stringify(template, null, 2));
-log(template);
+// console.log(JSON.stringify(data, null, 2));
+log(data);
+
+const template = handlebars.compile(fs.readFileSync('template.handlebars', 'utf8'));
+const rendered = template(data);
+fs.writeFileSync('/Users/griffin/Desktop/MyPlayground.playground/Sources/output.swift', rendered);
+// console.log(rendered);
+
