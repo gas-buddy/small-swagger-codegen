@@ -150,14 +150,15 @@ function verifyMethods(methods) {
 //////////////////////////////////////////////////////////////////////
 
 function nameAndModelsFromSchema(schema, defaultName, refTarget) {
+  let name = defaultName;
   if (schema.$ref) {
-    defaultName = typeFromRef(schema.$ref);
+    name = typeFromRef(schema.$ref);
   }
   schema = objectByResolvingRef(schema, refTarget);
 
   if (schema.type === 'array') {
     const newSchema = schema.items;
-    const nameAndSubModels = nameAndModelsFromSchema(newSchema, defaultName, refTarget);
+    const nameAndSubModels = nameAndModelsFromSchema(newSchema, name, refTarget);
     return {
       name: `[${nameAndSubModels.name}]`,
       models: nameAndSubModels.models
@@ -179,16 +180,12 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget) {
     return { name: 'Double' };
   }
 
-  const model = {
-    schema,
-    name: defaultName
-  };
+  delete schema.description;
 
-  delete model.schema.description;
-  const properties = { ...model.schema.properties };
-  const subModels = _.flatMap(model.schema.properties, (property, propertyName) => {
+  const properties = { ...schema.properties };
+  const subModels = _.flatMap(schema.properties, (property, propertyName) => {
     const newDefaultName = classNameFromComponents([
-      model.name,
+      name,
       propertyName
     ]);
     let nameAndSubModels = { models:[] };
@@ -198,11 +195,10 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget) {
       };
     return nameAndSubModels.models || [];
   });
-  model.schema.properties = properties;
-  return {
-    name: model.name,
-    models: _.concat(model, subModels)
-  };
+  schema.properties = properties;
+
+  const model = { name, schema };
+  return { name, models: _.concat(model, subModels) };
 }
 
 function modelsFromParam(param, method, refTarget) {
