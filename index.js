@@ -17,7 +17,7 @@ const HTTP_METHODS = [
 // Helpers
 //////////////////////////////////////////////////////////////////////
 function describe(it) {
-  return 'Object:\n' + require('util').inspect(it, {depth:10, colors:true, breakLength:150}) + "\n";
+  return '\n' + require('util').inspect(it, {depth:10, colors:true, breakLength:150}) + '\n';
 }
 
 function log(it) {
@@ -81,6 +81,7 @@ function classNameFromComponents(components) {
   return _.upperFirst(nameFromComponents(components));
 }
 
+
 //////////////////////////////////////////////////////////////////////
 // Methods
 //////////////////////////////////////////////////////////////////////
@@ -132,16 +133,7 @@ function methodsFromPaths(paths, refTarget) {
     .filter()
     .sortBy('name')
     .value();
-  verifyMethods(methods);
   return methods;
-}
-
-function verifyMethods(methods) {
-  const typeless = _.filter(methods, method => {
-    const params = _.concat(method.params || [], method.response);
-    return _.find(params, param => !param.type);
-  });
-  assert(typeless.length < 1, `Found params without types: ${describe(typeless)}`);
 }
 
 
@@ -224,25 +216,63 @@ function modelsFromMethods(methods, refTarget) {
         .uniqWith(_.isEqual)
         .sortBy('name')
         .value();
-  verifyModels(models);
   return models;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+// Verification
+//////////////////////////////////////////////////////////////////////
+function findProblems(array, pred, foundSome) {
+  const problems = _.filter(array, pred);
+  if (problems.length > 0) {
+    return foundSome(describe(problems));
+  }
+  return '';
+}
+
+function findAllProblems(array, problemFinders) {
+  let retVal = '';
+  _.each(problemFinders, problemFinder => {
+    findProblems(array, problemFinder[0], problem => {
+      retVal += problemFinder[1](problem);
+    });
+  });
+  return retVal;
+}
+
+function verifyMethods(methods) {
+  return findAllProblems(methods, [[
+    method => {
+      const params = _.concat(method.params || [], method.response);
+      return _.find(params, param => !param.type);
+    },
+    problems => `\nFound params or response without type: ${problems}`
+  ]]);
 }
 
 function verifyModels(models) {
   const names = _.map(models, m => m.name);
   assert(_.isEqual(names, _.uniq(names)), `Duplicate names! ${names}`);
-  _.each(models, model => {
-    const description = describe(model);
-    assert(model.name && model.name !== '', `Model is missing a name: ${description}`);
-  });
-  const noSchemas = _.filter(models, model => {
-    return !model.schema;
-  });
-  assert(noSchemas.length < 1, `Found models without schemas: ${describe(noSchemas)}`);
-  const nonObjects = _.filter(models, model => {
-    return model.schema.type !== 'object' && model.schema.type !== 'enum';
-  });
-  assert(nonObjects.length < 1, `Found non-object-or-enum models: ${describe(nonObjects)}`);
+
+  return findAllProblems(models, [[
+    model => !model.name,
+    problems => `\nFound models without names: ${problems}`
+  ], [
+    model => !model.schema,
+    problems => `\nFound models without schemas: ${problems}`
+  ], [
+    model => model.schema.type !== 'object' && model.schema.type !== 'enum',
+    problems => `\nFound non-object-or-enum models: ${problems}`
+  ]]);
+}
+
+function verify(template) {
+  const error = verifyMethods(template.methods) + verifyModels(template.models);
+  console.log(error);
+  if (!_.isEmpty(error)) {
+    assert(false, error);
+  }
 }
 
 
@@ -250,10 +280,10 @@ function verifyModels(models) {
 // Script
 //////////////////////////////////////////////////////////////////////
 
-
 const methods = methodsFromPaths(spec.paths, spec);
 const models = modelsFromMethods(methods, spec);
 const template = { methods, models };
+verify(template);
 
 // console.log(JSON.stringify(template, null, 2));
 log(template);
