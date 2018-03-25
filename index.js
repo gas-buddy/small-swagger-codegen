@@ -85,74 +85,6 @@ function classNameFromComponents(...components) {
 
 
 //////////////////////////////////////////////////////////////////////
-// Methods
-//////////////////////////////////////////////////////////////////////
-
-function processResponseOrParam(obj, refTarget) {
-  if (!obj) {
-    return obj;
-  }
-  obj = objectByResolvingRef(obj, refTarget);
-
-  // Sometimes params have a schema, sometimes just have the properties
-  // that a schema would normally have. This normalizes all params to be
-  // objects that have a schema.
-  let schema = obj.schema;
-  if (!schema) {
-    schema = obj;
-    obj = {
-      name: obj.name,
-      schema,
-    };
-  }
-
-  if (obj.name) {
-    obj.name = _.camelCase(obj.name);
-  }
-  if (obj.schema && obj.schema.$ref) {
-    obj.type = typeFromRef(obj.schema.$ref);
-  } else {
-    obj.type = mapType(obj.type);
-  }
-  return obj;
-}
-
-function methodFromSpec(path, pathParams, method, methodSpec, refTarget) {
-  if (!methodSpec) {
-    return undefined;
-  }
-  const name = _.camelCase(`${path}/${method}`);
-  let params = _.concat(pathParams || [], methodSpec.parameters || []);
-  params = _.map(params, p => processResponseOrParam(p, refTarget));
-  const goodResponseKey = _.find(Object.keys(methodSpec.responses), k => k[0] === '2');
-  const response = processResponseOrParam(methodSpec.responses[goodResponseKey], refTarget);
-  const description = methodSpec.description;
-  return { name, description, method, path, params, response };
-}
-
-function methodsFromPath(path, spec, refTarget) {
-  return _.flatMap(HTTP_METHODS, m => methodFromSpec(
-    path,
-    spec.parameters,
-    m,
-    spec[m],
-    refTarget
-  ));
-}
-
-function methodsFromPaths(paths, refTarget) {
-  const methods = _(paths)
-    .flatMap((pathSpec, path) => {
-      return methodsFromPath(path, pathSpec, refTarget);
-    })
-    .filter()
-    .sortBy('name')
-    .value();
-  return methods;
-}
-
-
-//////////////////////////////////////////////////////////////////////
 // Models
 //////////////////////////////////////////////////////////////////////
 
@@ -227,15 +159,77 @@ function modelsFromMethod(method, refTarget) {
   return _.flatMap(params, param => modelsFromParam(param, method, refTarget));
 }
 
-function modelsFromMethods(methods, refTarget) {
-  const models = _(methods)
-        .flatMap(method => modelsFromMethod(method, refTarget))
-        .filter()
-        .uniqWith(_.isEqual)
-        .sortBy('name')
-        .value();
-  return models;
+
+//////////////////////////////////////////////////////////////////////
+// Methods
+//////////////////////////////////////////////////////////////////////
+
+function processResponseOrParam(obj, refTarget) {
+  if (!obj) {
+    return obj;
+  }
+  obj = objectByResolvingRef(obj, refTarget);
+
+  // Sometimes params have a schema, sometimes just have the properties
+  // that a schema would normally have. This normalizes all params to be
+  // objects that have a schema.
+  let schema = obj.schema;
+  if (!schema) {
+    schema = obj;
+    obj = {
+      name: obj.name,
+      schema,
+    };
+  }
+
+  if (obj.name) {
+    obj.name = _.camelCase(obj.name);
+  }
+  if (obj.schema && obj.schema.$ref) {
+    obj.type = typeFromRef(obj.schema.$ref);
+  } else {
+    obj.type = mapType(obj.type);
+  }
+  return obj;
 }
+
+function methodFromSpec(path, pathParams, method, methodSpec, refTarget) {
+  if (!methodSpec) {
+    return undefined;
+  }
+  const name = _.camelCase(`${path}/${method}`);
+  let params = _.concat(pathParams || [], methodSpec.parameters || []);
+  params = _.map(params, p => processResponseOrParam(p, refTarget));
+  const goodResponseKey = _.find(Object.keys(methodSpec.responses), k => k[0] === '2');
+  const response = processResponseOrParam(methodSpec.responses[goodResponseKey], refTarget);
+  const description = methodSpec.description;
+  const retVal =  { name, description, method, path, params, response };
+  retVal.models = modelsFromMethod(retVal, refTarget);
+  return retVal;
+}
+
+function methodsFromPath(path, pathSpec, refTarget) {
+  return _.flatMap(HTTP_METHODS, m => methodFromSpec(
+    path,
+    pathSpec.parameters,
+    m,
+    pathSpec[m],
+    refTarget
+  ));
+}
+
+function methodsFromPaths(paths, refTarget) {
+  const methods = _(paths)
+    .flatMap((pathSpec, path) => {
+      return methodsFromPath(path, pathSpec, refTarget);
+    })
+    .filter()
+    .sortBy('name')
+    .value();
+  return methods;
+}
+
+
 
 
 //////////////////////////////////////////////////////////////////////
@@ -299,8 +293,22 @@ function verify(data) {
 // Script
 //////////////////////////////////////////////////////////////////////
 
+function moveModelsOffMethods(methods, refTarget) {
+  const models = _(methods)
+        .flatMap(method => {
+          const models = method.models;
+          delete method.models;
+          return models;
+        })
+        .filter()
+        .uniqWith(_.isEqual)
+        .sortBy('name')
+        .value();
+  return models;
+}
+
 const methods = methodsFromPaths(spec.paths, spec);
-const models = modelsFromMethods(methods, spec);
+const models = moveModelsOffMethods(methods, spec);
 const data = { methods, models };
 verify(data);
 
