@@ -19,22 +19,22 @@ const HTTP_METHODS = [
 // Helpers
 //////////////////////////////////////////////////////////////////////
 function describe(it) {
-  return '\n' + require('util').inspect(it, {depth:10, colors:true, breakLength:150}) + '\n';
+  return require('util').inspect(it, {depth:10, colors:true, breakLength:150});
 }
 
 function log(it) {
-  console.log(describe(it));
+  console.log(`\n${describe(it)}\n`);
 }
 
 function resolveRef(ref, refTarget) {
   const split = ref.split('/');
-  assert(split[0] === '#', 'No support for refs that don\'t start with #');
+  assert(split[0] === '#', `No support for refs that don\'t start with '#': ${ref}`);
   let idx = 1;
   let retVal = refTarget;
   _.each(_.tail(split), s => {
     retVal = retVal && retVal[s];
   });
-  return retVal;
+  return _.cloneDeep(retVal);
 }
 
 function objectByResolvingRef(obj, refTarget) {
@@ -72,14 +72,14 @@ function mapType(type) {
 
 function typeFromRef(ref) {
   const lastItem = _.split(ref, '/').pop();
-  return classNameFromComponents([lastItem]);
+  return classNameFromComponents(lastItem);
 }
 
 function nameFromComponents(components) {
   return _.camelCase(components.join('/'));
 }
 
-function classNameFromComponents(components) {
+function classNameFromComponents(...components) {
   return _.upperFirst(nameFromComponents(components));
 }
 
@@ -143,7 +143,10 @@ function methodsFromPaths(paths, refTarget) {
 // Models
 //////////////////////////////////////////////////////////////////////
 
-function nameAndModelsFromSchema(schema, defaultName, refTarget) {
+function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
+  if (!indent) { indent = ''; }
+  console.log(indent + describe(schema));
+
   let name = defaultName;
   if (schema.$ref) {
     name = typeFromRef(schema.$ref);
@@ -152,14 +155,12 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget) {
 
   if (schema.type === 'array') {
     const newSchema = schema.items;
-    const nameAndSubModels = nameAndModelsFromSchema(newSchema, name, refTarget);
+    const nameAndSubModels = nameAndModelsFromSchema(newSchema, name, refTarget, indent+'  ');
+    schema.type = `[${nameAndSubModels.name}]`;
     return {
-      name: `[${nameAndSubModels.name}]`,
+      name: schema.type,
       models: nameAndSubModels.models
     };
-  } else if (schema.enum) {
-    schema.valueType = schema.type;
-    schema.type = 'enum';
   } else if (schema.type === 'string') {
     if (schema.format === 'date' || schema.format ==='date-time') {
       return { name: 'Date' };
@@ -172,37 +173,37 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget) {
     return { name: 'Int' };
   } else if (schema.type === 'number') {
     return { name: 'Double' };
-  }
+  } else if (schema.type === 'object') {
+    delete schema.description;
 
-  delete schema.description;
-
-  const properties = { ...schema.properties };
-  const subModels = _.flatMap(schema.properties, (property, propertyName) => {
-    const newDefaultName = classNameFromComponents([
-      name,
-      propertyName
-    ]);
-    let nameAndSubModels = { models:[] };
-      nameAndSubModels = nameAndModelsFromSchema(property, newDefaultName, refTarget);
+    const properties = { ...schema.properties };
+    const subModels = _.flatMap(schema.properties, (property, propertyName) => {
+      const newDefaultName = classNameFromComponents(name, propertyName);
+      let nameAndSubModels = { models:[] };
+      nameAndSubModels = nameAndModelsFromSchema(property, newDefaultName, refTarget, indent+'  ');
       properties[propertyName] = {
         type: `${nameAndSubModels.name}`
       };
-    return nameAndSubModels.models || [];
-  });
-  schema.properties = properties;
+      return nameAndSubModels.models || [];
+    });
+    schema.properties = properties;
 
-  const model = { name, schema };
-  return { name, models: _.concat(model, subModels) };
+    const model = { name, schema };
+    return { name, models: _.concat(model, subModels) };
+  // } else if (schema.type === 'enum') {
+  //   schema.valueType = schema.type;
+  //   schema.type = 'enum';
+  //   return schema;
+  }
+
+  assert(false, `I don't know how to process a schema of type ${schema.type} 🤔 ${describe(schema)}`);
 }
 
 function modelsFromParam(param, method, refTarget) {
   if (!param.schema) {
     return [];
   }
-  const defaultName = classNameFromComponents([
-    method.name,
-    param.name || 'response'
-  ]);
+  const defaultName = classNameFromComponents(method.name, param.name || 'response');
   return nameAndModelsFromSchema(param.schema, defaultName, refTarget).models;
 }
 
@@ -233,7 +234,7 @@ function findProblems(array, pred, foundSome) {
   return '';
 }
 
-function findAllProblems(array, problemFinders) {
+function findAllProblems(array, ...problemFinders) {
   let retVal = '';
   _.each(problemFinders, problemFinder => {
     findProblems(array, problemFinder[0], problem => {
@@ -244,20 +245,20 @@ function findAllProblems(array, problemFinders) {
 }
 
 function verifyMethods(methods) {
-  return findAllProblems(methods, [[
+  return findAllProblems(methods, [
     method => {
       const params = _.concat(method.params || [], method.response);
       return _.find(params, param => !param.type);
     },
     problems => `\nFound params or response without type: ${problems}`
-  ]]);
+  ]);
 }
 
 function verifyModels(models) {
   const names = _.map(models, m => m.name);
   assert(_.isEqual(names, _.uniq(names)), `Duplicate names! ${names}`);
 
-  return findAllProblems(models, [[
+  return findAllProblems(models, [
     model => !model.name,
     problems => `\nFound models without names: ${problems}`
   ], [
@@ -266,10 +267,11 @@ function verifyModels(models) {
   ], [
     model => model.schema.type !== 'object' && model.schema.type !== 'enum',
     problems => `\nFound non-object-or-enum models: ${problems}`
-  ]]);
+  ]);
 }
 
 function verify(data) {
+  log(data);
   const error = verifyMethods(data.methods) + verifyModels(data.models);
   console.log(error);
   if (!_.isEmpty(error)) {
