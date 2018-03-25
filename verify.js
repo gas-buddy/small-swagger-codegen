@@ -1,6 +1,14 @@
 import _ from 'lodash';
 import assert from 'assert';
 
+export function describe(it) {
+  return require('util').inspect(it, {depth:10, colors:true, breakLength:150});
+}
+
+export function log(it) {
+  console.log(`\n${describe(it)}`);
+}
+
 function findProblems(array, pred, foundSome) {
   const problems = _.filter(array, pred);
   if (problems.length > 0) {
@@ -40,15 +48,17 @@ function verifyModels(models) {
     model => !model.schema,
     problems => `\nFound models without schemas: ${problems}`
   ], [
-    model => model.schema.type !== 'object' && model.schema.type !== 'enum',
+    model => model.schema && model.schema.type !== 'object' && model.schema.type !== 'enum',
     problems => `\nFound non-object-or-enum models: ${problems}`
   ]);
 }
 
 export function verify(data) {
-  // log(data);
-  const error = verifyMethods(data.methods) + verifyModels(data.models);
-  if (!_.isEmpty(error)) {
-    assert(false, error);
-  }
+  const problems = [
+    verifyMethods(data.objectMethods),
+    verifyMethods(data.enumMethods),
+    verifyModels(data.models)
+  ];
+  const error = _.join(problems, '');
+  return _.isEmpty(error) ? undefined : error;
 }

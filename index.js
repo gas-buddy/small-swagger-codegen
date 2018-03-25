@@ -4,7 +4,7 @@ import assert from 'assert';
 import handlebars from 'handlebars';
 import spec from '@gasbuddy/payment-api-spec';
 // import spec from '@gasbuddy/mobile-orchestration-api-spec';
-import { verify } from './verify';
+import { describe, log, verify } from './verify';
 
 
 const HTTP_METHODS = [
@@ -19,14 +19,6 @@ const HTTP_METHODS = [
 //////////////////////////////////////////////////////////////////////
 // Helpers
 //////////////////////////////////////////////////////////////////////
-function describe(it) {
-  return require('util').inspect(it, {depth:10, colors:true, breakLength:150});
-}
-
-function log(it) {
-  console.log(`\n${describe(it)}\n`);
-}
-
 function resolveRef(ref, refTarget) {
   const split = ref.split('/');
   assert(split[0] === '#', `No support for refs that don\'t start with '#': ${ref}`);
@@ -55,12 +47,32 @@ function typeFromRef(ref) {
   return classNameFromComponents(lastItem);
 }
 
-function nameFromComponents(components) {
+function nameFromComponents(...components) {
   return _.camelCase(components.join('/'));
 }
 
 function classNameFromComponents(...components) {
-  return _.upperFirst(nameFromComponents(components));
+  return _.upperFirst(nameFromComponents(...components));
+}
+
+function mapPrimitiveType(type) {
+  if (type === 'string') {
+    return 'String';
+  } else if (type === 'boolean') {
+    return 'Bool';
+  } else if (type === 'integer') {
+    return 'Int';
+  } else if (type === 'number') {
+    return 'Double';
+  }
+  return undefined;
+}
+
+function mapPrimitiveValue(value, type) {
+  if (type === 'string') {
+    return `"${value}"`;
+  }
+  return value;
 }
 
 
@@ -78,6 +90,23 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
     schema = objectByResolvingRef(schema, refTarget);
   }
 
+  if (schema.enum) {
+    return {
+      name,
+      models: [{
+        name,
+        schema: {
+          type: 'enum',
+          enumType: mapPrimitiveType(schema.type),
+          values: _.map(schema.enum, e => ({
+            name: nameFromComponents(e),
+            value: mapPrimitiveValue(e, schema.type)
+          }))
+        }
+      }]
+    };
+  }
+
   if (schema.type === 'array') {
     const newSchema = schema.items;
     const nameAndSubModels = nameAndModelsFromSchema(newSchema, name, refTarget, indent+'  ');
@@ -93,12 +122,6 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
     } else {
       return { name: 'String' };
     }
-  } else if (schema.type === 'boolean') {
-    return { name: 'Bool' };
-  } else if (schema.type === 'integer') {
-    return { name: 'Int' };
-  } else if (schema.type === 'number') {
-    return { name: 'Double' };
   } else if (schema.type === 'object') {
     delete schema.description;
 
@@ -116,10 +139,8 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
 
     const model = { name, schema };
     return { name, models: _.concat(model, subModels) };
-  } else if (schema.type === 'enum') {
-    schema.valueType = schema.type;
-    schema.type = 'enum';
-    return schema;
+  } else if (mapPrimitiveType(schema.type)) {
+    return { name: mapPrimitiveType(schema.type) };
   } else if (!schema.type) {
     return { name: 'Void', models: []};
   }
@@ -226,16 +247,33 @@ function moveModelsOffMethods(methods) {
   return models;
 }
 
-const methods = methodsFromPaths(spec.paths, spec);
-const models = moveModelsOffMethods(methods);
-const data = { methods, models };
-verify(data);
+function splitModels(models) {
+  const retVal = {
+    objectModels: [],
+    enumModels: []
+  };
+  _.forEach(models, model => {
+    if (model.schema && model.schema.type === 'object') {
+      retVal.objectModels.push(model);
+    } else if (model.schema && model.schema.type === 'enum') {
+      retVal.enumModels.push(model);
+    } else {
+      assert(false, `Found non-object-or-enum model: ${describe(model)}`);
+    }
+  });
+  return retVal;
+}
 
-// console.log(JSON.stringify(data, null, 2));
-log(data);
+const methods = methodsFromPaths(spec.paths, spec);
+const models = splitModels(moveModelsOffMethods(methods));
+const data = { methods, ...models };
+const problems = verify(data);
+if (problems) {
+  log(data);
+  console.log(problems);
+  process.exit(1);
+}
 
 const template = handlebars.compile(fs.readFileSync('template.handlebars', 'utf8'));
 const rendered = template(data);
 fs.writeFileSync('/Users/griffin/Desktop/MyPlayground.playground/Sources/output.swift', rendered);
-// console.log(rendered);
-

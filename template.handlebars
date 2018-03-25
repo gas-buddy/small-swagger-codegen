@@ -14,14 +14,14 @@ open class Api {
 }
 
 
-{{#each models}}
+{{#each objectModels}}
 
   open class {{name}} {
   {{#with schema}}
     {{#each properties}}
       public var {{@key}}: {{type}}
     {{/each}}
-    
+
     public init(
     {{#each properties}}
       {{@key}}: {{type}}{{#unless @last}},{{/unless}}
@@ -31,6 +31,18 @@ open class Api {
       self.{{@key}} = {{@key}}
     {{/each}}
     }
+  {{/with}}
+  }
+
+{{/each}}
+
+{{#each enumModels}}
+
+  public enum {{name}}: {{schema.enumType}} {
+  {{#with schema}}
+    {{#each values}}
+      case {{name}} = {{{value}}}
+    {{/each}}
   {{/with}}
   }
 
