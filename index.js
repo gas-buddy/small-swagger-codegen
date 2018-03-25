@@ -64,6 +64,8 @@ function mapPrimitiveType(type) {
     return 'Int';
   } else if (type === 'number') {
     return 'Double';
+  } else if (type === 'object') {
+    return '[String: Any]';
   }
   return undefined;
 }
@@ -122,7 +124,7 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
     } else {
       return { name: 'String' };
     }
-  } else if (schema.type === 'object') {
+  } else if (schema.type === 'object' && schema.properties) {
     delete schema.description;
 
     const properties = { ...schema.properties };
@@ -130,8 +132,12 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
       const newDefaultName = classNameFromComponents(name, propertyName);
       let nameAndSubModels = { models:[] };
       nameAndSubModels = nameAndModelsFromSchema(property, newDefaultName, refTarget, indent+'  ');
-      properties[propertyName] = {
-        type: `${nameAndSubModels.name}`
+
+      let clientName = nameFromComponents(propertyName);
+      delete properties[propertyName];
+      properties[clientName] = {
+        type: `${nameAndSubModels.name}`,
+        specName: propertyName
       };
       return nameAndSubModels.models || [];
     });
@@ -139,8 +145,10 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
 
     const model = { name, schema };
     return { name, models: _.concat(model, subModels) };
+
   } else if (mapPrimitiveType(schema.type)) {
     return { name: mapPrimitiveType(schema.type) };
+
   } else if (!schema.type) {
     return { name: 'Void', models: []};
   }
@@ -273,6 +281,7 @@ if (problems) {
   console.log(problems);
   process.exit(1);
 }
+log(data);
 
 const template = handlebars.compile(fs.readFileSync('template.handlebars', 'utf8'));
 const rendered = template(data);
