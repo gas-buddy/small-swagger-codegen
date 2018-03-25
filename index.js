@@ -93,6 +93,19 @@ function processResponseOrParam(obj, refTarget) {
     return obj;
   }
   obj = objectByResolvingRef(obj, refTarget);
+
+  // Sometimes params have a schema, sometimes just have the properties
+  // that a schema would normally have. This normalizes all params to be
+  // objects that have a schema.
+  let schema = obj.schema;
+  if (!schema) {
+    schema = obj;
+    obj = {
+      name: obj.name,
+      schema,
+    };
+  }
+
   if (obj.name) {
     obj.name = _.camelCase(obj.name);
   }
@@ -150,8 +163,8 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
   let name = defaultName;
   if (schema.$ref) {
     name = typeFromRef(schema.$ref);
+    schema = objectByResolvingRef(schema, refTarget);
   }
-  schema = objectByResolvingRef(schema, refTarget);
 
   if (schema.type === 'array') {
     const newSchema = schema.items;
@@ -190,10 +203,12 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
 
     const model = { name, schema };
     return { name, models: _.concat(model, subModels) };
-  // } else if (schema.type === 'enum') {
-  //   schema.valueType = schema.type;
-  //   schema.type = 'enum';
-  //   return schema;
+  } else if (schema.type === 'enum') {
+    schema.valueType = schema.type;
+    schema.type = 'enum';
+    return schema;
+  } else if (!schema.type) {
+    return { name: 'Void', models: []};
   }
 
   assert(false, `I don't know how to process a schema of type ${schema.type} 🤔 ${describe(schema)}`);
@@ -271,7 +286,7 @@ function verifyModels(models) {
 }
 
 function verify(data) {
-  log(data);
+  // log(data);
   const error = verifyMethods(data.methods) + verifyModels(data.models);
   console.log(error);
   if (!_.isEmpty(error)) {
@@ -290,7 +305,7 @@ const data = { methods, models };
 verify(data);
 
 // console.log(JSON.stringify(data, null, 2));
-log(data);
+// log(data);
 
 const template = handlebars.compile(fs.readFileSync('template.handlebars', 'utf8'));
 const rendered = template(data);
