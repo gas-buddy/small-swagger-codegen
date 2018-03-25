@@ -4,21 +4,6 @@ public protocol SwaggerSerializeable {
     func shallowSerialize() -> Any
 }
 
-extension String: SwaggerSerializeable {
-    public func shallowSerialize() -> Any {
-        return self
-    }
-}
-extension Int: SwaggerSerializeable {
-    public func shallowSerialize() -> Any {
-        return self
-    }
-}
-extension Bool: SwaggerSerializeable {
-    public func shallowSerialize() -> Any {
-        return self
-    }
-}
 extension Array: SwaggerSerializeable {
     public func shallowSerialize() -> Any {
         return self
@@ -30,16 +15,31 @@ extension Date: SwaggerSerializeable {
     }
 }
 
+protocol SwaggerSerializeablePrimitive: SwaggerSerializeable {}
+extension SwaggerSerializeablePrimitive {
+    public func shallowSerialize() -> Any {
+        return self
+    }
+}
+extension String: SwaggerSerializeablePrimitive {}
+extension Int: SwaggerSerializeablePrimitive {}
+extension Bool: SwaggerSerializeablePrimitive {}
+
 extension SwaggerSerializeable {
     public func serialize() -> Any {
         let shallow = shallowSerialize()
-        if let obj = shallow as? [String: Any] {
+        
+        if let primitive = shallow as? SwaggerSerializeablePrimitive {
+            return primitive.shallowSerialize()
+            
+        } else if let obj = shallow as? [String: Any] {
             return obj.mapValues { value -> Any in
                 guard let serializeable = value as? SwaggerSerializeable else {
                     fatalError("Unable to serialize object property: \(value)")
                 }
                 return serializeable.serialize()
             }
+            
         } else if let arr = shallow as? [Any] {
             return arr.map { element -> Any in
                 guard let serializeable = element as? SwaggerSerializeable else {
@@ -48,13 +48,6 @@ extension SwaggerSerializeable {
                 return serializeable.serialize()
             }
             
-        } else if let str = shallow as? String {
-            return str
-        } else if let str = shallow as? Int {
-            return str
-        } else if let str = shallow as? Bool {
-            return str
-
         } else {
             fatalError("Unable to serialize: \(shallow)")
         }
