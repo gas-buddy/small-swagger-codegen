@@ -4,6 +4,7 @@ import assert from 'assert';
 import handlebars from 'handlebars';
 import spec from '@gasbuddy/payment-api-spec';
 // import spec from '@gasbuddy/mobile-orchestration-api-spec';
+import { verify } from './verify';
 
 
 const HTTP_METHODS = [
@@ -49,27 +50,6 @@ function objectByResolvingRef(obj, refTarget) {
   return retVal;
 }
 
-function resolveRefsRecursive(obj, refTarget) {
-  if (Array.isArray(obj)) {
-    return obj.map(o => resolveRefsRecursive(o, refTarget));
-  } else if (obj instanceof Object) {
-    let retVal = objectByResolvingRef(obj, refTarget);
-    _.each(Object.keys(retVal), k => {
-      retVal[k] = resolveRefsRecursive(obj[k], refTarget);
-    });
-    return retVal;
-  }
-  return obj;
-}
-
-function mapType(type) {
-  return {
-    string: 'String',
-    boolean: 'Bool',
-    integer: 'Int'
-  }[type] || type || 'Any';
-}
-
 function typeFromRef(ref) {
   const lastItem = _.split(ref, '/').pop();
   return classNameFromComponents(lastItem);
@@ -108,6 +88,7 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
     };
   } else if (schema.type === 'string') {
     if (schema.format === 'date' || schema.format ==='date-time') {
+      // TODO: format gets thrown out
       return { name: 'Date' };
     } else {
       return { name: 'String' };
@@ -159,21 +140,6 @@ function nameAndModelsFromParam(param, methodName, refTarget) {
 // Methods
 //////////////////////////////////////////////////////////////////////
 
-function processResponseOrParam(obj, refTarget) {
-  if (!obj) {
-    return obj;
-  }
-  if (obj.name) {
-    obj.name = _.camelCase(obj.name);
-  }
-  // if (obj.schema && obj.schema.$ref) {
-  //   obj.type = typeFromRef(obj.schema.$ref);
-  // } else {
-  //   obj.type = mapType(obj.type);
-  // }
-  return obj;
-}
-
 function methodFromSpec(path, pathParams, method, methodSpec, refTarget) {
   if (!methodSpec) {
     return undefined;
@@ -202,18 +168,21 @@ function methodFromSpec(path, pathParams, method, methodSpec, refTarget) {
     const paramModels = nameAndModelsFromParam(param, name, refTarget);
     models = models.concat(paramModels.models);
     param.type = paramModels.name || param.type;
-    return processResponseOrParam(param, refTarget);
+    if (param.name) {
+      param.name = _.camelCase(param.name);
+    }
+    return param;
   });
 
   const goodResponseKey = _.find(Object.keys(methodSpec.responses), k => k[0] === '2');
   let response = methodSpec.responses[goodResponseKey];
 
+  // TODO: Many similarities with how we treat `param` above.
   response = objectByResolvingRef(response, refTarget);
-
   const responseModels = nameAndModelsFromParam(response, name, refTarget);
   models = models.concat(responseModels.models);
   response.type = responseModels.name || response.type || 'Void';
-  response = processResponseOrParam(response, refTarget);
+  //
 
   return { name, description, method, path, params, response, models };
 }
@@ -234,67 +203,9 @@ function methodsFromPaths(paths, refTarget) {
       return methodsFromPath(path, pathSpec, refTarget);
     })
     .filter()
-    .sortBy('name')
+    .sortBy('path')
     .value();
   return methods;
-}
-
-
-
-
-//////////////////////////////////////////////////////////////////////
-// Verification
-//////////////////////////////////////////////////////////////////////
-function findProblems(array, pred, foundSome) {
-  const problems = _.filter(array, pred);
-  if (problems.length > 0) {
-    return foundSome(describe(problems));
-  }
-  return '';
-}
-
-function findAllProblems(array, ...problemFinders) {
-  let retVal = '';
-  _.each(problemFinders, problemFinder => {
-    findProblems(array, problemFinder[0], problem => {
-      retVal += problemFinder[1](problem);
-    });
-  });
-  return retVal;
-}
-
-function verifyMethods(methods) {
-  return findAllProblems(methods, [
-    method => {
-      const params = _.concat(method.params || [], method.response);
-      return _.find(params, param => !param.type);
-    },
-    problems => `\nFound methods with params or responses without a type: ${problems}`
-  ]);
-}
-
-function verifyModels(models) {
-  const names = _.map(models, m => m.name);
-  assert(_.isEqual(names, _.uniq(names)), `Duplicate names! ${names}`);
-
-  return findAllProblems(models, [
-    model => !model.name,
-    problems => `\nFound models without names: ${problems}`
-  ], [
-    model => !model.schema,
-    problems => `\nFound models without schemas: ${problems}`
-  ], [
-    model => model.schema.type !== 'object' && model.schema.type !== 'enum',
-    problems => `\nFound non-object-or-enum models: ${problems}`
-  ]);
-}
-
-function verify(data) {
-  // log(data);
-  const error = verifyMethods(data.methods) + verifyModels(data.models);
-  if (!_.isEmpty(error)) {
-    assert(false, error);
-  }
 }
 
 
@@ -302,7 +213,7 @@ function verify(data) {
 // Script
 //////////////////////////////////////////////////////////////////////
 
-function moveModelsOffMethods(methods, refTarget) {
+function moveModelsOffMethods(methods) {
   const models = _(methods)
         .flatMap(method => {
           const models = method.models;
@@ -311,18 +222,17 @@ function moveModelsOffMethods(methods, refTarget) {
         })
         .filter()
         .uniqWith(_.isEqual)
-        .sortBy('name')
         .value();
   return models;
 }
 
 const methods = methodsFromPaths(spec.paths, spec);
-const models = moveModelsOffMethods(methods, spec);
+const models = moveModelsOffMethods(methods);
 const data = { methods, models };
 verify(data);
 
 // console.log(JSON.stringify(data, null, 2));
-// log(data);
+log(data);
 
 const template = handlebars.compile(fs.readFileSync('template.handlebars', 'utf8'));
 const rendered = template(data);
