@@ -1,8 +1,8 @@
 import Foundation
 
-class Api {
+open class Api {
 {{#each methods}}
-    static func {{name}}(
+    open static func {{name}}(
     {{#each params}}
     {{name}}: {{type}},
     {{/each}}

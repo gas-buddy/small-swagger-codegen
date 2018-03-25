@@ -90,7 +90,7 @@ function classNameFromComponents(...components) {
 
 function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
   if (!indent) { indent = ''; }
-  console.log(indent + describe(schema));
+  // console.log(indent + describe(schema));
 
   let name = defaultName;
   if (schema.$ref) {
@@ -143,20 +143,15 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
     return { name: 'Void', models: []};
   }
 
-  assert(false, `I don't know how to process a schema of type ${schema.type} 🤔 ${describe(schema)}`);
+  assert(false, `I don't know how to process a schema of type ${schema.type} 🤔\n  ${describe(schema)}`);
 }
 
-function modelsFromParam(param, method, refTarget) {
+function nameAndModelsFromParam(param, methodName, refTarget) {
   if (!param.schema) {
     return [];
   }
-  const defaultName = classNameFromComponents(method.name, param.name || 'response');
-  return nameAndModelsFromSchema(param.schema, defaultName, refTarget).models;
-}
-
-function modelsFromMethod(method, refTarget) {
-  const params = _.concat(method.params || [], method.response);
-  return _.flatMap(params, param => modelsFromParam(param, method, refTarget));
+  const defaultName = classNameFromComponents(methodName, param.name || 'response');
+  return nameAndModelsFromSchema(param.schema, defaultName, refTarget);
 }
 
 
@@ -168,28 +163,14 @@ function processResponseOrParam(obj, refTarget) {
   if (!obj) {
     return obj;
   }
-  obj = objectByResolvingRef(obj, refTarget);
-
-  // Sometimes params have a schema, sometimes just have the properties
-  // that a schema would normally have. This normalizes all params to be
-  // objects that have a schema.
-  let schema = obj.schema;
-  if (!schema) {
-    schema = obj;
-    obj = {
-      name: obj.name,
-      schema,
-    };
-  }
-
   if (obj.name) {
     obj.name = _.camelCase(obj.name);
   }
-  if (obj.schema && obj.schema.$ref) {
-    obj.type = typeFromRef(obj.schema.$ref);
-  } else {
-    obj.type = mapType(obj.type);
-  }
+  // if (obj.schema && obj.schema.$ref) {
+  //   obj.type = typeFromRef(obj.schema.$ref);
+  // } else {
+  //   obj.type = mapType(obj.type);
+  // }
   return obj;
 }
 
@@ -197,15 +178,44 @@ function methodFromSpec(path, pathParams, method, methodSpec, refTarget) {
   if (!methodSpec) {
     return undefined;
   }
+
+  let models = [];
   const name = _.camelCase(`${path}/${method}`);
-  let params = _.concat(pathParams || [], methodSpec.parameters || []);
-  params = _.map(params, p => processResponseOrParam(p, refTarget));
-  const goodResponseKey = _.find(Object.keys(methodSpec.responses), k => k[0] === '2');
-  const response = processResponseOrParam(methodSpec.responses[goodResponseKey], refTarget);
   const description = methodSpec.description;
-  const retVal =  { name, description, method, path, params, response };
-  retVal.models = modelsFromMethod(retVal, refTarget);
-  return retVal;
+
+  let params = _.concat(pathParams || [], methodSpec.parameters || []);
+  params = _.map(params, param => {
+    param = objectByResolvingRef(param, refTarget);
+    // Sometimes params have a schema, sometimes they just have the properties
+    // that a schema would normally have. This normalizes all params to be
+    // objects that have a schema.
+    let schema = param.schema;
+    if (!schema) {
+      schema = param;
+      param = {
+        name: param.name,
+        description: param.description,
+        schema,
+      };
+    }
+
+    const paramModels = nameAndModelsFromParam(param, name, refTarget);
+    models = models.concat(paramModels.models);
+    param.type = paramModels.name || param.type;
+    return processResponseOrParam(param, refTarget);
+  });
+
+  const goodResponseKey = _.find(Object.keys(methodSpec.responses), k => k[0] === '2');
+  let response = methodSpec.responses[goodResponseKey];
+
+  response = objectByResolvingRef(response, refTarget);
+
+  const responseModels = nameAndModelsFromParam(response, name, refTarget);
+  models = models.concat(responseModels.models);
+  response.type = responseModels.name || response.type || 'Void';
+  response = processResponseOrParam(response, refTarget);
+
+  return { name, description, method, path, params, response, models };
 }
 
 function methodsFromPath(path, pathSpec, refTarget) {
@@ -259,7 +269,7 @@ function verifyMethods(methods) {
       const params = _.concat(method.params || [], method.response);
       return _.find(params, param => !param.type);
     },
-    problems => `\nFound params or response without type: ${problems}`
+    problems => `\nFound methods with params or responses without a type: ${problems}`
   ]);
 }
 
@@ -282,7 +292,6 @@ function verifyModels(models) {
 function verify(data) {
   // log(data);
   const error = verifyMethods(data.methods) + verifyModels(data.models);
-  console.log(error);
   if (!_.isEmpty(error)) {
     assert(false, error);
   }
