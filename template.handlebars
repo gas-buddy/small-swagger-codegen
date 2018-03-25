@@ -1,59 +1,5 @@
 import Foundation
 
-public protocol SwaggerSerializeable {
-  func shallowSerialize() -> Any
-}
-
-extension String: SwaggerSerializeable {
-  func shallowSerialize() -> Any {
-    return self
-  }
-}
-
-public class SwaggerSerializeableArray<T: SwaggerSerializeable> {
-  let values: [T]
-  init(values: [T]) {
-    self.values = values
-  }
-}
-extension SwaggerSerializeableArray: SwaggerSerializeable {
-  public func shallowSerialize() -> Any {
-    return "BUTTS"
-  }
-}
-
-public protocol SwaggerSerializeableObject: SwaggerSerializeable {
-  func shallowSerializeObject() -> [String: SwaggerSerializeable]
-}
-extension SwaggerSerializeableObject {
-  public func shallowSerialize() -> Any {
-    return shallowSerializeObject()
-  }
-}
-
-public protocol SwaggerSerializeableEnum: SwaggerSerializeable {
-  associatedtype SwaggerSerializeableEnumType
-  func shallowSerializeEnum() -> SwaggerSerializeableEnumType
-}
-extension SwaggerSerializeableEnum {
-  public func shallowSerialize() -> Any {
-    return shallowSerializeEnum()
-  }
-}
-extension SwaggerSerializeable {
-  func serialize() -> Any {
-    let shallow = shallowSerialize()
-    if let obj = shallow as? [String: Any] {
-      return obj.mapValues { v in
-        if let x = v as? SwaggerSerializeable {
-        }
-        $0.serialize
-      }
-    } else if let arr = shallow as? [Any] {
-    }
-  }
-}
-
 open class Api {
 {{#each methods}}
     open static func {{name}}(
@@ -68,7 +14,7 @@ open class Api {
 }
 
 {{#each objectModels}}
-  open class {{name}}: SwaggerSerializeableObject {
+  open class {{name}}: SwaggerSerializeable {
   {{#with schema}}
     {{#each properties}}
       public var {{@key}}: {{type}}
@@ -84,7 +30,7 @@ open class Api {
     {{/each}}
     }
 
-    public func shallowSerializeObject() -> [String: SwaggerSerializeable] {
+    public func shallowSerialize() -> Any {
       return [
       {{#each properties}}
         "{{specName}}": {{@key}},
@@ -97,13 +43,12 @@ open class Api {
 {{/each}}
 
 {{#each enumModels}}
-  public enum {{name}}: {{schema.enumType}}, SwaggerSerializeableEnum {
+  public enum {{name}}: {{schema.enumType}}, SwaggerSerializeable {
   {{#with schema}}
     {{#each values}}
       case {{name}} = {{{value}}}
     {{/each}}
-    typealias SwaggerSerializeableEnumType = {{schema.enumType}}
-    public func shallowSerializeEnum() -> {{schema.enumType}} {
+    public func shallowSerialize() -> Any {
       return rawValue;
     }
   {{/with}}

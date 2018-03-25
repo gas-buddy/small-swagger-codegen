@@ -285,4 +285,4 @@ log(data);
 
 const template = handlebars.compile(fs.readFileSync('template.handlebars', 'utf8'));
 const rendered = template(data);
-fs.writeFileSync('/Users/griffin/Desktop/MyPlayground.playground/Sources/output.swift', rendered);
+fs.writeFileSync('./MyPlayground.playground/Sources/output.swift', rendered);
