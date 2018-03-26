@@ -2,14 +2,14 @@ import Foundation
 
 open class Api {
 {{#each methods}}
-    open static func {{name}}(
-    {{#each params}}
-    {{name}}: {{type}},
-    {{/each}}
-    completion: (Error?, {{response.type}}) -> Void
-    ) {
-        // {{method}} {{path}}
-    }
+  open static func {{name}}(
+  {{#each params}}
+  {{name}}: {{type}},
+  {{/each}}
+  completion: (Error?, {{response.type}}) -> Void
+  ) {
+    // {{method}} {{path}}
+  }
 {{/each}}
 }
 

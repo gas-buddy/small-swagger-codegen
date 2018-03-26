@@ -6,15 +6,9 @@ import spec from '@gasbuddy/payment-api-spec';
 // import spec from '@gasbuddy/mobile-orchestration-api-spec';
 import { describe, log, verify } from './verify';
 
-
 const HTTP_METHODS = [
   'get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'
 ];
-
-
-// TODO:
-// - allof
-
 
 //////////////////////////////////////////////////////////////////////
 // Helpers
@@ -93,61 +87,58 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
   }
 
   if (schema.enum) {
-    return {
-      name,
-      models: [{
-        name,
-        schema: {
-          type: 'enum',
-          enumType: mapPrimitiveType(schema.type),
-          values: _.map(schema.enum, e => ({
-            name: nameFromComponents(e),
-            value: mapPrimitiveValue(e, schema.type)
-          }))
-        }
-      }]
+    const enumSchema = {
+      type: 'enum',
+      enumType: mapPrimitiveType(schema.type),
+      values: _.map(schema.enum, e => ({
+        name: nameFromComponents(e),
+        value: mapPrimitiveValue(e, schema.type)
+      }))
     };
-  }
+    const model = { name, schema: enumSchema };
+    return { name, models: [model] };
 
-  if (schema.type === 'array') {
+  } else if (schema.type === 'array') {
     const newSchema = schema.items;
-    const nameAndSubModels = nameAndModelsFromSchema(newSchema, name, refTarget, indent+'  ');
-    schema.type = `[${nameAndSubModels.name}]`;
-    return {
-      name: schema.type,
-      models: nameAndSubModels.models
-    };
+    const { name: elementType, models: elementModels } = nameAndModelsFromSchema(
+      newSchema, name, refTarget, indent+'  '
+    );
+    return { name: `[${elementType}]`, models: elementModels };
+
   } else if (schema.type === 'string') {
     if (schema.format === 'date' || schema.format ==='date-time') {
       // TODO: format gets thrown out
-      return { name: 'Date' };
+      return { name: 'Date', models: [] };
     } else {
-      return { name: 'String' };
+      return { name: 'String', models: [] };
     }
   } else if (schema.type === 'object' && schema.properties) {
     delete schema.description;
 
     const properties = { ...schema.properties };
-    const subModels = _.flatMap(schema.properties, (property, propertyName) => {
+    const model = { name, schema };
+    const models = _.flatMap(schema.properties, (property, propertyName) => {
       const newDefaultName = classNameFromComponents(name, propertyName);
-      let nameAndSubModels = { models:[] };
-      nameAndSubModels = nameAndModelsFromSchema(property, newDefaultName, refTarget, indent+'  ');
-
+      const {name: propertyType, models: propertyModels} = nameAndModelsFromSchema(
+        property,
+        newDefaultName,
+        refTarget,
+        indent+'  '
+      );
       let clientName = nameFromComponents(propertyName);
       delete properties[propertyName];
       properties[clientName] = {
-        type: `${nameAndSubModels.name}`,
+        type: propertyType,
         specName: propertyName
       };
-      return nameAndSubModels.models || [];
+      return propertyModels || [];
     });
     schema.properties = properties;
 
-    const model = { name, schema };
-    return { name, models: _.concat(model, subModels) };
+    return { name, models: _.concat(model, models) };
 
   } else if (mapPrimitiveType(schema.type)) {
-    return { name: mapPrimitiveType(schema.type) };
+    return { name: mapPrimitiveType(schema.type), models: []};
 
   } else if (!schema.type) {
     return { name: 'Void', models: []};
