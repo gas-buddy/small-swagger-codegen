@@ -125,10 +125,12 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
         refTarget,
         indent+'  '
       );
+      const isRequired = !!_.find(schema.required, r => r === propertyName);
       let clientName = nameFromComponents(propertyName);
       delete properties[propertyName];
       properties[clientName] = {
         type: propertyType,
+        isRequired,
         specName: propertyName
       };
       return propertyModels || [];
@@ -276,4 +278,4 @@ log(data);
 
 const template = handlebars.compile(fs.readFileSync('template.handlebars', 'utf8'));
 const rendered = template(data);
-fs.writeFileSync('./MyPlayground.playground/Sources/output.swift', rendered);
+fs.writeFileSync('./Testbed/Testbed/output.swift', rendered);

@@ -37,5 +37,6 @@ let rwi = ReferralsWithInfo(
     enrollmentProgram: pd,
     link: "link", referrals: [r1, r2]
 )
+jsonObj(rwi)
 print(json(ReferralsWithInfo.deserialize(json: jsonObj(rwi))))
 

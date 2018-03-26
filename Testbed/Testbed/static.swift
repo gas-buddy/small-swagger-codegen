@@ -2,7 +2,7 @@ import Foundation
 
 
 public protocol SwaggerSerializeable {
-    func shallowSerialize() -> Any
+    func shallowSerialize() -> Any?
 }
 
 public protocol SwaggerDeserializeable {
@@ -15,7 +15,7 @@ public protocol SwaggerObject: SwaggerSerializeable, SwaggerDeserializeable {
 
 
 extension Array: SwaggerObject {
-    public func shallowSerialize() -> Any {
+    public func shallowSerialize() -> Any? {
         return self
     }
     public static func deserialize(json: Any) -> Array<Element> {
@@ -35,7 +35,7 @@ extension Array: SwaggerObject {
 }
 
 extension Dictionary: SwaggerObject {
-    public func shallowSerialize() -> Any {
+    public func shallowSerialize() -> Any? {
         return self
     }
     public static func deserialize(json: Any) -> Dictionary<Key, Value> {
@@ -55,7 +55,7 @@ extension Dictionary: SwaggerObject {
 }
 
 extension Date: SwaggerObject {
-    public func shallowSerialize() -> Any {
+    public func shallowSerialize() -> Any? {
         return "HEY ITS ME UR DATE"
     }
     public static func deserialize(json: Any) -> Date {
@@ -63,9 +63,32 @@ extension Date: SwaggerObject {
     }
 }
 
+extension Optional: SwaggerObject {
+    public func shallowSerialize() -> Any? {
+        guard let value = self else {
+            return self as Any
+        }
+        guard let serializeable = value as? SwaggerSerializeable,
+            let serialized = serializeable.shallowSerialize() as? Wrapped else {
+            fatalError("Serialization error: don't know how to serialize \(value)")
+        }
+        return Optional(serialized)
+    }
+    public static func deserialize(json: Any) -> Optional<Wrapped> {
+        let optional = json as Optional<Any>
+        guard let deserializeable = Wrapped.self as? SwaggerDeserializeable.Type else {
+            fatalError("Deserialization error: don't know how to deserialize \(Wrapped.self)")
+        }
+        guard let unwrapped = optional, let deserializedValue = deserializeable.deserialize(json: unwrapped) as? Wrapped else {
+            fatalError("Deserialization error: expected \(Wrapped.self) but got \(json)")
+        }
+        return deserializedValue
+    }
+}
+
 protocol SwaggerSerializeablePrimitive: SwaggerObject {}
 extension SwaggerSerializeablePrimitive {
-    public func shallowSerialize() -> Any {
+    public func shallowSerialize() -> Any? {
         return self
     }
     public static func deserialize(json: Any) -> Self {
@@ -80,14 +103,21 @@ extension Int: SwaggerSerializeablePrimitive {}
 extension Double: SwaggerSerializeablePrimitive {}
 extension Bool: SwaggerSerializeablePrimitive {}
 
+func isOptional(_ instance: Any) -> Bool {
+    let mirror = Mirror(reflecting: instance)
+    let style = mirror.displayStyle
+    return style == .optional
+}
 extension SwaggerSerializeable {
-    public func serialize() -> Any {
-        let shallow = shallowSerialize()
+    public func serialize() -> Any? {
+        guard let shallow = shallowSerialize() else {
+            return nil
+        }
         
         if let primitive = shallow as? SwaggerSerializeablePrimitive {
             return primitive.shallowSerialize()
             
-        } else if let obj = shallow as? [String: Any] {
+        } else if let obj = shallow as? [String: Any?] {
             return obj.mapValues { value -> Any in
                 guard let serializeable = value as? SwaggerSerializeable else {
                     fatalError("Unable to serialize object property: \(value)")

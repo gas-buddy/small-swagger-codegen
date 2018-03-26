@@ -17,12 +17,12 @@ open class Api {
   open class {{{name}}}: SwaggerObject {
   {{#with schema}}
     {{#each properties}}
-      public var {{{@key}}}: {{{type}}}
+      public var {{{@key}}}: {{{type}}}{{#unless isRequired}}?{{/unless}}
     {{/each}}
 
     required public init(
     {{#each properties}}
-      {{{@key}}}: {{{type}}}{{#unless @last}},{{/unless}}
+      {{{@key}}}: {{{type}}} {{~#unless isRequired}}?=nil{{/unless}} {{~#unless @last}},{{/unless}}
     {{/each}}
     ) {
     {{#each properties}}
@@ -30,7 +30,7 @@ open class Api {
     {{/each}}
     }
 
-    public func shallowSerialize() -> Any {
+    public func shallowSerialize() -> Any? {
       return [
       {{#each properties}}
         "{{{specName}}}": {{{@key}}},
@@ -44,7 +44,7 @@ open class Api {
       }
       return self.init(
       {{#each properties}}
-        {{{@key}}}: {{{type}}}.deserialize(json: dictionary["{{{specName}}}"]){{#unless @last}},{{/unless}}
+        {{{@key}}}: {{#unless isRequired}}Optional<{{/unless}}{{{type}}}{{#unless isRequired}}>{{/unless}}.deserialize(json: dictionary["{{{specName}}}"]){{#unless @last}},{{/unless}}
       {{/each}}
       )
     }
@@ -59,7 +59,7 @@ open class Api {
     {{#each values}}
       case {{{name}}} = {{{value}}}
     {{/each}}
-    public func shallowSerialize() -> Any {
+    public func shallowSerialize() -> Any? {
       return rawValue;
     }
     public static func deserialize(json: Any) -> {{{../name}}} {
