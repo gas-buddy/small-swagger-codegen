@@ -8,7 +8,13 @@ open class Api {
   {{/each}}
     completion: (Error?, {{{response.type}}}) -> Void
   ) {
-    // {{{method}}} {{{path}}}
+    _request(params: [
+    {{#each params}}
+      .init(name: "{{{serverName}}}", in: .{{{in}}}, value: {{{name}}}) {{~#unless @last}},{{/unless}}
+    {{/each}}
+    ]) { (err: Error?, res: {{{response.type}}}) in
+      // {{{method}}} {{{path}}}
+    }
   }
 {{/each}}
 }

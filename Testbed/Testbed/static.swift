@@ -103,6 +103,7 @@ extension Int: SwaggerSerializeablePrimitive {}
 extension Double: SwaggerSerializeablePrimitive {}
 extension Bool: SwaggerSerializeablePrimitive {}
 
+
 func isOptional(_ instance: Any) -> Bool {
     let mirror = Mirror(reflecting: instance)
     let style = mirror.displayStyle

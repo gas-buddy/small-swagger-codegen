@@ -192,6 +192,7 @@ function methodFromSpec(path, pathParams, method, methodSpec, refTarget) {
     models = models.concat(paramModels.models);
     param.type = paramModels.name || param.type;
     if (param.name) {
+      param.serverName = param.name;
       param.name = _.camelCase(param.name);
     }
     return param;
