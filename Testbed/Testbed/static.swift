@@ -26,7 +26,7 @@ extension Array: SwaggerObject {
     
     public static func deserialize(json: Any?, format: String?) -> Array<Element> {
         guard let array = json as? [Any] else {
-            fatalError("Deserialization error: expected array but got \(json)")
+            fatalError("Deserialization error: expected array but got \(String(describing: json))")
         }
         return array.map { element in
             guard let deserializeable = Element.self as? SwaggerDeserializeable.Type else {
@@ -52,14 +52,14 @@ extension Dictionary: SwaggerObject {
     
     public static func deserialize(json: Any?, format: String?) -> Dictionary<Key, Value> {
         guard let dictionary = json as? [Key: Any] else {
-            fatalError("Deserialization error: expected dictionary but got \(json)")
+            fatalError("Deserialization error: expected dictionary but got \(String(describing: json))")
         }
         return dictionary.mapValues { value in
             guard let deserializeable = Value.self as? SwaggerDeserializeable.Type else {
                 fatalError("Deserialization error: don't know how to deserialize \(Value.self)")
             }
             guard let deserializedValue = deserializeable.deserialize(json: value, format: format) as? Value else {
-                fatalError("Deserialization error: expected \(Value.self) but got \(json)")
+                fatalError("Deserialization error: expected \(Value.self) but got \(String(describing: json))")
             }
             return deserializedValue
         }
@@ -116,7 +116,7 @@ extension Date: SwaggerObject {
             // treat as a java date
             return Date(timeIntervalSince1970: Double(sourceInt / 1000) )
         }
-        fatalError("Deserialization error: expected a Date but got \(json)")
+        fatalError("Deserialization error: expected a Date but got \(String(describing: json))")
     }
 }
 
@@ -132,6 +132,9 @@ extension Optional: SwaggerObject {
         return Optional(serialized)
     }
     public static func deserialize(json: Any?, format: String?) -> Optional<Wrapped> {
+        if json is NSNull {
+            return nil
+        }
         switch json {
         case .none:
             return nil
@@ -155,7 +158,7 @@ extension SwaggerSerializeablePrimitive {
     }
     public static func deserialize(json: Any?, format: String?) -> Self {
         guard let deserialized = json as? Self else {
-            fatalError("Deserialization error: Expected \(Self.self) but got \(json)")
+            fatalError("Deserialization error: Expected \(Self.self) but got \(String(describing: json))")
         }
         return deserialized
     }

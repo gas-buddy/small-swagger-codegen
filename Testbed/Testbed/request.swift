@@ -22,13 +22,17 @@ struct RequestParam {
 }
 
 func _request<ResponseType: SwaggerDeserializeable>(
+    method: String,
+    path: String,
     params: [RequestParam] = [],
     completion: ((Error?, ResponseType?) -> Void)
 ) {
-    print(params)
+    print("\(method.uppercased()) \(path) -- \(params)")
 }
 
 func _request(
+    method: String,
+    path: String,
     params: [RequestParam] = [],
     completion: ((Error?, Void) -> Void)
     ) {

@@ -1,6 +1,6 @@
 import Foundation
 
-open class Api { 
+open class Api {
 {{#each methods}}
   open static func {{{name}}}(
   {{#each params}}
@@ -8,13 +8,13 @@ open class Api {
   {{/each}}
     completion: (Error?, {{{response.type}}}?) -> Void
   ) {
-    // {{{method}}} {{{path}}}
-    _request(params: [
+    _request(method: "{{{method}}}", path: "{{{path}}}", params: [
     {{#each params}}
       .init(name: "{{{serverName}}}", in: .{{{in}}}, value: {{{name}}}, format: {{#if format}}"{{format}}"{{else}}nil{{/if}}) {{~#unless @last}},{{/unless}}
     {{/each}}
     ], completion: completion)
   }
+
 {{/each}}
 }
 
@@ -36,11 +36,12 @@ open class Api {
     }
 
     public func serialize(format: String? = nil) -> Any? {
-      return [
+      let retVal: [String: Any?] = [
       {{#each properties}}
         "{{{specName}}}": {{{@key}}}{{#unless isRequired}}?{{/unless}}.serialize(format: {{#if format}}"{{format}}"{{else}}nil{{/if}}),
       {{/each}}
-      ]
+      ].filter { (_: String, val: Any?) -> Bool in return val != nil }
+      return retVal
     }
 
     public static func deserialize(json: Any?, format: String? = nil) -> Self {
