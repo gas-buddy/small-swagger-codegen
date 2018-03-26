@@ -12,7 +12,7 @@ Api.accountIdCreditBalanceGet(accountId: "sdfs") { _, _ in }
 
 
 Api.accountIdStatusGet(accountId: "id", fields: [.disposition, .instruments]) {err, status in
-    print(status.programs!)
+    print((status?.programs)!)
 }
 
 let ins = Instrument(
@@ -38,3 +38,12 @@ let rwi = ReferralsWithInfo(
 )
 print(json(ReferralsWithInfo.deserialize(json: jsonObj(rwi))))
 
+
+let testData = try! JSONSerialization.jsonObject(with: """
+{
+"instrument_id": "id",
+"instrument_type": "checking_account"
+}
+""".data(using: .utf8)!)
+
+print(json(Instrument.deserialize(json: testData)))

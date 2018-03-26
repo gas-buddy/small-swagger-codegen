@@ -23,7 +23,7 @@ struct RequestParam {
 
 func _request<ResponseType: SwaggerDeserializeable>(
     params: [RequestParam] = [],
-    completion: ((Error?, ResponseType) -> Void)
+    completion: ((Error?, ResponseType?) -> Void)
 ) {
     print(params)
 }

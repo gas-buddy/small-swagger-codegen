@@ -6,15 +6,14 @@ open class Api {
   {{#each params}}
     {{{name}}}: {{{type}}}{{#unless required}}? = nil{{/unless}},
   {{/each}}
-    completion: (Error?, {{{response.type}}}) -> Void
+    completion: (Error?, {{{response.type}}}?) -> Void
   ) {
+    // {{{method}}} {{{path}}}
     _request(params: [
     {{#each params}}
       .init(name: "{{{serverName}}}", in: .{{{in}}}, value: {{{name}}}, format: {{#if format}}"{{format}}"{{else}}nil{{/if}}) {{~#unless @last}},{{/unless}}
     {{/each}}
-    ]) { (err: Error?, res: {{{response.type}}}) in
-      // {{{method}}} {{{path}}}
-    }
+    ], completion: completion)
   }
 {{/each}}
 }
@@ -39,18 +38,18 @@ open class Api {
     public func serialize(format: String? = nil) -> Any? {
       return [
       {{#each properties}}
-        "{{{specName}}}": {{{@key}}}{{#unless isRequired}}?{{/unless}}.serialize(format: {{#if format}}"{{format}}"{{else}}nil{{/if}}) as Any,
+        "{{{specName}}}": {{{@key}}}{{#unless isRequired}}?{{/unless}}.serialize(format: {{#if format}}"{{format}}"{{else}}nil{{/if}}),
       {{/each}}
       ]
     }
 
-    public static func deserialize(json: Any, format: String? = nil) -> Self {
+    public static func deserialize(json: Any?, format: String? = nil) -> Self {
       guard let dictionary = json as? [String: Any] else {
-        fatalError("Deserialization error: expected {{{../name}}} but got \(json)")
+        fatalError("Deserialization error: Trying to deserialize a {{{../name}}} but got \(String(describing: json))")
       }
       return self.init(
       {{#each properties}}
-        {{{@key}}}: {{#unless isRequired}}Optional<{{/unless}}{{{type}}}{{#unless isRequired}}>{{/unless}}.deserialize(json: dictionary["{{{specName}}}"] as Any, format: {{#if format}}"{{format}}"{{else}}nil{{/if}}){{#unless @last}},{{/unless}}
+        {{{@key}}}: {{#unless isRequired}}Optional<{{/unless}}{{{type}}}{{#unless isRequired}}>{{/unless}}.deserialize(json: dictionary["{{{specName}}}"], format: {{#if format}}"{{format}}"{{else}}nil{{/if}}){{#unless @last}},{{/unless}}
       {{/each}}
       )
     }
@@ -68,10 +67,10 @@ open class Api {
     public func serialize(format: String? = nil) -> Any? {
       return rawValue;
     }
-    public static func deserialize(json: Any, format: String? = nil) -> {{{../name}}} {
+    public static func deserialize(json: Any?, format: String? = nil) -> {{{../name}}} {
       guard let asType = json as? {{{enumType}}},
         let asEnum = {{{../name}}}(rawValue: asType) else {
-        fatalError("Deserialization error: expected {{{enumType}}} but got \(json)")
+        fatalError("Deserialization error: Trying to deserialize a {{{../name}}}, expected {{{enumType}}} but got \(String(describing: json))")
       }
       return asEnum
     }

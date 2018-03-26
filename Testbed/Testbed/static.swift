@@ -6,7 +6,7 @@ public protocol SwaggerSerializeable {
 }
 
 public protocol SwaggerDeserializeable {
-    static func deserialize(json: Any, format: String?) -> Self
+    static func deserialize(json: Any?, format: String?) -> Self
 }
 
 public protocol SwaggerObject: SwaggerSerializeable, SwaggerDeserializeable {
@@ -24,7 +24,7 @@ extension Array: SwaggerObject {
         }
     }
     
-    public static func deserialize(json: Any, format: String?) -> Array<Element> {
+    public static func deserialize(json: Any?, format: String?) -> Array<Element> {
         guard let array = json as? [Any] else {
             fatalError("Deserialization error: expected array but got \(json)")
         }
@@ -50,7 +50,7 @@ extension Dictionary: SwaggerObject {
         }
     }
     
-    public static func deserialize(json: Any, format: String?) -> Dictionary<Key, Value> {
+    public static func deserialize(json: Any?, format: String?) -> Dictionary<Key, Value> {
         guard let dictionary = json as? [Key: Any] else {
             fatalError("Deserialization error: expected dictionary but got \(json)")
         }
@@ -104,7 +104,7 @@ extension Date: SwaggerObject {
         default: fatalError("Serialization error: Unknown date format \(format)")
         }
     }
-    public static func deserialize(json: Any, format: String?) -> Date {
+    public static func deserialize(json: Any?, format: String?) -> Date {
         if let sourceString = json as? String {
             for formatter in dateParseFormatters {
                 if let date = formatter.date(from: sourceString) {
@@ -131,15 +131,20 @@ extension Optional: SwaggerObject {
         }
         return Optional(serialized)
     }
-    public static func deserialize(json: Any, format: String?) -> Optional<Wrapped> {
-        let optional = json as Optional<Any>
-        guard let deserializeable = Wrapped.self as? SwaggerDeserializeable.Type else {
-            fatalError("Deserialization error: don't know how to deserialize \(Wrapped.self)")
+    public static func deserialize(json: Any?, format: String?) -> Optional<Wrapped> {
+        switch json {
+        case .none:
+            return nil
+        case let .some(wrapped):
+            guard let deserializeable = Wrapped.self as? SwaggerDeserializeable.Type else {
+                fatalError("Deserialization error: don't know how to deserialize \(Wrapped.self)")
+            }
+            guard let deserializedValue = deserializeable.deserialize(json: wrapped, format: format) as? Wrapped else {
+                fatalError("Deserialization error: expected \(Wrapped.self) but got \(json!)")
+            }
+            return deserializedValue
+
         }
-        guard let unwrapped = optional, let deserializedValue = deserializeable.deserialize(json: unwrapped, format: format) as? Wrapped else {
-            fatalError("Deserialization error: expected \(Wrapped.self) but got \(json)")
-        }
-        return deserializedValue
     }
 }
 
@@ -148,7 +153,7 @@ extension SwaggerSerializeablePrimitive {
     public func serialize(format: String?) -> Any? {
         return self
     }
-    public static func deserialize(json: Any, format: String?) -> Self {
+    public static func deserialize(json: Any?, format: String?) -> Self {
         guard let deserialized = json as? Self else {
             fatalError("Deserialization error: Expected \(Self.self) but got \(json)")
         }
