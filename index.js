@@ -177,12 +177,13 @@ function methodFromSpec(path, pathParams, method, methodSpec, refTarget) {
     // Sometimes params have a schema, sometimes they just have the properties
     // that a schema would normally have. This normalizes all params to be
     // objects that have a schema.
-    let schema = param.schema;
-    if (!schema) {
-      schema = param;
+    if (!param.schema) {
+      const schema = param;
       param = {
         name: param.name,
+        in: param.in,
         description: param.description,
+        required: param.required,
         schema,
       };
     }

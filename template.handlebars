@@ -4,9 +4,9 @@ open class Api {
 {{#each methods}}
   open static func {{{name}}}(
   {{#each params}}
-  {{{name}}}: {{{type}}},
+    {{{name}}}: {{{type}}}{{#unless required}}? = nil{{/unless}},
   {{/each}}
-  completion: (Error?, {{{response.type}}}) -> Void
+    completion: (Error?, {{{response.type}}}) -> Void
   ) {
     // {{{method}}} {{{path}}}
   }
