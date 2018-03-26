@@ -162,7 +162,7 @@ function typeInfoAndModelsFromParam(param, methodName, refTarget) {
 // Methods
 //////////////////////////////////////////////////////////////////////
 
-function methodFromSpec(path, pathParams, method, methodSpec, refTarget) {
+function methodFromSpec(path, pathParams, basePath, method, methodSpec, refTarget) {
   if (!methodSpec) {
     return undefined;
   }
@@ -210,23 +210,24 @@ function methodFromSpec(path, pathParams, method, methodSpec, refTarget) {
   response.format = responseTypeInfo.format;
   //
 
-  return { name, description, method, path, params, response, models };
+  return { path: basePath + path, name, description, method, params, response, models };
 }
 
-function methodsFromPath(path, pathSpec, refTarget) {
-  return _.flatMap(HTTP_METHODS, m => methodFromSpec(
+function methodsFromPath(path, pathSpec, basePath, refTarget) {
+  return _.flatMap(HTTP_METHODS, method => methodFromSpec(
     path,
     pathSpec.parameters,
-    m,
-    pathSpec[m],
+    basePath,
+    method,
+    pathSpec[method],
     refTarget
   ));
 }
 
-function methodsFromPaths(paths, refTarget) {
+function methodsFromPaths(paths, basePath, refTarget) {
   const methods = _(paths)
     .flatMap((pathSpec, path) => {
-      return methodsFromPath(path, pathSpec, refTarget);
+      return methodsFromPath(path, pathSpec, basePath, refTarget);
     })
     .filter()
     .sortBy('path')
@@ -269,7 +270,7 @@ function splitModels(models) {
   return retVal;
 }
 
-const methods = methodsFromPaths(spec.paths, spec);
+const methods = methodsFromPaths(spec.paths, spec.basePath || '', spec);
 const models = splitModels(moveModelsOffMethods(methods));
 const data = { methods, ...models };
 const problems = verify(data);
