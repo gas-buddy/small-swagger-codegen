@@ -1,28 +1,83 @@
 import Foundation
 
+
 public protocol SwaggerSerializeable {
     func shallowSerialize() -> Any
 }
 
-extension Array: SwaggerSerializeable {
+public protocol SwaggerDeserializeable {
+    static func deserialize(json: Any) -> Self
+}
+
+public protocol SwaggerObject: SwaggerSerializeable, SwaggerDeserializeable {
+    
+}
+
+
+extension Array: SwaggerObject {
     public func shallowSerialize() -> Any {
         return self
     }
-}
-extension Date: SwaggerSerializeable {
-    public func shallowSerialize() -> Any {
-        return "HEY ITS ME UR DATE"
+    public static func deserialize(json: Any) -> Array<Element> {
+        guard let array = json as? [Any] else {
+            fatalError("Deserialization error: expected array but got \(json)")
+        }
+        return array.map { element in
+            guard let deserializeable = Element.self as? SwaggerDeserializeable.Type else {
+                fatalError("Deserialization error: don't know how to deserialize \(Element.self)")
+            }
+            guard let deserializedElement = deserializeable.deserialize(json: element) as? Element else {
+                fatalError("Deserialization error: expected \(Element.self) but got \(element)")
+            }
+            return deserializedElement
+        }
     }
 }
 
-protocol SwaggerSerializeablePrimitive: SwaggerSerializeable {}
+extension Dictionary: SwaggerObject {
+    public func shallowSerialize() -> Any {
+        return self
+    }
+    public static func deserialize(json: Any) -> Dictionary<Key, Value> {
+        guard let dictionary = json as? [Key: Any] else {
+            fatalError("Deserialization error: expected dictionary but got \(json)")
+        }
+        return dictionary.mapValues { value in
+            guard let deserializeable = Value.self as? SwaggerDeserializeable.Type else {
+                fatalError("Deserialization error: don't know how to deserialize \(Value.self)")
+            }
+            guard let deserializedValue = deserializeable.deserialize(json: value) as? Value else {
+                fatalError("Deserialization error: expected \(Value.self) but got \(json)")
+            }
+            return deserializedValue
+        }
+    }
+}
+
+extension Date: SwaggerObject {
+    public func shallowSerialize() -> Any {
+        return "HEY ITS ME UR DATE"
+    }
+    public static func deserialize(json: Any) -> Date {
+        return Date() // O NO
+    }
+}
+
+protocol SwaggerSerializeablePrimitive: SwaggerObject {}
 extension SwaggerSerializeablePrimitive {
     public func shallowSerialize() -> Any {
         return self
     }
+    public static func deserialize(json: Any) -> Self {
+        guard let deserialized = json as? Self else {
+            fatalError("Deserialization error: Expected \(Self.self) but got \(json)")
+        }
+        return deserialized
+    }
 }
 extension String: SwaggerSerializeablePrimitive {}
 extension Int: SwaggerSerializeablePrimitive {}
+extension Double: SwaggerSerializeablePrimitive {}
 extension Bool: SwaggerSerializeablePrimitive {}
 
 extension SwaggerSerializeable {

@@ -59,7 +59,7 @@ function mapPrimitiveType(type) {
   } else if (type === 'number') {
     return 'Double';
   } else if (type === 'object') {
-    return '[String: Any]';
+    return 'Dictionary<String, Any>';
   }
   return undefined;
 }
@@ -103,7 +103,7 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
     const { name: elementType, models: elementModels } = nameAndModelsFromSchema(
       newSchema, name, refTarget, indent+'  '
     );
-    return { name: `[${elementType}]`, models: elementModels };
+    return { name: `Array<${elementType}>`, models: elementModels };
 
   } else if (schema.type === 'string') {
     if (schema.format === 'date' || schema.format ==='date-time') {

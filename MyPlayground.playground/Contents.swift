@@ -1,7 +1,10 @@
 import Foundation
 
-func printJson(_ it: SwaggerSerializeable) {
-    print(String(data:it.toJson(), encoding: .utf8)!)
+func json(_ it: SwaggerSerializeable) -> String {
+    return String(data:it.toJson(), encoding: .utf8)!
+}
+func jsonObj(_ it: SwaggerSerializeable) -> Any {
+    return try! JSONSerialization.jsonObject(with: json(it).data(using: .utf8)!)
 }
 
 let a = AccountWalletStatusName(firstName: "first", lastName: "last")
@@ -23,7 +26,7 @@ let ins = Instrument(
     lastDigits: "4242",
     tags: ["tag1", "tag2"]
 )
-printJson(ins)
+print(json(Instrument.deserialize(json: jsonObj(ins))))
 
 let pd = ProgramDetails(name: "name", type: "type", activatedAt: Date(), perGallonDiscount: "pgd", initialPerGallonDiscount: "initialpgd", isEligibleForInitialDiscount: true, transactionsRequiredForInitialDiscount: 42, initialDiscountExpiration: Date(), unitString: "CASHBACK in Points")
 let r1 = Referral(program: pd, refereeEnrolledAt: Date(), refereeTransactedAt: Date(), referrerDiscountedTransactionId: "FIRST ONE")
@@ -34,5 +37,5 @@ let rwi = ReferralsWithInfo(
     enrollmentProgram: pd,
     link: "link", referrals: [r1, r2]
 )
+print(json(ReferralsWithInfo.deserialize(json: jsonObj(rwi))))
 
-printJson(rwi)

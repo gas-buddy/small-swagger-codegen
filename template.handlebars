@@ -1,41 +1,52 @@
 import Foundation
 
-open class Api {
+open class Api { 
 {{#each methods}}
-  open static func {{name}}(
+  open static func {{{name}}}(
   {{#each params}}
-  {{name}}: {{type}},
+  {{{name}}}: {{{type}}},
   {{/each}}
-  completion: (Error?, {{response.type}}) -> Void
+  completion: (Error?, {{{response.type}}}) -> Void
   ) {
-    // {{method}} {{path}}
+    // {{{method}}} {{{path}}}
   }
 {{/each}}
 }
 
 {{#each objectModels}}
-  open class {{name}}: SwaggerSerializeable {
+  open class {{{name}}}: SwaggerObject {
   {{#with schema}}
     {{#each properties}}
-      public var {{@key}}: {{type}}
+      public var {{{@key}}}: {{{type}}}
     {{/each}}
 
-    public init(
+    required public init(
     {{#each properties}}
-      {{@key}}: {{type}}{{#unless @last}},{{/unless}}
+      {{{@key}}}: {{{type}}}{{#unless @last}},{{/unless}}
     {{/each}}
     ) {
     {{#each properties}}
-      self.{{@key}} = {{@key}}
+      self.{{{@key}}} = {{{@key}}}
     {{/each}}
     }
 
     public func shallowSerialize() -> Any {
       return [
       {{#each properties}}
-        "{{specName}}": {{@key}},
+        "{{{specName}}}": {{{@key}}},
       {{/each}}
       ]
+    }
+
+    public static func deserialize(json: Any) -> Self {
+      guard let dictionary = json as? [String: Any] else {
+        fatalError("Deserialization error: expected {{{../name}}} but got \(json)")
+      }
+      return self.init(
+      {{#each properties}}
+        {{{@key}}}: {{{type}}}.deserialize(json: dictionary["{{{specName}}}"]){{#unless @last}},{{/unless}}
+      {{/each}}
+      )
     }
   {{/with}}
   }
@@ -43,13 +54,20 @@ open class Api {
 {{/each}}
 
 {{#each enumModels}}
-  public enum {{name}}: {{schema.enumType}}, SwaggerSerializeable {
+  public enum {{{name}}}: {{{schema.enumType}}}, SwaggerObject {
   {{#with schema}}
     {{#each values}}
-      case {{name}} = {{{value}}}
+      case {{{name}}} = {{{value}}}
     {{/each}}
     public func shallowSerialize() -> Any {
       return rawValue;
+    }
+    public static func deserialize(json: Any) -> {{{../name}}} {
+      guard let asType = json as? {{{enumType}}},
+        let asEnum = {{{../name}}}(rawValue: asType) else {
+        fatalError("Deserialization error: expected {{{enumType}}} but got \(json)")
+      }
+      return asEnum
     }
   {{/with}}
   }
