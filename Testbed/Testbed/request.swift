@@ -18,6 +18,7 @@ struct RequestParam {
     let name: String
     let `in`: Location
     let value: SwaggerSerializeable
+    let format: String?
 }
 
 func _request<ResponseType: SwaggerDeserializeable>(

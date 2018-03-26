@@ -10,7 +10,7 @@ open class Api {
   ) {
     _request(params: [
     {{#each params}}
-      .init(name: "{{{serverName}}}", in: .{{{in}}}, value: {{{name}}}) {{~#unless @last}},{{/unless}}
+      .init(name: "{{{serverName}}}", in: .{{{in}}}, value: {{{name}}}, format: {{#if format}}"{{format}}"{{else}}nil{{/if}}) {{~#unless @last}},{{/unless}}
     {{/each}}
     ]) { (err: Error?, res: {{{response.type}}}) in
       // {{{method}}} {{{path}}}
@@ -36,21 +36,21 @@ open class Api {
     {{/each}}
     }
 
-    public func shallowSerialize() -> Any? {
+    public func serialize(format: String? = nil) -> Any? {
       return [
       {{#each properties}}
-        "{{{specName}}}": {{{@key}}} as Any,
+        "{{{specName}}}": {{{@key}}}{{#unless isRequired}}?{{/unless}}.serialize(format: {{#if format}}"{{format}}"{{else}}nil{{/if}}) as Any,
       {{/each}}
       ]
     }
 
-    public static func deserialize(json: Any) -> Self {
+    public static func deserialize(json: Any, format: String? = nil) -> Self {
       guard let dictionary = json as? [String: Any] else {
         fatalError("Deserialization error: expected {{{../name}}} but got \(json)")
       }
       return self.init(
       {{#each properties}}
-        {{{@key}}}: {{#unless isRequired}}Optional<{{/unless}}{{{type}}}{{#unless isRequired}}>{{/unless}}.deserialize(json: dictionary["{{{specName}}}"] as Any){{#unless @last}},{{/unless}}
+        {{{@key}}}: {{#unless isRequired}}Optional<{{/unless}}{{{type}}}{{#unless isRequired}}>{{/unless}}.deserialize(json: dictionary["{{{specName}}}"] as Any, format: {{#if format}}"{{format}}"{{else}}nil{{/if}}){{#unless @last}},{{/unless}}
       {{/each}}
       )
     }
@@ -65,10 +65,10 @@ open class Api {
     {{#each values}}
       case {{{name}}} = {{{value}}}
     {{/each}}
-    public func shallowSerialize() -> Any? {
+    public func serialize(format: String? = nil) -> Any? {
       return rawValue;
     }
-    public static func deserialize(json: Any) -> {{{../name}}} {
+    public static func deserialize(json: Any, format: String? = nil) -> {{{../name}}} {
       guard let asType = json as? {{{enumType}}},
         let asEnum = {{{../name}}}(rawValue: asType) else {
         fatalError("Deserialization error: expected {{{enumType}}} but got \(json)")

@@ -25,7 +25,7 @@ let ins = Instrument(
     lastDigits: "4242",
     tags: ["tag1", "tag2"]
 )
-//print(json(Instrument.deserialize(json: jsonObj(ins))))
+print(json(Instrument.deserialize(json: jsonObj(ins))))
 
 let pd = ProgramDetails(name: "name", type: "type", activatedAt: Date(), perGallonDiscount: "pgd", initialPerGallonDiscount: "initialpgd", isEligibleForInitialDiscount: true, transactionsRequiredForInitialDiscount: 42, initialDiscountExpiration: Date(), unitString: "CASHBACK in Points")
 let r1 = Referral(program: pd, refereeEnrolledAt: Date(), refereeTransactedAt: Date(), referrerDiscountedTransactionId: "FIRST ONE")
@@ -36,4 +36,5 @@ let rwi = ReferralsWithInfo(
     enrollmentProgram: pd,
     link: "link", referrals: [r1, r2]
 )
-//print(json(ReferralsWithInfo.deserialize(json: jsonObj(rwi))))
+print(json(ReferralsWithInfo.deserialize(json: jsonObj(rwi))))
+

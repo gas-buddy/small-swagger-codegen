@@ -76,7 +76,7 @@ function mapPrimitiveValue(value, type) {
 // Models
 //////////////////////////////////////////////////////////////////////
 
-function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
+function typeInfoAndModelsFromSchema(schema, defaultName, refTarget, indent) {
   if (!indent) { indent = ''; }
   // console.log(indent + describe(schema));
 
@@ -96,21 +96,20 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
       }))
     };
     const model = { name, schema: enumSchema };
-    return { name, models: [model] };
+    return { typeInfo: { name }, models: [model] };
 
   } else if (schema.type === 'array') {
     const newSchema = schema.items;
-    const { name: elementType, models: elementModels } = nameAndModelsFromSchema(
+    const { typeInfo: elementTypeInfo, models: elementModels } = typeInfoAndModelsFromSchema(
       newSchema, name, refTarget, indent+'  '
     );
-    return { name: `Array<${elementType}>`, models: elementModels };
+    return { typeInfo: { name: `Array<${elementTypeInfo.name}>`, format: elementTypeInfo.format }, models: elementModels };
 
   } else if (schema.type === 'string') {
     if (schema.format === 'date' || schema.format ==='date-time') {
-      // TODO: format gets thrown out
-      return { name: 'Date', models: [] };
+      return { typeInfo: { name: 'Date', format: schema.format }, models: [] };
     } else {
-      return { name: 'String', models: [] };
+      return { typeInfo: { name: 'String' }, models: [] };
     }
   } else if (schema.type === 'object' && schema.properties) {
     delete schema.description;
@@ -119,7 +118,7 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
     const model = { name, schema };
     const models = _.flatMap(schema.properties, (property, propertyName) => {
       const newDefaultName = classNameFromComponents(name, propertyName);
-      const {name: propertyType, models: propertyModels} = nameAndModelsFromSchema(
+      const { typeInfo: propertyTypeInfo, models: propertyModels } = typeInfoAndModelsFromSchema(
         property,
         newDefaultName,
         refTarget,
@@ -129,7 +128,8 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
       let clientName = nameFromComponents(propertyName);
       delete properties[propertyName];
       properties[clientName] = {
-        type: propertyType,
+        type: propertyTypeInfo.name,
+        format: propertyTypeInfo.format,
         isRequired,
         specName: propertyName
       };
@@ -137,24 +137,24 @@ function nameAndModelsFromSchema(schema, defaultName, refTarget, indent) {
     });
     schema.properties = properties;
 
-    return { name, models: _.concat(model, models) };
+    return { typeInfo: { name }, models: _.concat(model, models) };
 
   } else if (mapPrimitiveType(schema.type)) {
-    return { name: mapPrimitiveType(schema.type), models: []};
+    return { typeInfo: { name: mapPrimitiveType(schema.type) }, models: []};
 
   } else if (!schema.type) {
-    return { name: 'Void', models: []};
+    return { typeInfo: { name: 'Void' }, models: []};
   }
 
   assert(false, `I don't know how to process a schema of type ${schema.type} 🤔\n  ${describe(schema)}`);
 }
 
-function nameAndModelsFromParam(param, methodName, refTarget) {
+function typeInfoAndModelsFromParam(param, methodName, refTarget) {
   if (!param.schema) {
-    return [];
+    return { typeInfo: {}, models: [] };
   }
   const defaultName = classNameFromComponents(methodName, param.name || 'response');
-  return nameAndModelsFromSchema(param.schema, defaultName, refTarget);
+  return typeInfoAndModelsFromSchema(param.schema, defaultName, refTarget);
 }
 
 
@@ -188,9 +188,10 @@ function methodFromSpec(path, pathParams, method, methodSpec, refTarget) {
       };
     }
 
-    const paramModels = nameAndModelsFromParam(param, name, refTarget);
-    models = models.concat(paramModels.models);
-    param.type = paramModels.name || param.type;
+    const { typeInfo: paramTypeInfo, models: paramModels } = typeInfoAndModelsFromParam(param, name, refTarget);
+    models = models.concat(paramModels);
+    param.type = paramTypeInfo.name || param.type;
+    param.format = paramTypeInfo.format || param.format;
     if (param.name) {
       param.serverName = param.name;
       param.name = _.camelCase(param.name);
@@ -203,9 +204,10 @@ function methodFromSpec(path, pathParams, method, methodSpec, refTarget) {
 
   // TODO: Many similarities with how we treat `param` above.
   response = objectByResolvingRef(response, refTarget);
-  const responseModels = nameAndModelsFromParam(response, name, refTarget);
-  models = models.concat(responseModels.models);
-  response.type = responseModels.name || response.type || 'Void';
+  const { typeInfo: responseTypeInfo, models: responseModels } = typeInfoAndModelsFromParam(response, name, refTarget);
+  models = models.concat(responseModels);
+  response.type = responseTypeInfo.name || response.type || 'Void';
+  response.format = responseTypeInfo.format;
   //
 
   return { name, description, method, path, params, response, models };
