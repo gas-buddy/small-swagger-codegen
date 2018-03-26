@@ -33,7 +33,7 @@ open class Api {
     public func shallowSerialize() -> Any? {
       return [
       {{#each properties}}
-        "{{{specName}}}": {{{@key}}},
+        "{{{specName}}}": {{{@key}}} as Any,
       {{/each}}
       ]
     }
@@ -44,7 +44,7 @@ open class Api {
       }
       return self.init(
       {{#each properties}}
-        {{{@key}}}: {{#unless isRequired}}Optional<{{/unless}}{{{type}}}{{#unless isRequired}}>{{/unless}}.deserialize(json: dictionary["{{{specName}}}"]){{#unless @last}},{{/unless}}
+        {{{@key}}}: {{#unless isRequired}}Optional<{{/unless}}{{{type}}}{{#unless isRequired}}>{{/unless}}.deserialize(json: dictionary["{{{specName}}}"] as Any){{#unless @last}},{{/unless}}
       {{/each}}
       )
     }

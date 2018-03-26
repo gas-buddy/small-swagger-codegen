@@ -119,10 +119,8 @@ extension SwaggerSerializeable {
             
         } else if let obj = shallow as? [String: Any?] {
             return obj.mapValues { value -> Any in
-                guard let serializeable = value as? SwaggerSerializeable else {
-                    fatalError("Unable to serialize object property: \(value)")
-                }
-                return serializeable.serialize()
+                let serializeable = value as SwaggerSerializeable
+                return serializeable.serialize() as Any
             }
             
         } else if let arr = shallow as? [Any] {
@@ -130,7 +128,7 @@ extension SwaggerSerializeable {
                 guard let serializeable = element as? SwaggerSerializeable else {
                     fatalError("Unable to serialize array element: \(element)")
                 }
-                return serializeable.serialize()
+                return serializeable.serialize() as Any
             }
             
         } else {
@@ -139,6 +137,6 @@ extension SwaggerSerializeable {
     }
     
     public func toJson() -> Data {
-        return try! JSONSerialization.data(withJSONObject: serialize(), options: [.prettyPrinted])
+        return try! JSONSerialization.data(withJSONObject: serialize() as Any, options: [.prettyPrinted])
     }
 }

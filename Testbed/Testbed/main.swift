@@ -13,7 +13,7 @@ Api.accountIdCreditBalanceGet(accountId: "sdfs") { _, _ in }
 
 
 Api.accountIdStatusGet(accountId: "id", fields: [.disposition, .instruments]) {err, status in
-    print(status.programs)
+    print(status.programs!)
 }
 
 let ins = Instrument(
@@ -37,6 +37,5 @@ let rwi = ReferralsWithInfo(
     enrollmentProgram: pd,
     link: "link", referrals: [r1, r2]
 )
-jsonObj(rwi)
 print(json(ReferralsWithInfo.deserialize(json: jsonObj(rwi))))
 
