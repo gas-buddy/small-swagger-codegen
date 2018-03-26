@@ -1,9 +1,9 @@
 import Foundation
 
-func json(_ it: SwaggerSerializeable) -> String {
+func json(_ it: SwaggerContainer) -> String {
     return String(data:it.toJson(), encoding: .utf8)!
 }
-func jsonObj(_ it: SwaggerSerializeable) -> Any {
+func jsonObj(_ it: SwaggerContainer) -> Any {
     return try! JSONSerialization.jsonObject(with: json(it).data(using: .utf8)!)
 }
 

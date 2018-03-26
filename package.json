@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "babel src/ -Dd build/",
+    "gen": "npm run build && node build/index.js"
   },
   "engines": {
     "node": ">=8.9"

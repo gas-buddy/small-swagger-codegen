@@ -1,14 +1,14 @@
 import Foundation
 
-open class Api {
+open class Api: SwaggerApi {
 {{#each methods}}
   open static func {{{name}}}(
   {{#each params}}
     {{{name}}}: {{{type}}}{{#unless required}}? = nil{{/unless}},
   {{/each}}
-    completion: (Error?, {{{response.type}}}?) -> Void
+    completion: @escaping (Error?, {{{response.type}}}?) -> Void
   ) {
-    _request(method: "{{{method}}}", path: "{{{path}}}", params: [
+    self.request(method: "{{{method}}}", path: "{{{path}}}", params: [
     {{#each params}}
       .init(name: "{{{serverName}}}", in: .{{{in}}}, value: {{{name}}}, format: {{#if format}}"{{format}}"{{else}}nil{{/if}}) {{~#unless @last}},{{/unless}}
     {{/each}}
@@ -19,7 +19,7 @@ open class Api {
 }
 
 {{#each objectModels}}
-  open class {{{name}}}: SwaggerObject {
+  open class {{{name}}}: SwaggerModel {
   {{#with schema}}
     {{#each properties}}
       public var {{{@key}}}: {{{type}}}{{#unless isRequired}}?{{/unless}}
@@ -60,13 +60,16 @@ open class Api {
 {{/each}}
 
 {{#each enumModels}}
-  public enum {{{name}}}: {{{schema.enumType}}}, SwaggerObject {
+  public enum {{{name}}}: {{{schema.enumType}}}, SwaggerEnum {
   {{#with schema}}
     {{#each values}}
       case {{{name}}} = {{{value}}}
     {{/each}}
     public func serialize(format: String? = nil) -> Any? {
       return rawValue;
+    }
+    public func serializeToString(format: String? = nil) -> String? {
+      return rawValue.serializeToString(format: format);
     }
     public static func deserialize(json: Any?, format: String? = nil) -> {{{../name}}} {
       guard let asType = json as? {{{enumType}}},
@@ -77,4 +80,5 @@ open class Api {
     }
   {{/with}}
   }
+
 {{/each}}

@@ -3,18 +3,37 @@ import Foundation
 
 public protocol SwaggerSerializeable {
     func serialize(format: String?) -> Any?
+    func serializeToString(format: String?) -> String?
 }
 
 public protocol SwaggerDeserializeable {
     static func deserialize(json: Any?, format: String?) -> Self
 }
 
-public protocol SwaggerObject: SwaggerSerializeable, SwaggerDeserializeable {
-    
+
+protocol SwaggerContainer: SwaggerSerializeable, SwaggerDeserializeable {}
+extension SwaggerContainer {
+    public func toJson(format: String? = nil) -> Data {
+        let serialized = serialize(format: format) as Any
+        guard let data = try? JSONSerialization.data(withJSONObject: serialized, options: [.prettyPrinted]) else {
+            fatalError("Serialization error: unable to convert \(serialized) to JSON")
+        }
+        return data
+    }
+
+    public func serializeToString(format: String?) -> String? {
+        let jsonData = toJson(format: format)
+        guard let string = String(data: jsonData, encoding: .utf8) else {
+            fatalError("Serialization error: unable to convert JSON data \(jsonData) to String")
+        }
+        return string
+    }
 }
 
+protocol SwaggerModel: SwaggerContainer { }
+protocol SwaggerEnum: SwaggerSerializeable, SwaggerDeserializeable { }
 
-extension Array: SwaggerObject {
+extension Array: SwaggerContainer {
     public func serialize(format: String?) -> Any? {
         return map { element -> Any in
             guard let serializeable = element as? SwaggerSerializeable else {
@@ -40,7 +59,8 @@ extension Array: SwaggerObject {
     }
 }
 
-extension Dictionary: SwaggerObject {
+
+extension Dictionary: SwaggerContainer {
     public func serialize(format: String?) -> Any? {
         return mapValues { value -> Any in
             guard let serializeable = value as? SwaggerSerializeable else {
@@ -93,8 +113,12 @@ private let dateParseFormatters = dateParseFormats.map { format -> DateFormatter
     return formatter
 }
 
-extension Date: SwaggerObject {
+extension Date: SwaggerSerializeable, SwaggerDeserializeable {
     public func serialize(format: String?) -> Any? {
+        return serializeToString(format: format)
+    }
+    
+    public func serializeToString(format: String?) -> String? {
         guard let format = format else {
             fatalError("Serialization error: Can't format a date without a format")
         }
@@ -104,6 +128,7 @@ extension Date: SwaggerObject {
         default: fatalError("Serialization error: Unknown date format \(format)")
         }
     }
+    
     public static func deserialize(json: Any?, format: String?) -> Date {
         if let sourceString = json as? String {
             for formatter in dateParseFormatters {
@@ -120,7 +145,8 @@ extension Date: SwaggerObject {
     }
 }
 
-extension Optional: SwaggerObject {
+
+extension Optional: SwaggerSerializeable, SwaggerDeserializeable {
     public func serialize(format: String?) -> Any? {
         guard let value = self else {
             return self as Any
@@ -130,6 +156,16 @@ extension Optional: SwaggerObject {
             fatalError("Serialization error: don't know how to serialize \(value)")
         }
         return Optional(serialized)
+    }
+    public func serializeToString(format: String?) -> String? {
+        guard let value = self else {
+            return nil
+        }
+        guard let serializeable = value as? SwaggerSerializeable,
+            let serialized = serializeable.serializeToString(format: format) else {
+                fatalError("Serialization error: don't know how to serialize \(value)")
+        }
+        return serialized
     }
     public static func deserialize(json: Any?, format: String?) -> Optional<Wrapped> {
         if json is NSNull {
@@ -151,7 +187,8 @@ extension Optional: SwaggerObject {
     }
 }
 
-protocol SwaggerSerializeablePrimitive: SwaggerObject {}
+
+protocol SwaggerSerializeablePrimitive: SwaggerSerializeable, SwaggerDeserializeable {}
 extension SwaggerSerializeablePrimitive {
     public func serialize(format: String?) -> Any? {
         return self
@@ -163,14 +200,28 @@ extension SwaggerSerializeablePrimitive {
         return deserialized
     }
 }
-extension String: SwaggerSerializeablePrimitive {}
-extension Int: SwaggerSerializeablePrimitive {}
-extension Double: SwaggerSerializeablePrimitive {}
-extension Bool: SwaggerSerializeablePrimitive {}
+extension String: SwaggerSerializeablePrimitive {
+    public func serializeToString(format: String?) -> String? {
+        return self
+    }
+}
+extension Int: SwaggerSerializeablePrimitive {
+    public func serializeToString(format: String?) -> String? {
+        return "\(self)"
+    }
+}
+extension Double: SwaggerSerializeablePrimitive {
+    public func serializeToString(format: String?) -> String? {
+        return "\(self)"
+    }
+}
+extension Bool: SwaggerSerializeablePrimitive {
+    public func serializeToString(format: String?) -> String? {
+        return self ? "true" : "false"
+    }
+}
 
 
 extension SwaggerSerializeable {
-    public func toJson(format: String? = nil) -> Data {
-        return try! JSONSerialization.data(withJSONObject: serialize(format: format) as Any, options: [.prettyPrinted])
-    }
+ 
 }

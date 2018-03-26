@@ -279,7 +279,7 @@ if (problems) {
   console.log(problems);
   process.exit(1);
 }
-log(data);
+// log(data);
 
 const template = handlebars.compile(fs.readFileSync('template.handlebars', 'utf8'));
 const rendered = template(data);
