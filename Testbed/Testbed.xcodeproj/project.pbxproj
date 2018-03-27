@@ -14,7 +14,7 @@
 		8596A76D2069B98400B36531 /* TestbedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8596A76C2069B98400B36531 /* TestbedTests.swift */; };
 		85BF82932069BE930048A17B /* request.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BF828F2069BE920048A17B /* request.swift */; };
 		85BF82952069BE930048A17B /* output.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BF82912069BE930048A17B /* output.swift */; };
-		85BF82962069BE930048A17B /* static.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BF82922069BE930048A17B /* static.swift */; };
+		85BF82962069BE930048A17B /* serialization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BF82922069BE930048A17B /* serialization.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -41,7 +41,7 @@
 		8596A76E2069B98400B36531 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		85BF828F2069BE920048A17B /* request.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = request.swift; sourceTree = "<group>"; };
 		85BF82912069BE930048A17B /* output.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = output.swift; sourceTree = "<group>"; };
-		85BF82922069BE930048A17B /* static.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = static.swift; sourceTree = "<group>"; };
+		85BF82922069BE930048A17B /* serialization.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = serialization.swift; sourceTree = "<group>"; };
 		A09FB51CC267F9B01B30CB55 /* Pods_Testbed.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Testbed.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -97,7 +97,7 @@
 			children = (
 				85BF82912069BE930048A17B /* output.swift */,
 				85BF828F2069BE920048A17B /* request.swift */,
-				85BF82922069BE930048A17B /* static.swift */,
+				85BF82922069BE930048A17B /* serialization.swift */,
 				8596A75B2069B98300B36531 /* AppDelegate.swift */,
 				8596A75D2069B98300B36531 /* Assets.xcassets */,
 				8596A75F2069B98300B36531 /* MainMenu.xib */,
@@ -287,7 +287,7 @@
 				85BF82952069BE930048A17B /* output.swift in Sources */,
 				8596A75C2069B98300B36531 /* AppDelegate.swift in Sources */,
 				85BF82932069BE930048A17B /* request.swift in Sources */,
-				85BF82962069BE930048A17B /* static.swift in Sources */,
+				85BF82962069BE930048A17B /* serialization.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

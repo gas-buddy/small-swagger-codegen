@@ -106,7 +106,8 @@ open class SwaggerApi {
         guard let url = components.url else {
             fatalError("Failed to construct URL: \(urlString) \(components)")
         }
-        let request = try! URLRequest(url: url, method: method, headers: headers)
+        let allHeaders = defaultHeaders.merging(headers ?? [:], uniquingKeysWith: { (first, _) in first })
+        let request = try! URLRequest(url: url, method: method, headers: allHeaders)
         let r = Alamofire.request(request)
         debugPrint(r)
         r.responseJSON { res in
