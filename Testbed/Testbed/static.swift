@@ -2,7 +2,11 @@ import Foundation
 
 
 public protocol SwaggerSerializeable {
+    // Serializes this object into a JSON object or fragment. This means
+    // any type that could be returned by NSJSONSerialization.JSONObjectWithData with
+    // the NSJSONReadingAllowFragments option.
     func serialize(format: String?) -> Any?
+    // Returns a string representation of the JSON object or fragment returned by `serialize`
     func serializeToString(format: String?) -> String?
 }
 
@@ -13,20 +17,20 @@ public protocol SwaggerDeserializeable {
 
 protocol SwaggerContainer: SwaggerSerializeable, SwaggerDeserializeable {}
 extension SwaggerContainer {
-    public func toJson(format: String? = nil) -> Data {
-        let serialized = serialize(format: format) as Any
-        guard let data = try? JSONSerialization.data(withJSONObject: serialized, options: [.prettyPrinted]) else {
-            fatalError("Serialization error: unable to convert \(serialized) to JSON")
-        }
-        return data
-    }
-
     public func serializeToString(format: String?) -> String? {
         let jsonData = toJson(format: format)
         guard let string = String(data: jsonData, encoding: .utf8) else {
             fatalError("Serialization error: unable to convert JSON data \(jsonData) to String")
         }
         return string
+    }
+    
+    public func toJson(format: String? = nil) -> Data {
+        let serialized = serialize(format: format) as Any
+        guard let data = try? JSONSerialization.data(withJSONObject: serialized, options: [.prettyPrinted]) else {
+            fatalError("Serialization error: unable to convert \(serialized) to JSON")
+        }
+        return data
     }
 }
 
@@ -219,9 +223,4 @@ extension Bool: SwaggerSerializeablePrimitive {
     public func serializeToString(format: String?) -> String? {
         return self ? "true" : "false"
     }
-}
-
-
-extension SwaggerSerializeable {
- 
 }

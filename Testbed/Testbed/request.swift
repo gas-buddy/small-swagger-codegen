@@ -29,12 +29,15 @@ open class SwaggerApi {
     ]
     
     static func request<ResponseType: SwaggerDeserializeable>(
-        method: String,
+        method: HTTPMethod,
         path: String,
         params: [RequestParam] = [],
         completion: @escaping (Error?, ResponseType?) -> Void
     ) {
         var path = path
+        var queryParams: [URLQueryItem] = []
+        var body: Data? = nil
+        var headers: HTTPHeaders = [:]
         params.forEach { param in
             switch param.in {
             case .path:
@@ -45,12 +48,29 @@ open class SwaggerApi {
                     fatalError("Failed to escape path parameter?? \(value)")
                 }
                 path = path.replacingOccurrences(of: "{\(param.name)}", with: escapedValue)
-            case .body: break
-            case .query: break
-            case .header: break
+            case .body:
+                guard body == nil else {
+                    fatalError("Attempted to make a request with multiple body parameters: \(method.rawValue) \(path) \(params)")
+                }
+                guard let serializeable = param.value as? SwaggerContainer else {
+                    fatalError("Failed to send \(param.value) as a body parameter, unable to convert to JSON")
+                }
+                body = serializeable.toJson()
+            case .query:
+                var value = ""
+                if let array = param.value as? [SwaggerSerializeable] {
+                    for (idx, ele) in array.enumerated() {
+                        value = "\(value)\(idx > 0 ? "," : "")\(ele.serializeToString(format: param.format) ?? "")"
+                    }
+                } else {
+                    value = param.value.serializeToString(format: param.format) ?? ""
+                }
+                queryParams.append(URLQueryItem(name: param.name, value: value))
+            case .header:
+                headers[param.name] = param.value.serializeToString(format: nil)
             }
         }
-        request(method: method, path: path) { err, response in
+        request(method: method, path: path, queryParams: queryParams, headers: headers, body: body) { err, response in
             guard let res = response else {
                 return completion(err, nil)
             }
@@ -59,7 +79,7 @@ open class SwaggerApi {
     }
     
     static func request(
-        method: String,
+        method: HTTPMethod,
         path: String,
         params: [RequestParam] = [],
         completion: ((Error?, Void) -> Void)
@@ -68,8 +88,30 @@ open class SwaggerApi {
     }
     
     
-    private static func request(method: String, path: String, completion: @escaping (Error?, Any?) -> Void) {
-        print("\(method.uppercased()) \(baseUrl)\(path)")
+    private static func request(
+        method: HTTPMethod,
+        path: String,
+        queryParams: [URLQueryItem],
+        headers: HTTPHeaders?,
+        body: Data?,
+        completion: @escaping (Error?, Any?) -> Void
+    ) {
+        let urlString = "\(baseUrl)\(path)"
+        guard var components = URLComponents(string: urlString) else {
+            fatalError("Failed to create URL components from URL string: \(urlString)")
+        }
+        if queryParams.count > 0 {
+            components.queryItems = queryParams
+        }
+        guard let url = components.url else {
+            fatalError("Failed to construct URL: \(urlString) \(components)")
+        }
+        let request = try! URLRequest(url: url, method: method, headers: headers)
+        let r = Alamofire.request(request)
+        debugPrint(r)
+        r.responseJSON { res in
+            debugPrint(res)
+        }
     }
 }
 

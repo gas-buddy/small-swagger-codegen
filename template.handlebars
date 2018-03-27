@@ -8,7 +8,7 @@ open class Api: SwaggerApi {
   {{/each}}
     completion: @escaping (Error?, {{{response.type}}}?) -> Void
   ) {
-    self.request(method: "{{{method}}}", path: "{{{path}}}", params: [
+    self.request(method: .{{{method}}}, path: "{{{path}}}", params: [
     {{#each params}}
       .init(name: "{{{serverName}}}", in: .{{{in}}}, value: {{{name}}}, format: {{#if format}}"{{format}}"{{else}}nil{{/if}}) {{~#unless @last}},{{/unless}}
     {{/each}}
