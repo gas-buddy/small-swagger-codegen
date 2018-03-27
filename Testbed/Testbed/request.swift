@@ -44,7 +44,7 @@ open class SwaggerApi {
                 guard let value = param.value.serializeToString(format: param.format) else {
                     fatalError("Failed to serialize path parameter to string: \(param)")
                 }
-                guard let escapedValue = value.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) else {
+                guard let escapedValue = value.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
                     fatalError("Failed to escape path parameter?? \(value)")
                 }
                 path = path.replacingOccurrences(of: "{\(param.name)}", with: escapedValue)
@@ -65,7 +65,9 @@ open class SwaggerApi {
                 } else {
                     value = param.value.serializeToString(format: param.format) ?? ""
                 }
-                queryParams.append(URLQueryItem(name: param.name, value: value))
+                if !value.isEmpty {
+                    queryParams.append(URLQueryItem(name: param.name, value: value))
+                }
             case .header:
                 headers[param.name] = param.value.serializeToString(format: nil)
             }
@@ -111,7 +113,34 @@ open class SwaggerApi {
         let r = Alamofire.request(request)
         debugPrint(r)
         r.responseJSON { res in
-            debugPrint(res)
+            var error = res.error
+            guard error == nil else {
+                return completion(error, nil)
+            }
+            guard let statusCode = res.response?.statusCode else {
+                fatalError("Server didn't return a status code, but also didn't error?? \(res.debugDescription)")
+            }
+            guard let data = res.data else {
+                return completion(error, nil)
+            }
+            var jsonObj: Any? = nil
+            do {
+                jsonObj = try JSONSerialization.jsonObject(with: data, options: [.allowFragments])
+            } catch {
+                let dataString = String(data: data, encoding: .utf8) ?? data.debugDescription
+                print("Server returned invalid json for request \(r.debugDescription): \(dataString)")
+            }
+            if statusCode > 200 {
+                var userInfo: [String: Any]? = nil
+                if let dict = jsonObj as? [String: Any] {
+                    userInfo = [
+                        NSLocalizedDescriptionKey: (dict["message"] as? String) as Any
+                    ]
+                }
+                error = NSError(domain: "GBPay", code: statusCode, userInfo: userInfo)
+                return completion(error, nil)
+            }
+            return completion(error, jsonObj)
         }
     }
 }

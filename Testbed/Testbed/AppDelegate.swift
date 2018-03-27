@@ -22,9 +22,14 @@ func test() {
     Api.accountIdCreditBalanceGet(accountId: "sdfs") { _, _ in }
     
     
-    Api.accountIdStatusGet(accountId: "id", fields: [.disposition, .instruments]) {err, status in
-        print((status?.programs)!)
+    Api.accountIdStatusGet(accountId: "@me", fields: [.disposition, .instruments]) {err, status in
+        print(status.serializeToString(format: nil))
     }
+    Api.accountIdTransactionsGet(accountId: "@butts") { err, res in
+        print(err.debugDescription)
+        print(res.serializeToString(format: nil))
+    }
+    
     
     let ins = Instrument(
         instrumentId: "id",
@@ -37,7 +42,7 @@ func test() {
         tags: ["tag1", "tag2"]
     )
     print(json(Instrument.deserialize(json: jsonObj(ins))))
-    
+
     let pd = ProgramDetails(name: "name", type: "type", activatedAt: Date(), perGallonDiscount: "pgd", initialPerGallonDiscount: "initialpgd", isEligibleForInitialDiscount: true, transactionsRequiredForInitialDiscount: 42, initialDiscountExpiration: Date(), unitString: "CASHBACK in Points")
     let r1 = Referral(program: pd, refereeEnrolledAt: Date(), refereeTransactedAt: Date(), referrerDiscountedTransactionId: "FIRST ONE")
     let r2 = Referral(program: pd, refereeEnrolledAt: Date(), refereeTransactedAt: Date(), referrerDiscountedTransactionId: "SECOND ONE")
