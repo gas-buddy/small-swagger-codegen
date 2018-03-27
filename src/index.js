@@ -2,8 +2,6 @@ import fs from 'fs';
 import _ from 'lodash';
 import assert from 'assert';
 import handlebars from 'handlebars';
-import spec from '@gasbuddy/payment-api-spec';
-// import spec from '@gasbuddy/mobile-orchestration-api-spec';
 import { describe, log, verify } from './verify';
 
 const HTTP_METHODS = [
@@ -26,8 +24,7 @@ function resolveRef(ref, refTarget) {
 
 function objectByResolvingRef(obj, refTarget) {
   if (!obj) {
-    return obj;
-  }
+    return obj;}
   if (!obj.$ref) {
     return { ...obj };
   }
@@ -42,7 +39,11 @@ function typeFromRef(ref) {
 }
 
 function nameFromComponents(...components) {
-  return _.camelCase(components.join('/'));
+  const name = _.camelCase(components.join('/'));
+  if (!isNaN(name[0])) {
+    return `_${name}`;
+  }
+  return name;
 }
 
 function classNameFromComponents(...components) {
@@ -76,10 +77,7 @@ function mapPrimitiveValue(value, type) {
 // Models
 //////////////////////////////////////////////////////////////////////
 
-function typeInfoAndModelsFromSchema(schema, defaultName, refTarget, indent) {
-  if (!indent) { indent = ''; }
-  // console.log(indent + describe(schema));
-
+function typeInfoAndModelsFromSchema(schema, defaultName, refTarget) {
   let name = defaultName;
   if (schema.$ref) {
     name = typeFromRef(schema.$ref);
@@ -101,7 +99,7 @@ function typeInfoAndModelsFromSchema(schema, defaultName, refTarget, indent) {
   } else if (schema.type === 'array') {
     const newSchema = schema.items;
     const { typeInfo: elementTypeInfo, models: elementModels } = typeInfoAndModelsFromSchema(
-      newSchema, name, refTarget, indent+'  '
+      newSchema, name, refTarget
     );
     return { typeInfo: { name: `Array<${elementTypeInfo.name}>`, format: elementTypeInfo.format }, models: elementModels };
 
@@ -121,11 +119,12 @@ function typeInfoAndModelsFromSchema(schema, defaultName, refTarget, indent) {
       const { typeInfo: propertyTypeInfo, models: propertyModels } = typeInfoAndModelsFromSchema(
         property,
         newDefaultName,
-        refTarget,
-        indent+'  '
+        refTarget
       );
       const isRequired = !!_.find(schema.required, r => r === propertyName);
       let clientName = nameFromComponents(propertyName);
+
+      // TODO: Sneaky mutation
       delete properties[propertyName];
       properties[clientName] = {
         type: propertyTypeInfo.name,
@@ -133,6 +132,7 @@ function typeInfoAndModelsFromSchema(schema, defaultName, refTarget, indent) {
         isRequired,
         specName: propertyName
       };
+      //
       return propertyModels || [];
     });
     schema.properties = properties;
@@ -237,7 +237,7 @@ function methodsFromPaths(paths, basePath, refTarget) {
 
 
 //////////////////////////////////////////////////////////////////////
-// Script
+// Process One Spec
 //////////////////////////////////////////////////////////////////////
 
 function moveModelsOffMethods(methods) {
@@ -251,6 +251,54 @@ function moveModelsOffMethods(methods) {
         .uniqWith(_.isEqual)
         .value();
   return models;
+}
+
+
+function processSpec(spec) {
+  const methods = methodsFromPaths(spec.paths, spec.basePath || '', spec);
+  const models = moveModelsOffMethods(methods);
+  const data = { methods, models };
+  const problems = verify(data);
+
+  if (problems) {
+    log(data);
+    console.log(problems);
+    process.exit(1);
+  }
+
+  return data;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+// Process Multiple Specs
+//////////////////////////////////////////////////////////////////////
+
+function combineTemplateDatas(templateDatas) {
+  const apis = _.map(templateDatas, (apiData, apiName) => ({
+    name: apiName,
+    methods: apiData.methods
+  }));
+  const allModels = [];
+  const duplicatedModelNames = [];
+  _.forEach(templateDatas, (apiData, apiName) => {
+    _.forEach(apiData.models, model => {
+      model.apiName = apiName;
+      const existingModel = _.find(allModels, existingModel => existingModel.name == model.name);
+      if (!existingModel) {
+        allModels.push(model);
+      } else {
+        if (!_.isEqual(model.spec, existingModel.spec)) {
+          log("--------------------------------------------");
+          log("Conflicting model names!");
+          log(model);
+          log(existingModel);
+          log("--------------------------------------------");
+        }
+      }
+    });
+  });
+  return { apis, models: allModels };
 }
 
 function splitModels(models) {
@@ -270,17 +318,27 @@ function splitModels(models) {
   return retVal;
 }
 
-const methods = methodsFromPaths(spec.paths, spec.basePath || '', spec);
-const models = splitModels(moveModelsOffMethods(methods));
-const data = { methods, ...models };
-const problems = verify(data);
-if (problems) {
-  log(data);
-  console.log(problems);
-  process.exit(1);
+function templateDataFromSpecs(specs) {
+  const templateDatas = _.mapValues(specs, processSpec);
+  return combineTemplateDatas(templateDatas);
 }
-// log(data);
+
+
+//////////////////////////////////////////////////////////////////////
+// Script
+//////////////////////////////////////////////////////////////////////
+
+import PaymentApi from '@gasbuddy/payment-api-spec';
+import MobileOrchestrationApi from '@gasbuddy/mobile-orchestration-api-spec';
+import LoyaltyApi from '@gasbuddy/loyalty-api-spec';
+const templateData = templateDataFromSpecs({ PaymentApi, MobileOrchestrationApi, LoyaltyApi });
+const { objectModels, enumModels } = splitModels(templateData.models);
+delete templateData.models;
+templateData.objectModels = objectModels;
+templateData.enumModels = enumModels;
+
+log(templateData)
 
 const template = handlebars.compile(fs.readFileSync('template.handlebars', 'utf8'));
-const rendered = template(data);
+const rendered = template(templateData);
 fs.writeFileSync('./Testbed/Testbed/output.swift', rendered);

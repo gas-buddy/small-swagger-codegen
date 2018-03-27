@@ -13,6 +13,7 @@
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
+    "@gasbuddy/loyalty-api-spec": "^3.0.0",
     "@gasbuddy/mobile-orchestration-api-spec": "^9.5.0",
     "@gasbuddy/payment-api-spec": "^5.12.0",
     "handlebars": "^4.0.11",

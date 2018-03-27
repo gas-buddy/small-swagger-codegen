@@ -1,22 +1,25 @@
 import Foundation
 
-open class Api: SwaggerApi {
-{{#each methods}}
-  open static func {{{name}}}(
-  {{#each params}}
-    {{{name}}}: {{{type}}}{{#unless required}}? = nil{{/unless}},
-  {{/each}}
-    completion: @escaping (Error?, {{{response.type}}}?) -> Void
-  ) {
-    self.request(method: .{{{method}}}, path: "{{{path}}}", params: [
+{{#each apis}}
+  open class {{{name}}}: SwaggerApi {
+  {{#each methods}}
+    open static func {{{name}}}(
     {{#each params}}
-      .init(name: "{{{serverName}}}", in: .{{{in}}}, value: {{{name}}}, format: {{#if format}}"{{format}}"{{else}}nil{{/if}}) {{~#unless @last}},{{/unless}}
+      {{{name}}}: {{{type}}}{{#unless required}}? = nil{{/unless}},
     {{/each}}
-    ], completion: completion)
+      completion: @escaping (Error?, {{{response.type}}}?) -> Void
+    ) {
+      self.request(method: .{{{method}}}, path: "{{{path}}}", params: [
+      {{#each params}}
+        .init(name: "{{{serverName}}}", in: .{{{in}}}, value: {{{name}}}, format: {{#if format}}"{{format}}"{{else}}nil{{/if}}) {{~#unless @last}},{{/unless}}
+      {{/each}}
+      ], completion: completion)
+    }
+
+  {{/each}}
   }
 
 {{/each}}
-}
 
 {{#each objectModels}}
   open class {{{name}}}: SwaggerModel {
