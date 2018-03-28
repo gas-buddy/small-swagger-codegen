@@ -31,17 +31,17 @@ private struct UploadFile {
 open class SwaggerApi {
     public static var baseUrl = "https://api.gasbuddy.io/payment"
     public static var defaultHeaders: [String: String] = [
-        "Authorization": "Basic butts"
+        "Authorization": "Bearer b25b2edca78040ff889f47f2b7e1af38"
     ]
     
     static func request(
         method: HTTPMethod,
         path: String,
         params: [RequestParam] = [],
-        completion: @escaping (Error?, Void) -> Void
-    ) {
-        internalRequest(method: method, path: path, params: params) { err, response in
-            return completion(err, ())
+        completion: @escaping (Void, Error?) -> Void
+        ) {
+        internalRequest(method: method, path: path, params: params) { response, err in
+            return completion((), err)
         }
     }
     
@@ -49,13 +49,13 @@ open class SwaggerApi {
         method: HTTPMethod,
         path: String,
         params: [RequestParam] = [],
-        completion: @escaping (Error?, ResponseType?) -> Void
-    ) {
-        internalRequest(method: method, path: path, params: params) { err, response in
+        completion: @escaping (ResponseType?, Error?) -> Void
+        ) {
+        internalRequest(method: method, path: path, params: params) { response, err in
             guard let res = response else {
-                return completion(err, nil)
+                return completion(nil, err)
             }
-            return completion(err, ResponseType.deserialize(json: res, format: nil))
+            return completion(ResponseType.deserialize(json: res, format: nil), err)
         }
     }
     
@@ -63,8 +63,8 @@ open class SwaggerApi {
         method: HTTPMethod,
         path: String,
         params: [RequestParam] = [],
-        completion: @escaping (Error?, Any?) -> Void
-    ) {
+        completion: @escaping (Any?, Error?) -> Void
+        ) {
         var path = path
         var queryParams: [URLQueryItem] = []
         var body: Data? = nil
@@ -109,8 +109,8 @@ open class SwaggerApi {
                 uploadFile = UploadFile(url: url, name: param.name)
             }
         }
-        internalRequest(method: method, path: path, queryParams: queryParams, headers: headers, body: body, uploadFile: uploadFile) { err, response in
-            return completion(err, response)
+        internalRequest(method: method, path: path, queryParams: queryParams, headers: headers, body: body, uploadFile: uploadFile) { response, err in
+            return completion(response, err)
         }
     }
     
@@ -121,8 +121,8 @@ open class SwaggerApi {
         headers: HTTPHeaders?,
         body: Data?,
         uploadFile: UploadFile?,
-        completion: @escaping (Error?, Any?) -> Void
-    ) {
+        completion: @escaping (Any?, Error?) -> Void
+        ) {
         guard !(body != nil && uploadFile != nil) else {
             fatalError("Tried to upload a file and send a request body in the same request: \(method) \(path)")
         }
@@ -149,8 +149,8 @@ open class SwaggerApi {
         url: URL,
         allHeaders: HTTPHeaders,
         body: Data?,
-        completion: @escaping (Error?, Any?) -> Void
-    ) {
+        completion: @escaping (Any?, Error?) -> Void
+        ) {
         let urlRequest = try! URLRequest(url: url, method: method, headers: allHeaders)
         let req = Alamofire.request(urlRequest)
         debugPrint(req)
@@ -162,8 +162,8 @@ open class SwaggerApi {
         url: URL,
         allHeaders: HTTPHeaders,
         uploadFile: UploadFile,
-        completion: @escaping (Error?, Any?) -> Void
-    ) {
+        completion: @escaping (Any?, Error?) -> Void
+        ) {
         Alamofire.upload(multipartFormData: { multiPartFormData in
             multiPartFormData.append(uploadFile.url, withName: uploadFile.name)
         }, to: url, method: method, headers: allHeaders, encodingCompletion: { encodingResult in
@@ -171,7 +171,7 @@ open class SwaggerApi {
             case .success(let upload, _, _):
                 upload.responseJSON { res in handleResponse(upload, res, completion) }
             case .failure(let encodingError):
-                completion(encodingError, nil)
+                completion(nil, encodingError)
             }
         })
     }
@@ -179,17 +179,17 @@ open class SwaggerApi {
     private static func handleResponse(
         _ req: Request,
         _ res: DataResponse<Any>,
-        _ completion: @escaping (Error?, Any?) -> Void
-    ) {
+        _ completion: @escaping (Any?, Error?) -> Void
+        ) {
         var error = res.error
         guard error == nil else {
-            return completion(error, nil)
+            return completion(nil, error)
         }
         guard let statusCode = res.response?.statusCode else {
             fatalError("Server didn't return a status code, but also didn't error?? \(res.debugDescription)")
         }
         guard let data = res.data else {
-            return completion(error, nil)
+            return completion(nil, error)
         }
         var jsonObj: Any? = nil
         do {
@@ -206,9 +206,9 @@ open class SwaggerApi {
                 ]
             }
             error = NSError(domain: "GBPay", code: statusCode, userInfo: userInfo)
-            return completion(error, nil)
+            return completion(nil, error)
         }
-        return completion(error, jsonObj)
+        return completion(jsonObj, error)
     }
 }
 
