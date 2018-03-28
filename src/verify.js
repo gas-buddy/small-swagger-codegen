@@ -9,19 +9,22 @@ export function log(it) {
   console.log(`\n${describe(it)}`);
 }
 
-function findProblems(array, pred, foundSome) {
-  const problems = _.filter(array, pred);
-  if (problems.length > 0) {
-    return foundSome(describe(problems));
-  }
-  return '';
+function findProblems(array, pred, foundProblem) {
+  const problems = array
+        .filter(pred)
+        .map(item => foundProblem(describe(item)))
+        .join('');
+  return problems === '' ? undefined : problems;
 }
 
 function findAllProblems(array, ...problemFinders) {
   let retVal = '';
   _.each(problemFinders, problemFinder => {
     findProblems(array, problemFinder[0], problem => {
-      retVal += problemFinder[1](problem);
+      if (problem) {
+        retVal += problemFinder[1](problem);
+        retVal += '\n---------------------------';
+      }
     });
   });
   return retVal;
@@ -43,22 +46,21 @@ function verifyModels(models) {
 
   return findAllProblems(models, [
     model => !model.name,
-    problems => `\nFound models without names: ${problems}`
+    problem => `\nFound models without name: ${problem}`
   ], [
     model => !model.schema,
-    problems => `\nFound models without schemas: ${problems}`
+    problem => `\nFound models without schema: ${problem}`
   ], [
     model => model.schema && model.schema.type !== 'object' && model.schema.type !== 'enum',
-    problems => `\nFound non-object-or-enum models: ${problems}`
+    problem => `\nFound non-object-or-enum model: ${problem}`
   ]);
 }
 
 export function verify(data) {
-  const problems = [
-    verifyMethods(data.objectMethods),
-    verifyMethods(data.enumMethods),
-    verifyModels(data.models)
-  ];
-  const error = _.join(problems, '');
-  return _.isEmpty(error) ? undefined : error;
+  let problems = data.apis
+      .map(api => verifyMethods(api.methods))
+      .concat(verifyModels(data.objectModels))
+      .concat(verifyModels(data.enumModels))
+      .join('');
+  return _.isEmpty(problems) ? undefined : problems;
 }

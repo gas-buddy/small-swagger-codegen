@@ -253,19 +253,10 @@ function moveModelsOffMethods(methods) {
   return models;
 }
 
-
-function processSpec(spec) {
+function partialTemplateDataFromSpec(spec) {
   const methods = methodsFromPaths(spec.paths, spec.basePath || '', spec);
   const models = moveModelsOffMethods(methods);
   const data = { methods, models };
-  const problems = verify(data);
-
-  if (problems) {
-    log(data);
-    console.log(problems);
-    process.exit(1);
-  }
-
   return data;
 }
 
@@ -319,8 +310,16 @@ function splitModels(models) {
 }
 
 function templateDataFromSpecs(specs) {
-  const templateDatas = _.mapValues(specs, processSpec);
+  const templateDatas = _.mapValues(specs, partialTemplateDataFromSpec);
   return combineTemplateDatas(templateDatas);
+}
+
+function verifyTemplateData(templateData) {
+  const problems = verify(templateData);
+  if (problems) {
+    console.log(problems);
+    process.exit(1);
+  }
 }
 
 
@@ -328,16 +327,14 @@ function templateDataFromSpecs(specs) {
 // Script
 //////////////////////////////////////////////////////////////////////
 
-import PaymentApi from '@gasbuddy/payment-api-spec';
-import MobileOrchestrationApi from '@gasbuddy/mobile-orchestration-api-spec';
-import LoyaltyApi from '@gasbuddy/loyalty-api-spec';
-const templateData = templateDataFromSpecs({ PaymentApi, MobileOrchestrationApi, LoyaltyApi });
+const config = require('../config.json');
+const specs = _.mapValues(config.specs, v => require(v));
+const templateData = templateDataFromSpecs(specs);
 const { objectModels, enumModels } = splitModels(templateData.models);
 delete templateData.models;
 templateData.objectModels = objectModels;
 templateData.enumModels = enumModels;
-
-log(templateData)
+verifyTemplateData(templateData);
 
 const template = handlebars.compile(fs.readFileSync('template.handlebars', 'utf8'));
 const rendered = template(templateData);
