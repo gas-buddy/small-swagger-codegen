@@ -15,11 +15,17 @@ struct RequestParam {
         case body
         case query
         case header
+        case formData
     }
     let name: String
     let `in`: Location
     let value: SwaggerSerializeable
     let format: String?
+}
+
+private struct UploadFile {
+    let url: URL
+    let name: String
 }
 
 open class SwaggerApi {
@@ -37,6 +43,7 @@ open class SwaggerApi {
         var path = path
         var queryParams: [URLQueryItem] = []
         var body: Data? = nil
+        var uploadFile: UploadFile? = nil
         var headers: HTTPHeaders = [:]
         params.forEach { param in
             switch param.in {
@@ -70,9 +77,14 @@ open class SwaggerApi {
                 }
             case .header:
                 headers[param.name] = param.value.serializeToString(format: nil)
+            case .formData:
+                guard let url = param.value as? URL else {
+                    fatalError("Attempted to send something other than a file in form data: \(param)")
+                }
+                uploadFile = UploadFile(url: url, name: param.name)
             }
         }
-        request(method: method, path: path, queryParams: queryParams, headers: headers, body: body) { err, response in
+        request(method: method, path: path, queryParams: queryParams, headers: headers, body: body, uploadFile: uploadFile) { err, response in
             guard let res = response else {
                 return completion(err, nil)
             }
@@ -96,8 +108,12 @@ open class SwaggerApi {
         queryParams: [URLQueryItem],
         headers: HTTPHeaders?,
         body: Data?,
+        uploadFile: UploadFile?,
         completion: @escaping (Error?, Any?) -> Void
     ) {
+        guard !(body != nil && uploadFile != nil) else {
+            fatalError("Tried to upload a file and send a request body in the same request: \(method) \(path)")
+        }
         let urlString = "\(baseUrl)\(path)"
         guard var components = URLComponents(string: urlString) else {
             fatalError("Failed to create URL components from URL string: \(urlString)")
@@ -109,39 +125,78 @@ open class SwaggerApi {
             fatalError("Failed to construct URL: \(urlString) \(components)")
         }
         let allHeaders = defaultHeaders.merging(headers ?? [:], uniquingKeysWith: { (first, _) in first })
-        let request = try! URLRequest(url: url, method: method, headers: allHeaders)
-        let r = Alamofire.request(request)
-        debugPrint(r)
-        r.responseJSON { res in
-            var error = res.error
-            guard error == nil else {
-                return completion(error, nil)
-            }
-            guard let statusCode = res.response?.statusCode else {
-                fatalError("Server didn't return a status code, but also didn't error?? \(res.debugDescription)")
-            }
-            guard let data = res.data else {
-                return completion(error, nil)
-            }
-            var jsonObj: Any? = nil
-            do {
-                jsonObj = try JSONSerialization.jsonObject(with: data, options: [.allowFragments])
-            } catch {
-                let dataString = String(data: data, encoding: .utf8) ?? data.debugDescription
-                print("Server returned invalid json for request \(r.debugDescription): \(dataString)")
-            }
-            if statusCode > 200 {
-                var userInfo: [String: Any]? = nil
-                if let dict = jsonObj as? [String: Any] {
-                    userInfo = [
-                        NSLocalizedDescriptionKey: (dict["message"] as? String) as Any
-                    ]
-                }
-                error = NSError(domain: "GBPay", code: statusCode, userInfo: userInfo)
-                return completion(error, nil)
-            }
-            return completion(error, jsonObj)
+        
+        if let uploadFile = uploadFile {
+            return request(method: method, url: url, allHeaders: allHeaders, uploadFile: uploadFile, completion: completion)
         }
+        return request(method: method, url: url, allHeaders: allHeaders, body: body, completion: completion)
+    }
+    
+    private static func request(
+        method: HTTPMethod,
+        url: URL,
+        allHeaders: HTTPHeaders,
+        body: Data?,
+        completion: @escaping (Error?, Any?) -> Void
+    ) {
+        let urlRequest = try! URLRequest(url: url, method: method, headers: allHeaders)
+        let req = Alamofire.request(urlRequest)
+        debugPrint(req)
+        req.responseJSON { res in handleResponse(req, res, completion) }
+    }
+    
+    private static func request(
+        method: HTTPMethod,
+        url: URL,
+        allHeaders: HTTPHeaders,
+        uploadFile: UploadFile,
+        completion: @escaping (Error?, Any?) -> Void
+    ) {
+        Alamofire.upload(multipartFormData: { multiPartFormData in
+            multiPartFormData.append(uploadFile.url, withName: uploadFile.name)
+        }, to: url, method: method, headers: allHeaders, encodingCompletion: { encodingResult in
+            switch encodingResult {
+            case .success(let upload, _, _):
+                upload.responseJSON { res in handleResponse(upload, res, completion) }
+            case .failure(let encodingError):
+                completion(encodingError, nil)
+            }
+        })
+    }
+    
+    private static func handleResponse(
+        _ req: Request,
+        _ res: DataResponse<Any>,
+        _ completion: @escaping (Error?, Any?) -> Void
+    ) {
+        var error = res.error
+        guard error == nil else {
+            return completion(error, nil)
+        }
+        guard let statusCode = res.response?.statusCode else {
+            fatalError("Server didn't return a status code, but also didn't error?? \(res.debugDescription)")
+        }
+        guard let data = res.data else {
+            return completion(error, nil)
+        }
+        var jsonObj: Any? = nil
+        do {
+            jsonObj = try JSONSerialization.jsonObject(with: data, options: [.allowFragments])
+        } catch {
+            let dataString = String(data: data, encoding: .utf8) ?? data.debugDescription
+            print("Server returned invalid json for request \(req.debugDescription): \(dataString)")
+        }
+        if statusCode > 200 {
+            var userInfo: [String: Any]? = nil
+            if let dict = jsonObj as? [String: Any] {
+                userInfo = [
+                    NSLocalizedDescriptionKey: (dict["message"] as? String) as Any
+                ]
+            }
+            error = NSError(domain: "GBPay", code: statusCode, userInfo: userInfo)
+            return completion(error, nil)
+        }
+        return completion(error, jsonObj)
     }
 }
 

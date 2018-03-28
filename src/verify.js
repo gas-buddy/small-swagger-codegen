@@ -37,6 +37,16 @@ function verifyMethods(methods) {
       return _.find(params, param => !param.type);
     },
     problems => `\nFound methods with params or responses without a type: ${problems}`
+  ], [
+    method => {
+      for (const param of method.params) {
+        if (param.in === 'formData' && param.schema && param.schema.type !== 'file') {
+          return method;
+        }
+      }
+      return undefined;
+    },
+    problems => `\nFound methods with form data params that are not of type 'file': ${problems}`
   ]);
 }
 

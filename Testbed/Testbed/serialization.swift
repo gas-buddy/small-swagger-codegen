@@ -192,6 +192,23 @@ extension Optional: SwaggerSerializeable, SwaggerDeserializeable {
 }
 
 
+extension URL: SwaggerSerializeable, SwaggerDeserializeable {
+    public func serialize(format: String?) -> Any? {
+        return absoluteString
+    }
+    public func serializeToString(format: String?) -> String? {
+        return absoluteString
+    }
+    public static func deserialize(json: Any?, format: String?) -> URL {
+        guard let deserialized = json as? String,
+            let retVal = URL(string: deserialized) else {
+            fatalError("Deserialization error: Expected URL but got \(String(describing: json))")
+        }
+        return retVal
+    }
+}
+
+
 protocol SwaggerSerializeablePrimitive: SwaggerSerializeable, SwaggerDeserializeable {}
 extension SwaggerSerializeablePrimitive {
     public func serialize(format: String?) -> Any? {

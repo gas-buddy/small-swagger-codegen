@@ -66,6 +66,8 @@ function mapPrimitiveType(type) {
     return 'Int';
   } else if (type === 'number') {
     return 'Double';
+  } else if (type === 'file') {
+    return 'URL';
   } else if (type === 'object') {
     return 'Dictionary<String, Any>';
   }
