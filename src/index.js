@@ -177,7 +177,7 @@ function methodFromSpec(path, pathParams, basePath, method, methodSpec, refTarge
   }
 
   let models = [];
-  const name = _.camelCase(`${path}/${method}`);
+  const name = _.camelCase(methodSpec.operationId || `${path}/${method}`);
   const description = methodSpec.description;
 
   let params = _.concat(pathParams || [], methodSpec.parameters || []);

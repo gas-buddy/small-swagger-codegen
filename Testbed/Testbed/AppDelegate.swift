@@ -19,13 +19,13 @@ func test() {
     
     
     let a = AccountWalletStatusName(firstName: "first", lastName: "last")
-    PaymentApi.accountIdCreditBalanceGet(accountId: "sdfs") { _, _ in }
+    PaymentApi.getCreditBalances(accountId: "sdfs") { _, _ in }
     
     
     PaymentApi.accountIdStatusGet(accountId: "@me", fields: [.disposition, .instruments]) {err, status in
         print(status.serializeToString(format: nil))
     }
-    PaymentApi.accountIdTransactionsGet(accountId: "@butts") { err, res in
+    PaymentApi.getTransactionHistory(accountId: "@butts") { err, res in
         print(err.debugDescription)
         print(res.serializeToString(format: nil))
     }
