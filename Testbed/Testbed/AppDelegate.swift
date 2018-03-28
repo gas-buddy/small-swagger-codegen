@@ -16,11 +16,8 @@ func jsonObj(_ it: SwaggerContainer) -> Any {
 }
 
 func test() {
-    
-    
     let a = AccountWalletStatusName(firstName: "first", lastName: "last")
     PaymentApi.getCreditBalances(accountId: "sdfs") { _, _ in }
-    
     
     PaymentApi.accountIdStatusGet(accountId: "@me", fields: [.disposition, .instruments]) {err, status in
         print(status.serializeToString(format: nil))
@@ -29,7 +26,6 @@ func test() {
         print(err.debugDescription)
         print(res.serializeToString(format: nil))
     }
-    
     
     let ins = Instrument(
         instrumentId: "id",
@@ -56,29 +52,22 @@ func test() {
     
     
     let testData = try! JSONSerialization.jsonObject(with: """
-{
-"instrument_id": "id",
-"instrument_type": "checking_account"
-}
-""".data(using: .utf8)!)
+        {
+            "instrument_id": "id",
+            "instrument_type": "checking_account"
+        }
+    """.data(using: .utf8)!)
     
     print(json(Instrument.deserialize(json: testData)))
 }
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
-
     @IBOutlet weak var window: NSWindow!
-
-
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         test()
     }
-
     func applicationWillTerminate(_ aNotification: Notification) {
         // Insert code here to tear down your application
     }
-
-
 }
-

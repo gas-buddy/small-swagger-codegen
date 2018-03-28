@@ -34,11 +34,36 @@ open class SwaggerApi {
         "Authorization": "Basic butts"
     ]
     
+    static func request(
+        method: HTTPMethod,
+        path: String,
+        params: [RequestParam] = [],
+        completion: @escaping (Error?, Void) -> Void
+    ) {
+        internalRequest(method: method, path: path, params: params) { err, response in
+            return completion(err, ())
+        }
+    }
+    
     static func request<ResponseType: SwaggerDeserializeable>(
         method: HTTPMethod,
         path: String,
         params: [RequestParam] = [],
         completion: @escaping (Error?, ResponseType?) -> Void
+    ) {
+        internalRequest(method: method, path: path, params: params) { err, response in
+            guard let res = response else {
+                return completion(err, nil)
+            }
+            return completion(err, ResponseType.deserialize(json: res, format: nil))
+        }
+    }
+    
+    static func internalRequest(
+        method: HTTPMethod,
+        path: String,
+        params: [RequestParam] = [],
+        completion: @escaping (Error?, Any?) -> Void
     ) {
         var path = path
         var queryParams: [URLQueryItem] = []
@@ -84,25 +109,12 @@ open class SwaggerApi {
                 uploadFile = UploadFile(url: url, name: param.name)
             }
         }
-        request(method: method, path: path, queryParams: queryParams, headers: headers, body: body, uploadFile: uploadFile) { err, response in
-            guard let res = response else {
-                return completion(err, nil)
-            }
-            return completion(err, ResponseType.deserialize(json: res, format: nil))
+        internalRequest(method: method, path: path, queryParams: queryParams, headers: headers, body: body, uploadFile: uploadFile) { err, response in
+            return completion(err, response)
         }
     }
     
-    static func request(
-        method: HTTPMethod,
-        path: String,
-        params: [RequestParam] = [],
-        completion: ((Error?, Void) -> Void)
-    ) {
-        print(params)
-    }
-    
-    
-    private static func request(
+    private static func internalRequest(
         method: HTTPMethod,
         path: String,
         queryParams: [URLQueryItem],
@@ -127,12 +139,12 @@ open class SwaggerApi {
         let allHeaders = defaultHeaders.merging(headers ?? [:], uniquingKeysWith: { (first, _) in first })
         
         if let uploadFile = uploadFile {
-            return request(method: method, url: url, allHeaders: allHeaders, uploadFile: uploadFile, completion: completion)
+            return internalRequest(method: method, url: url, allHeaders: allHeaders, uploadFile: uploadFile, completion: completion)
         }
-        return request(method: method, url: url, allHeaders: allHeaders, body: body, completion: completion)
+        return internalRequest(method: method, url: url, allHeaders: allHeaders, body: body, completion: completion)
     }
     
-    private static func request(
+    private static func internalRequest(
         method: HTTPMethod,
         url: URL,
         allHeaders: HTTPHeaders,
@@ -145,7 +157,7 @@ open class SwaggerApi {
         req.responseJSON { res in handleResponse(req, res, completion) }
     }
     
-    private static func request(
+    private static func internalRequest(
         method: HTTPMethod,
         url: URL,
         allHeaders: HTTPHeaders,
