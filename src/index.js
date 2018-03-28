@@ -12,6 +12,9 @@ const HTTP_METHODS = [
 // Helpers
 //////////////////////////////////////////////////////////////////////
 function resolveRef(ref, refTarget) {
+  if (!ref) {
+    return undefined;
+  }
   const split = ref.split('/');
   assert(split[0] === '#', `No support for refs that don\'t start with '#': ${ref}`);
   let idx = 1;
@@ -23,14 +26,18 @@ function resolveRef(ref, refTarget) {
 }
 
 function objectByResolvingRef(obj, refTarget) {
-  if (!obj) {
-    return obj;}
-  if (!obj.$ref) {
-    return { ...obj };
+  const ref = obj.$ref;
+  const allOf = obj.allOf;
+  const clone = _.clone(obj);
+  if (!clone || (!ref && !allOf)) {
+    return clone;
   }
-  let retVal = { ...resolveRef(obj.$ref, refTarget), ...obj };
-  delete retVal.$ref;
-  return retVal;
+  delete clone.$ref;
+  delete clone.allOf;
+  const objFromRef = resolveRef(ref, refTarget);
+  const objsFromAllOf = _.map(allOf, item => objectByResolvingRef(item, refTarget));
+  const resolved = _.merge({}, objFromRef, ...objsFromAllOf, clone);
+  return objectByResolvingRef(resolved, refTarget);
 }
 
 function typeFromRef(ref) {
@@ -81,8 +88,8 @@ function typeInfoAndModelsFromSchema(schema, defaultName, refTarget) {
   let name = defaultName;
   if (schema.$ref) {
     name = typeFromRef(schema.$ref);
-    schema = objectByResolvingRef(schema, refTarget);
   }
+  schema = objectByResolvingRef(schema, refTarget);
 
   if (schema.enum) {
     const enumSchema = {
