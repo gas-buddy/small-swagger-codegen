@@ -52,7 +52,10 @@ function verifyMethods(methods) {
 
 function verifyModels(models) {
   const names = _.map(models, m => m.name);
-  assert(_.isEqual(names, _.uniq(names)), `Duplicate names! ${names}`);
+  const dupes = _.filter(names, function (value, index, iteratee) {
+    return _.includes(iteratee, value, index + 1);
+  });
+  assert(dupes.length < 1, `Duplicate names! ${dupes}`);
 
   return findAllProblems(models, [
     model => !model.name,

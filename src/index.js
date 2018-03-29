@@ -284,17 +284,17 @@ function combineTemplateDatas(templateDatas) {
   _.forEach(templateDatas, (apiData, apiName) => {
     _.forEach(apiData.models, model => {
       model.apiName = apiName;
-      const existingModel = _.find(allModels, existingModel => existingModel.name == model.name);
+      const existingModel = _.find(allModels, existingModel => existingModel.name === model.name);
       if (!existingModel) {
         allModels.push(model);
-      } else {
-        if (!_.isEqual(model.spec, existingModel.spec)) {
-          log("--------------------------------------------");
-          log("Conflicting model names!");
-          log(model);
-          log(existingModel);
-          log("--------------------------------------------");
-        }
+      } else if (!_.isEqual(model.schema, existingModel.schema)) {
+        duplicatedModelNames.push(model.name);
+        existingModel.name = classNameFromComponents(existingModel.apiName, existingModel.name);
+        model.name = classNameFromComponents(model.apiName, model.name);
+        allModels.push(model);
+      } else if (duplicatedModelNames.includes(model.name)) {
+        model.name = classNameFromComponents(model.apiName, model.name);
+        allModels.push(model);
       }
     });
   });
