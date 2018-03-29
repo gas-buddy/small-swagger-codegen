@@ -25,7 +25,7 @@ function resolveRef(ref, refTarget) {
   return _.cloneDeep(retVal);
 }
 
-function objectByResolvingRef(obj, refTarget) {
+function objectByResolvingRefAndAllOf(obj, refTarget) {
   const ref = obj.$ref;
   const allOf = obj.allOf;
   const clone = _.clone(obj);
@@ -35,9 +35,9 @@ function objectByResolvingRef(obj, refTarget) {
   delete clone.$ref;
   delete clone.allOf;
   const objFromRef = resolveRef(ref, refTarget);
-  const objsFromAllOf = _.map(allOf, item => objectByResolvingRef(item, refTarget));
+  const objsFromAllOf = _.map(allOf, item => objectByResolvingRefAndAllOf(item, refTarget));
   const resolved = _.merge({}, objFromRef, ...objsFromAllOf, clone);
-  return objectByResolvingRef(resolved, refTarget);
+  return objectByResolvingRefAndAllOf(resolved, refTarget);
 }
 
 function typeFromRef(ref) {
@@ -91,7 +91,7 @@ function typeInfoAndModelsFromSchema(schema, defaultName, refTarget) {
   if (schema.$ref) {
     name = typeFromRef(schema.$ref);
   }
-  schema = objectByResolvingRef(schema, refTarget);
+  schema = objectByResolvingRefAndAllOf(schema, refTarget);
 
   if (schema.enum) {
     const enumSchema = {
@@ -182,7 +182,7 @@ function methodFromSpec(path, pathParams, basePath, method, methodSpec, refTarge
 
   let params = _.concat(pathParams || [], methodSpec.parameters || []);
   params = _.map(params, param => {
-    param = objectByResolvingRef(param, refTarget);
+    param = objectByResolvingRefAndAllOf(param, refTarget);
     // Sometimes params have a schema, sometimes they just have the properties
     // that a schema would normally have. This normalizes all params to be
     // objects that have a schema.
@@ -212,7 +212,7 @@ function methodFromSpec(path, pathParams, basePath, method, methodSpec, refTarge
   let response = methodSpec.responses[goodResponseKey];
 
   // TODO: Many similarities with how we treat `param` above.
-  response = objectByResolvingRef(response, refTarget);
+  response = objectByResolvingRefAndAllOf(response, refTarget);
   const { typeInfo: responseTypeInfo, models: responseModels } = typeInfoAndModelsFromParam(response, name, refTarget);
   models = models.concat(responseModels);
   response.type = responseTypeInfo.name || response.type || 'Void';
@@ -246,7 +246,7 @@ function methodsFromPaths(paths, basePath, refTarget) {
 
 
 //////////////////////////////////////////////////////////////////////
-// Process One Spec
+// Process Specs
 //////////////////////////////////////////////////////////////////////
 
 function moveModelsOffMethods(methods) {
@@ -260,45 +260,6 @@ function moveModelsOffMethods(methods) {
         .uniqWith(_.isEqual)
         .value();
   return models;
-}
-
-function partialTemplateDataFromSpec(spec) {
-  const methods = methodsFromPaths(spec.paths, spec.basePath || '', spec);
-  const models = moveModelsOffMethods(methods);
-  const data = { methods, models };
-  return data;
-}
-
-
-//////////////////////////////////////////////////////////////////////
-// Process Multiple Specs
-//////////////////////////////////////////////////////////////////////
-
-function combineTemplateDatas(templateDatas) {
-  const apis = _.map(templateDatas, (apiData, apiName) => ({
-    name: apiName,
-    methods: apiData.methods
-  }));
-  const allModels = [];
-  const duplicatedModelNames = [];
-  _.forEach(templateDatas, (apiData, apiName) => {
-    _.forEach(apiData.models, model => {
-      model.apiName = apiName;
-      const existingModel = _.find(allModels, existingModel => existingModel.name === model.name);
-      if (!existingModel) {
-        allModels.push(model);
-      } else if (!_.isEqual(model.schema, existingModel.schema)) {
-        duplicatedModelNames.push(model.name);
-        existingModel.name = classNameFromComponents(existingModel.apiName, existingModel.name);
-        model.name = classNameFromComponents(model.apiName, model.name);
-        allModels.push(model);
-      } else if (duplicatedModelNames.includes(model.name)) {
-        model.name = classNameFromComponents(model.apiName, model.name);
-        allModels.push(model);
-      }
-    });
-  });
-  return { apis, models: allModels };
 }
 
 function splitModels(models) {
@@ -318,15 +279,29 @@ function splitModels(models) {
   return retVal;
 }
 
-function templateDataFromSpecs(specs) {
-  const templateDatas = _.mapValues(specs, partialTemplateDataFromSpec);
-  return combineTemplateDatas(templateDatas);
+function templateDataFromSpec(spec, apiName) {
+  const methods = methodsFromPaths(spec.paths, spec.basePath || '', spec);
+  const models = moveModelsOffMethods(methods);
+  const { objectModels, enumModels } = splitModels(models);
+  const templateData = { methods, objectModels, enumModels, apiName };
+  return templateData;
 }
 
-function verifyTemplateData(templateData) {
-  const problems = verify(templateData);
-  if (problems) {
-    console.log(problems);
+function templateDatasFromSpecs(specs) {
+  return _.mapValues(specs, (spec, apiName) => templateDataFromSpec(spec, apiName));
+}
+
+function verifyTemplateDatas(templateDatas) {
+  const problems = _.map(templateDatas, (templateData, apiName) => {
+    const problems = verify(templateData);
+    if (!_.isEmpty(problems)) {
+      return `Problems with ${apiName}: ${problems}`;
+    }
+    return '';
+  });
+  const problemsString = _.join(problems, '');
+  if (!_.isEmpty(problemsString)) {
+    console.log(problemsString);
     process.exit(1);
   }
 }
@@ -338,13 +313,19 @@ function verifyTemplateData(templateData) {
 
 const config = require('../config.json');
 const specs = _.mapValues(config.specs, v => require(v));
-const templateData = templateDataFromSpecs(specs);
-const { objectModels, enumModels } = splitModels(templateData.models);
-delete templateData.models;
-templateData.objectModels = objectModels;
-templateData.enumModels = enumModels;
-verifyTemplateData(templateData);
+const templateDatas = templateDatasFromSpecs(specs);
+verifyTemplateDatas(templateDatas);
 
 const template = handlebars.compile(fs.readFileSync('template.handlebars', 'utf8'));
-const rendered = template(templateData);
-fs.writeFileSync('./Testbed/Testbed/output.swift', rendered);
+const podtemplate = handlebars.compile(fs.readFileSync('podtemplate.handlebars', 'utf8'));
+_.forEach(templateDatas, (templateData, apiName) => {
+  const nodeModule = config.specs[apiName];
+  const apiVersion = require(`../node_modules/${nodeModule}/package.json`).version;
+
+  const rendered = template(templateData);
+  fs.writeFileSync(`./Testbed/DevelopmentPods/Generated/${apiName}.swift`, rendered);
+
+  const renderedPodSpec = podtemplate({ apiName, apiVersion });
+  fs.writeFileSync(`./Testbed/DevelopmentPods/Generated/${apiName}.podspec`, renderedPodSpec);
+});
+

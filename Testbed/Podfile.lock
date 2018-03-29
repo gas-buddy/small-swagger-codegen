@@ -1,12 +1,56 @@
 PODS:
   - Alamofire (4.6.0)
+  - IdentityApi (1.6.1):
+    - SwaggerClientSupport
+  - LovesApi (2.11.0):
+    - SwaggerClientSupport
+  - LoyaltyApi (3.0.0):
+    - SwaggerClientSupport
+  - MobileOrchestrationApi (9.5.0):
+    - SwaggerClientSupport
+  - PaymentApi (5.12.0):
+    - SwaggerClientSupport
+  - SwaggerClientSupport (1.0.0):
+    - Alamofire
+  - VehicleApi (1.2.2):
+    - SwaggerClientSupport
 
 DEPENDENCIES:
   - Alamofire
+  - IdentityApi (from `DevelopmentPods/Generated`)
+  - LovesApi (from `DevelopmentPods/Generated`)
+  - LoyaltyApi (from `DevelopmentPods/Generated`)
+  - MobileOrchestrationApi (from `DevelopmentPods/Generated`)
+  - PaymentApi (from `DevelopmentPods/Generated`)
+  - SwaggerClientSupport (from `DevelopmentPods/Support`)
+  - VehicleApi (from `DevelopmentPods/Generated`)
+
+EXTERNAL SOURCES:
+  IdentityApi:
+    :path: DevelopmentPods/Generated
+  LovesApi:
+    :path: DevelopmentPods/Generated
+  LoyaltyApi:
+    :path: DevelopmentPods/Generated
+  MobileOrchestrationApi:
+    :path: DevelopmentPods/Generated
+  PaymentApi:
+    :path: DevelopmentPods/Generated
+  SwaggerClientSupport:
+    :path: DevelopmentPods/Support
+  VehicleApi:
+    :path: DevelopmentPods/Generated
 
 SPEC CHECKSUMS:
   Alamofire: f41a599bd63041760b26d393ec1069d9d7b917f4
+  IdentityApi: 914fa22ae2baf2491c7c247d6ee6083a6b97da1c
+  LovesApi: e39c7208f939728d0ce3fd039d0468dc5b533af4
+  LoyaltyApi: c2bcde2652f711acda2f23ba6e6eeee2254b41a0
+  MobileOrchestrationApi: 865c2d9fab3a855f94e6af2d601bc333bef07982
+  PaymentApi: adac23aff158dd07ecfdf9d4bba6cd728e815ed6
+  SwaggerClientSupport: 51aae0af7cc6d2456070a4177fd3c13051624f7d
+  VehicleApi: d8236e4ef01226a13ea30a3002a7c39b2b664302
 
-PODFILE CHECKSUM: 2afdb54d781bfd4629201611b754b8930aa728f6
+PODFILE CHECKSUM: bc7a9c9cd3972acec5b4e49e38b9d73332d91b34
 
 COCOAPODS: 1.4.0

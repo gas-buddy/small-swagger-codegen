@@ -12,9 +12,6 @@
 		8596A75E2069B98300B36531 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8596A75D2069B98300B36531 /* Assets.xcassets */; };
 		8596A7612069B98300B36531 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 8596A75F2069B98300B36531 /* MainMenu.xib */; };
 		8596A76D2069B98400B36531 /* TestbedTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8596A76C2069B98400B36531 /* TestbedTests.swift */; };
-		85BF82932069BE930048A17B /* request.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BF828F2069BE920048A17B /* request.swift */; };
-		85BF82952069BE930048A17B /* output.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BF82912069BE930048A17B /* output.swift */; };
-		85BF82962069BE930048A17B /* serialization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85BF82922069BE930048A17B /* serialization.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -39,9 +36,6 @@
 		8596A7682069B98400B36531 /* TestbedTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TestbedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8596A76C2069B98400B36531 /* TestbedTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestbedTests.swift; sourceTree = "<group>"; };
 		8596A76E2069B98400B36531 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		85BF828F2069BE920048A17B /* request.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = request.swift; sourceTree = "<group>"; };
-		85BF82912069BE930048A17B /* output.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = output.swift; sourceTree = "<group>"; };
-		85BF82922069BE930048A17B /* serialization.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = serialization.swift; sourceTree = "<group>"; };
 		A09FB51CC267F9B01B30CB55 /* Pods_Testbed.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Testbed.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -95,9 +89,6 @@
 		8596A75A2069B98300B36531 /* Testbed */ = {
 			isa = PBXGroup;
 			children = (
-				85BF82912069BE930048A17B /* output.swift */,
-				85BF828F2069BE920048A17B /* request.swift */,
-				85BF82922069BE930048A17B /* serialization.swift */,
 				8596A75B2069B98300B36531 /* AppDelegate.swift */,
 				8596A75D2069B98300B36531 /* Assets.xcassets */,
 				8596A75F2069B98300B36531 /* MainMenu.xib */,
@@ -252,10 +243,24 @@
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-Testbed/Pods-Testbed-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/Alamofire/Alamofire.framework",
+				"${BUILT_PRODUCTS_DIR}/IdentityApi/IdentityApi.framework",
+				"${BUILT_PRODUCTS_DIR}/LovesApi/LovesApi.framework",
+				"${BUILT_PRODUCTS_DIR}/LoyaltyApi/LoyaltyApi.framework",
+				"${BUILT_PRODUCTS_DIR}/MobileOrchestrationApi/MobileOrchestrationApi.framework",
+				"${BUILT_PRODUCTS_DIR}/PaymentApi/PaymentApi.framework",
+				"${BUILT_PRODUCTS_DIR}/SwaggerClientSupport/SwaggerClientSupport.framework",
+				"${BUILT_PRODUCTS_DIR}/VehicleApi/VehicleApi.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Alamofire.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/IdentityApi.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/LovesApi.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/LoyaltyApi.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/MobileOrchestrationApi.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/PaymentApi.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SwaggerClientSupport.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/VehicleApi.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -284,10 +289,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				85BF82952069BE930048A17B /* output.swift in Sources */,
 				8596A75C2069B98300B36531 /* AppDelegate.swift in Sources */,
-				85BF82932069BE930048A17B /* request.swift in Sources */,
-				85BF82962069BE930048A17B /* serialization.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

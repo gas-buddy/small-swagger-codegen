@@ -7,6 +7,8 @@
 //
 
 import Cocoa
+import PaymentApi
+import SwaggerClientSupport
 
 func json(_ it: SwaggerContainer) -> String {
     return String(data:it.toJson(), encoding: .utf8)!

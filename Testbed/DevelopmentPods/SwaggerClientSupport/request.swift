@@ -9,8 +9,8 @@
 import Foundation
 import Alamofire
 
-struct RequestParam {
-    enum Location {
+public struct RequestParam {
+    public enum Location {
         case path
         case body
         case query
@@ -21,6 +21,12 @@ struct RequestParam {
     let `in`: Location
     let value: SwaggerSerializeable
     let format: String?
+    public init(name: String, in: Location, value: SwaggerSerializeable, format: String?) {
+        self.name = name
+        self.in = `in`
+        self.value = value
+        self.format = format
+    }
 }
 
 private struct UploadFile {
@@ -34,23 +40,23 @@ open class SwaggerApi {
         "Authorization": "Bearer b25b2edca78040ff889f47f2b7e1af38"
     ]
     
-    static func request(
+    public static func request(
         method: HTTPMethod,
         path: String,
         params: [RequestParam] = [],
         completion: @escaping (Void, Error?) -> Void
-        ) {
+    ) {
         internalRequest(method: method, path: path, params: params) { response, err in
             return completion((), err)
         }
     }
     
-    static func request<ResponseType: SwaggerDeserializeable>(
+    public static func request<ResponseType: SwaggerDeserializeable>(
         method: HTTPMethod,
         path: String,
         params: [RequestParam] = [],
         completion: @escaping (ResponseType?, Error?) -> Void
-        ) {
+    ) {
         internalRequest(method: method, path: path, params: params) { response, err in
             guard let res = response else {
                 return completion(nil, err)
@@ -64,7 +70,7 @@ open class SwaggerApi {
         path: String,
         params: [RequestParam] = [],
         completion: @escaping (Any?, Error?) -> Void
-        ) {
+    ) {
         var path = path
         var queryParams: [URLQueryItem] = []
         var body: Data? = nil
@@ -122,7 +128,7 @@ open class SwaggerApi {
         body: Data?,
         uploadFile: UploadFile?,
         completion: @escaping (Any?, Error?) -> Void
-        ) {
+    ) {
         guard !(body != nil && uploadFile != nil) else {
             fatalError("Tried to upload a file and send a request body in the same request: \(method) \(path)")
         }
@@ -150,7 +156,7 @@ open class SwaggerApi {
         allHeaders: HTTPHeaders,
         body: Data?,
         completion: @escaping (Any?, Error?) -> Void
-        ) {
+    ) {
         let urlRequest = try! URLRequest(url: url, method: method, headers: allHeaders)
         let req = Alamofire.request(urlRequest)
         debugPrint(req)
@@ -163,7 +169,7 @@ open class SwaggerApi {
         allHeaders: HTTPHeaders,
         uploadFile: UploadFile,
         completion: @escaping (Any?, Error?) -> Void
-        ) {
+    ) {
         Alamofire.upload(multipartFormData: { multiPartFormData in
             multiPartFormData.append(uploadFile.url, withName: uploadFile.name)
         }, to: url, method: method, headers: allHeaders, encodingCompletion: { encodingResult in
@@ -180,7 +186,7 @@ open class SwaggerApi {
         _ req: Request,
         _ res: DataResponse<Any>,
         _ completion: @escaping (Any?, Error?) -> Void
-        ) {
+    ) {
         var error = res.error
         guard error == nil else {
             return completion(nil, error)

@@ -15,7 +15,7 @@ public protocol SwaggerDeserializeable {
 }
 
 
-protocol SwaggerContainer: SwaggerSerializeable, SwaggerDeserializeable {}
+public protocol SwaggerContainer: SwaggerSerializeable, SwaggerDeserializeable {}
 extension SwaggerContainer {
     public func serializeToString(format: String?) -> String? {
         let jsonData = toJson(format: format)
@@ -34,8 +34,8 @@ extension SwaggerContainer {
     }
 }
 
-protocol SwaggerModel: SwaggerContainer { }
-protocol SwaggerEnum: SwaggerSerializeable, SwaggerDeserializeable { }
+public protocol SwaggerModel: SwaggerContainer { }
+public protocol SwaggerEnum: SwaggerSerializeable, SwaggerDeserializeable { }
 
 extension Array: SwaggerContainer {
     public func serialize(format: String?) -> Any? {
@@ -209,7 +209,7 @@ extension URL: SwaggerSerializeable, SwaggerDeserializeable {
 }
 
 
-protocol SwaggerSerializeablePrimitive: SwaggerSerializeable, SwaggerDeserializeable {}
+public protocol SwaggerSerializeablePrimitive: SwaggerSerializeable, SwaggerDeserializeable {}
 extension SwaggerSerializeablePrimitive {
     public func serialize(format: String?) -> Any? {
         return self

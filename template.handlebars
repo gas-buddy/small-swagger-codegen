@@ -1,87 +1,86 @@
 import Foundation
+import SwaggerClientSupport
 
-{{#each apis}}
-  open class {{{name}}}: SwaggerApi {
-  {{#each methods}}
+open class {{{apiName}}}: SwaggerApi {
+{{#each methods}}
     open static func {{{name}}}(
     {{#each params}}
-      {{{name}}}: {{{type}}}{{#unless required}}? = nil{{/unless}},
+        {{{name}}}: {{{type}}}{{#unless required}}? = nil{{/unless}},
     {{/each}}
-      completion: @escaping ({{{response.type}}}?, Error?) -> Void
+        completion: @escaping ({{{response.type}}}?, Error?) -> Void
     ) {
-      self.request(method: .{{{method}}}, path: "{{{path}}}", params: [
-      {{#each params}}
-        .init(name: "{{{serverName}}}", in: .{{{in}}}, value: {{{name}}}, format: {{#if format}}"{{format}}"{{else}}nil{{/if}}) {{~#unless @last}},{{/unless}}
-      {{/each}}
-      ], completion: completion)
+        self.request(method: .{{{method}}}, path: "{{{path}}}", params: [
+        {{#each params}}
+            .init(name: "{{{serverName}}}", in: .{{{in}}}, value: {{{name}}}, format: {{#if format}}"{{format}}"{{else}}nil{{/if}}) {{~#unless @last}},{{/unless}}
+        {{/each}}
+        ], completion: completion)
     }
 
-  {{/each}}
-  }
-
 {{/each}}
+}
+
 
 {{#each objectModels}}
-  open class {{{name}}}: SwaggerModel {
-  {{#with schema}}
+open class {{{name}}}: SwaggerModel {
+{{#with schema}}
     {{#each properties}}
-      public var {{{@key}}}: {{{type}}}{{#unless isRequired}}?{{/unless}}
+    public var {{{@key}}}: {{{type}}}{{#unless isRequired}}?{{/unless}}
     {{/each}}
 
     required public init(
     {{#each properties}}
-      {{{@key}}}: {{{type}}} {{~#unless isRequired}}?=nil{{/unless}} {{~#unless @last}},{{/unless}}
+        {{{@key}}}: {{{type}}} {{~#unless isRequired}}?=nil{{/unless}} {{~#unless @last}},{{/unless}}
     {{/each}}
     ) {
     {{#each properties}}
-      self.{{{@key}}} = {{{@key}}}
+        self.{{{@key}}} = {{{@key}}}
     {{/each}}
     }
 
     public func serialize(format: String? = nil) -> Any? {
-      let retVal: [String: Any?] = [
-      {{#each properties}}
-        "{{{specName}}}": {{{@key}}}{{#unless isRequired}}?{{/unless}}.serialize(format: {{#if format}}"{{format}}"{{else}}nil{{/if}}),
-      {{/each}}
-      ].filter { (_: String, val: Any?) -> Bool in return val != nil }
-      return retVal
+        let retVal: [String: Any?] = [
+        {{#each properties}}
+            "{{{specName}}}": {{{@key}}}{{#unless isRequired}}?{{/unless}}.serialize(format: {{#if format}}"{{format}}"{{else}}nil{{/if}}),
+        {{/each}}
+        ].filter { (_: String, val: Any?) -> Bool in return val != nil }
+        return retVal
     }
 
     public static func deserialize(json: Any?, format: String? = nil) -> Self {
-      guard let dictionary = json as? [String: Any] else {
-        fatalError("Deserialization error: Trying to deserialize a {{{../name}}} but got \(String(describing: json))")
-      }
-      return self.init(
-      {{#each properties}}
-        {{{@key}}}: {{#unless isRequired}}Optional<{{/unless}}{{{type}}}{{#unless isRequired}}>{{/unless}}.deserialize(json: dictionary["{{{specName}}}"], format: {{#if format}}"{{format}}"{{else}}nil{{/if}}){{#unless @last}},{{/unless}}
-      {{/each}}
-      )
+        guard let dictionary = json as? [String: Any] else {
+            fatalError("Deserialization error: Trying to deserialize a {{{../name}}} but got \(String(describing: json))")
+        }
+        return self.init(
+        {{#each properties}}
+            {{{@key}}}: {{#unless isRequired}}Optional<{{/unless}}{{{type}}}{{#unless isRequired}}>{{/unless}}.deserialize(json: dictionary["{{{specName}}}"], format: {{#if format}}"{{format}}"{{else}}nil{{/if}}){{#unless @last}},{{/unless}}
+        {{/each}}
+        )
     }
-  {{/with}}
-  }
+{{/with}}
+}
 
 {{/each}}
 
 {{#each enumModels}}
-  public enum {{{name}}}: {{{schema.enumType}}}, SwaggerEnum {
-  {{#with schema}}
+public enum {{{name}}}: {{{schema.enumType}}}, SwaggerEnum {
+{{#with schema}}
     {{#each values}}
-      case {{{name}}} = {{{value}}}
+    case {{{name}}} = {{{value}}}
     {{/each}}
     public func serialize(format: String? = nil) -> Any? {
-      return rawValue;
+        return rawValue;
     }
     public func serializeToString(format: String? = nil) -> String? {
-      return rawValue.serializeToString(format: format);
+        return rawValue.serializeToString(format: format);
     }
     public static func deserialize(json: Any?, format: String? = nil) -> {{{../name}}} {
-      guard let asType = json as? {{{enumType}}},
-        let asEnum = {{{../name}}}(rawValue: asType) else {
-        fatalError("Deserialization error: Trying to deserialize a {{{../name}}}, expected {{{enumType}}} but got \(String(describing: json))")
-      }
-      return asEnum
+        guard let asType = json as? {{{enumType}}},
+            let asEnum = {{{../name}}}(rawValue: asType) else {
+            fatalError("Deserialization error: Trying to deserialize a {{{../name}}}, expected {{{enumType}}} but got \(String(describing: json))")
+        }
+        return asEnum
     }
-  {{/with}}
-  }
+{{/with}}
+}
 
 {{/each}}

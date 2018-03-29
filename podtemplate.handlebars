@@ -1,0 +1,22 @@
+Pod::Spec.new do |s|
+
+  s.name = '{{{apiName}}}'
+  s.version = '{{{apiVersion}}}'
+  s.summary = 'Swagger client for {{{apiName}}}'
+
+
+  s.description = <<-DESC
+Swagger client for {{{apiName}}} version {{{apiVersion}}}
+                  DESC
+
+  s.homepage = 'https://github.com/gas-buddy/gasbuddy-ios'
+
+  s.author = { 'GasBuddy' => 'info@gasbuddy.com' }
+  s.source = { :git => 'https://github.com/gas-buddy/gasbuddy-ios', :tag => s.version.to_s }
+
+  s.ios.deployment_target = '9.0'
+  s.osx.deployment_target = '10.10'
+
+  s.source_files = '{{{apiName}}}.swift'
+  s.dependency 'SwaggerClientSupport'
+end

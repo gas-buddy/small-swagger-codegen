@@ -2,9 +2,13 @@
 platform :osx, '10.12'
 
 target 'Testbed' do
-  # Comment the next line if you're not using Swift and don't want to use dynamic frameworks
   use_frameworks!
-
-  # Pods for Testbed
   pod 'Alamofire'
+  pod 'SwaggerClientSupport', :path => 'DevelopmentPods/SwaggerClientSupport'
+  pod 'IdentityApi', :path => 'DevelopmentPods/Generated'
+  pod 'LovesApi', :path => 'DevelopmentPods/Generated'
+  pod 'LoyaltyApi', :path => 'DevelopmentPods/Generated'
+  pod 'MobileOrchestrationApi', :path => 'DevelopmentPods/Generated'
+  pod 'PaymentApi', :path => 'DevelopmentPods/Generated'
+  pod 'VehicleApi', :path => 'DevelopmentPods/Generated'
 end

@@ -70,8 +70,8 @@ function verifyModels(models) {
 }
 
 export function verify(data) {
-  let problems = data.apis
-      .map(api => verifyMethods(api.methods))
+  let problems = []
+      .concat(verifyMethods(data.methods))
       .concat(verifyModels(data.objectModels))
       .concat(verifyModels(data.enumModels))
       .join('');
