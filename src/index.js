@@ -322,17 +322,17 @@ const specs = _.mapValues(config.specs, c => require(c.spec));
 const templateDatas = templateDatasFromSpecs(specs);
 verifyTemplateDatas(templateDatas);
 
-const template = handlebars.compile(fs.readFileSync('template.handlebars', 'utf8'));
-const podtemplate = handlebars.compile(fs.readFileSync('podtemplate.handlebars', 'utf8'));
+const template = handlebars.compile(fs.readFileSync('src/template.handlebars', 'utf8'));
+const podtemplate = handlebars.compile(fs.readFileSync('src/podtemplate.handlebars', 'utf8'));
 _.forEach(templateDatas, (templateData, apiName) => {
   const specConfig = config.specs[apiName];
   const apiVersion = require(`../node_modules/${specConfig.spec}/package.json`).version;
 
   templateData.apiClassName = specConfig.className;
   const rendered = template(templateData);
-  fs.writeFileSync(`./Testbed/DevelopmentPods/Generated/${apiName}.swift`, rendered);
+  fs.writeFileSync(`./generated/${apiName}.swift`, rendered);
 
   const renderedPodSpec = podtemplate({ apiName, apiVersion });
-  fs.writeFileSync(`./Testbed/DevelopmentPods/Generated/${apiName}.podspec`, renderedPodSpec);
+  fs.writeFileSync(`./generated/${apiName}.podspec`, renderedPodSpec);
 });
 
