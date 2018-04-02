@@ -20,7 +20,8 @@
     "@gasbuddy/payment-api-spec": "^5.12.0",
     "@gasbuddy/vehicle-api-spec": "^1.2.2",
     "handlebars": "^4.0.11",
-    "lodash": "^4.16.4"
+    "lodash": "^4.16.4",
+    "url-join": "^4.0.0"
   },
   "devDependencies": {
     "babel-cli": "^6.4.5",

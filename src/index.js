@@ -2,8 +2,10 @@ import fs from 'fs';
 import _ from 'lodash';
 import assert from 'assert';
 import handlebars from 'handlebars';
+import urlJoin from 'url-join';
 import { describe, log, verify } from './verify';
 
+const config = require('../config.json');
 const HTTP_METHODS = [
   'get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'
 ];
@@ -62,8 +64,6 @@ function mapPrimitiveType(type) {
     return 'String';
   } else if (type === 'boolean') {
     return 'Bool';
-  } else if (type === 'integer') {
-    return 'Int';
   } else if (type === 'number') {
     return 'Double';
   } else if (type === 'file') {
@@ -147,6 +147,12 @@ function typeInfoAndModelsFromSchema(schema, defaultName, refTarget) {
     schema.properties = properties;
 
     return { typeInfo: { name }, models: _.concat(model, models) };
+  } else if (schema.type === 'integer') {
+      if (schema.format === 'int64') {
+          return { typeInfo: { name: 'Int64' }, models: [] };
+      } else {
+          return { typeInfo: { name: 'Int32' }, models: [] };
+      }
 
   } else if (mapPrimitiveType(schema.type)) {
     return { typeInfo: { name: mapPrimitiveType(schema.type) }, models: []};
@@ -177,7 +183,7 @@ function methodFromSpec(path, pathParams, basePath, method, methodSpec, refTarge
   }
 
   let models = [];
-  const name = _.camelCase(methodSpec.operationId || `${path}/${method}`);
+  const name = _.camelCase(methodSpec.operationId || urlJoin(path, method));
   const description = methodSpec.description;
 
   let params = _.concat(pathParams || [], methodSpec.parameters || []);
@@ -219,7 +225,7 @@ function methodFromSpec(path, pathParams, basePath, method, methodSpec, refTarge
   response.format = responseTypeInfo.format;
   //
 
-  return { path: basePath + path, name, description, method, params, response, models };
+  return { path: urlJoin('/', basePath, path), name, description, method, params, response, models };
 }
 
 function methodsFromPath(path, pathSpec, basePath, refTarget) {
@@ -280,7 +286,8 @@ function splitModels(models) {
 }
 
 function templateDataFromSpec(spec, apiName) {
-  const methods = methodsFromPaths(spec.paths, spec.basePath || '', spec);
+  const basePath = urlJoin(config.specs[apiName].basePath, spec.basePath || '');
+  const methods = methodsFromPaths(spec.paths, basePath, spec);
   const models = moveModelsOffMethods(methods);
   const { objectModels, enumModels } = splitModels(models);
   const templateData = { methods, objectModels, enumModels, apiName };
@@ -311,17 +318,17 @@ function verifyTemplateDatas(templateDatas) {
 // Script
 //////////////////////////////////////////////////////////////////////
 
-const config = require('../config.json');
-const specs = _.mapValues(config.specs, v => require(v));
+const specs = _.mapValues(config.specs, c => require(c.spec));
 const templateDatas = templateDatasFromSpecs(specs);
 verifyTemplateDatas(templateDatas);
 
 const template = handlebars.compile(fs.readFileSync('template.handlebars', 'utf8'));
 const podtemplate = handlebars.compile(fs.readFileSync('podtemplate.handlebars', 'utf8'));
 _.forEach(templateDatas, (templateData, apiName) => {
-  const nodeModule = config.specs[apiName];
-  const apiVersion = require(`../node_modules/${nodeModule}/package.json`).version;
+  const specConfig = config.specs[apiName];
+  const apiVersion = require(`../node_modules/${specConfig.spec}/package.json`).version;
 
+  templateData.apiClassName = specConfig.className;
   const rendered = template(templateData);
   fs.writeFileSync(`./Testbed/DevelopmentPods/Generated/${apiName}.swift`, rendered);
 

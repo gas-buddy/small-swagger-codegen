@@ -1,15 +1,16 @@
 import Foundation
 import SwaggerClientSupport
 
-open class {{{apiName}}}: SwaggerApi {
+open class {{{apiClassName}}}Class: SwaggerApi {
 {{#each methods}}
-    open static func {{{name}}}(
+    open func {{{name}}}(
     {{#each params}}
         {{{name}}}: {{{type}}}{{#unless required}}? = nil{{/unless}},
     {{/each}}
-        completion: @escaping ({{{response.type}}}?, Error?) -> Void
+        timeout: TimeInterval? = nil,
+        completion: @escaping ({{{response.type}}}?, ErrorResponse?) -> Void
     ) {
-        self.request(method: .{{{method}}}, path: "{{{path}}}", params: [
+        self.request(method: .{{{method}}}, path: "{{{path}}}", timeout: timeout, params: [
         {{#each params}}
             .init(name: "{{{serverName}}}", in: .{{{in}}}, value: {{{name}}}, format: {{#if format}}"{{format}}"{{else}}nil{{/if}}) {{~#unless @last}},{{/unless}}
         {{/each}}
@@ -18,6 +19,8 @@ open class {{{apiName}}}: SwaggerApi {
 
 {{/each}}
 }
+
+public let {{{apiClassName}}} = {{{apiClassName}}}Class()
 
 
 {{#each objectModels}}
