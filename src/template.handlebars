@@ -3,6 +3,14 @@ import SwaggerClientSupport
 
 open class {{{apiClassName}}}Class: SwaggerApi {
 {{#each methods}}
+    {{~#maybeComment description}}
+    {{{description}}}
+    {{/maybeComment}}
+    {{#each params}}
+    {{~#maybeComment description}}
+    - parameter {{{name}}}: {{{description}}}
+    {{/maybeComment}}
+    {{/each}}
     open func {{{name}}}(
     {{#each params}}
         {{{name}}}: {{{type}}}{{#unless required}}? = nil{{/unless}},
@@ -27,6 +35,9 @@ public let {{{apiClassName}}} = {{{apiClassName}}}Class()
 open class {{{name}}}: {{#if superclass}}{{{superclass}}}{{else}}SwaggerModel{{/if}} {
 {{#with schema}}
     {{#each properties}}
+    {{~#maybeComment description}}
+    {{{description}}}
+    {{/maybeComment}}
     public var {{{name}}}: {{{type}}}{{#unless isRequired}}?{{/unless}}
     {{/each}}
 

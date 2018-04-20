@@ -208,8 +208,10 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
       let clientName = nameFromComponents(propertyName);
 
       // TODO: Sneaky mutation
+      const desc = propertiesObj[propertyName].description;
       delete propertiesObj[propertyName];
       propertiesObj[clientName] = {
+        description: desc,
         type: propertyTypeInfo.name,
         format: propertyTypeInfo.format,
         isRequired,
@@ -410,6 +412,21 @@ function verifyTemplateDatas(templateDatas) {
 const specs = _.mapValues(config.specs, c => require(c.spec));
 const templateDatas = templateDatasFromSpecs(specs);
 verifyTemplateDatas(templateDatas);
+
+handlebars.registerHelper('maybeComment', function(arg, options) {
+  if (!arg)  {
+    return arg;
+  }
+  const data = options.data ? undefined : { data: handlebars.createFrame(options.data) };
+  let string = options.fn ? options.fn(this, data) : '';
+  const numSpaces = string.search(/\S/);
+  if (!string || string.trim() === '') {
+    return undefined;
+  }
+  string = string.trim();
+  string = string.replace(/\n/g, ' ');
+  return `${' '.repeat(numSpaces)}/// ${string}\n`;
+});
 
 const template = handlebars.compile(fs.readFileSync('src/template.handlebars', 'utf8'));
 const podtemplate = handlebars.compile(fs.readFileSync('src/podtemplate.handlebars', 'utf8'));
