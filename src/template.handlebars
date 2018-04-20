@@ -24,38 +24,45 @@ public let {{{apiClassName}}} = {{{apiClassName}}}Class()
 
 
 {{#each objectModels}}
-open class {{{name}}}: SwaggerModel {
+open class {{{name}}}: {{#if superclass}}{{{superclass}}}{{else}}SwaggerModel{{/if}} {
 {{#with schema}}
     {{#each properties}}
-    public var {{{@key}}}: {{{type}}}{{#unless isRequired}}?{{/unless}}
+    public var {{{name}}}: {{{type}}}{{#unless isRequired}}?{{/unless}}
     {{/each}}
 
-    required public init(
-    {{#each properties}}
-        {{{@key}}}: {{{type}}} {{~#unless isRequired}}?=nil{{/unless}} {{~#unless @last}},{{/unless}}
+    public init(
+    {{#each initializerProperties}}
+        {{{name}}}: {{{type}}} {{~#unless isRequired}}?=nil{{/unless}} {{~#unless @last}},{{/unless}}
     {{/each}}
     ) {
     {{#each properties}}
-        self.{{{@key}}} = {{{@key}}}
+        self.{{{name}}} = {{{name}}}
     {{/each}}
+    {{~#if ../superclass}}
+        super.init(
+        {{#each inheritedProperties}}
+            {{{name}}}: {{{name}}} {{~#unless @last}},{{/unless}}
+        {{/each}}
+        )
+    {{/if}}
     }
 
-    public func serialize(format: String? = nil) -> Any? {
+    {{#if ../superclass}}override {{/if}}public func serialize(format: String? = nil) -> Any? {
         let retVal: [String: Any?] = [
         {{#each properties}}
-            "{{{specName}}}": {{{@key}}}{{#unless isRequired}}?{{/unless}}.serialize(format: {{#if format}}"{{format}}"{{else}}nil{{/if}}),
+            "{{{specName}}}": {{{name}}}{{#unless isRequired}}?{{/unless}}.serialize(format: {{#if format}}"{{format}}"{{else}}nil{{/if}}),
         {{/each}}
-        ].filter { (_: String, val: Any?) -> Bool in return val != nil }
-        return retVal
+        ]
+        return retVal.filter { (_: String, val: Any?) -> Bool in return val != nil }
     }
 
-    public static func deserialize(json: Any?, format: String? = nil) -> Self {
+    {{#if ../superclass}}override {{/if}}public class func deserialize(json: Any?, format: String? = nil) -> Self {
         guard let dictionary = json as? [String: Any] else {
             fatalError("Deserialization error: Trying to deserialize a {{{../name}}} but got \(String(describing: json))")
         }
         return self.init(
-        {{#each properties}}
-            {{{@key}}}: {{#unless isRequired}}Optional<{{/unless}}{{{type}}}{{#unless isRequired}}>{{/unless}}.deserialize(json: dictionary["{{{specName}}}"], format: {{#if format}}"{{format}}"{{else}}nil{{/if}}){{#unless @last}},{{/unless}}
+        {{#each initializerProperties}}
+            {{{name}}}: {{#unless isRequired}}Optional<{{/unless}}{{{type}}}{{#unless isRequired}}>{{/unless}}.deserialize(json: dictionary["{{{specName}}}"], format: {{#if format}}"{{format}}"{{else}}nil{{/if}}){{#unless @last}},{{/unless}}
         {{/each}}
         )
     }

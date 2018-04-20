@@ -10,39 +10,36 @@ const HTTP_METHODS = [
   'get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'
 ];
 
+
 //////////////////////////////////////////////////////////////////////
 // Helpers
 //////////////////////////////////////////////////////////////////////
-function resolveRef(ref, refTarget) {
-  if (!ref) {
+
+// Merge all the argument objects together. If any of the objects have properties with the
+//   same name where the values are arrays, then combine those arrays in the output.
+// For example:
+//   deepMerge({ a: [1, 2], b: 1 }, { a: [3], b: 2 })
+// The result would be:
+//   { a: [1, 2, 3], b: 2 }
+function deepMerge(...objs) {
+  return _.mergeWith({}, ...objs, (objValue, srcValue) => {
+    if (_.isArray(objValue)) {
+      return objValue.concat(srcValue);
+    }
     return undefined;
-  }
-  const split = ref.split('/');
-  assert(split[0] === '#', `No support for refs that don\'t start with '#': ${ref}`);
-  let idx = 1;
-  let retVal = refTarget;
-  _.each(_.tail(split), s => {
-    retVal = retVal && retVal[s];
   });
-  return _.cloneDeep(retVal);
 }
 
-function objectByResolvingRefAndAllOf(obj, refTarget) {
-  const ref = obj.$ref;
-  const allOf = obj.allOf;
-  const clone = _.clone(obj);
-  if (!clone || (!ref && !allOf)) {
-    return clone;
-  }
-  delete clone.$ref;
-  delete clone.allOf;
-  const objFromRef = resolveRef(ref, refTarget);
-  const objsFromAllOf = _.map(allOf, item => objectByResolvingRefAndAllOf(item, refTarget));
-  const resolved = _.merge({}, objFromRef, ...objsFromAllOf, clone);
-  return objectByResolvingRefAndAllOf(resolved, refTarget);
+function propertiesToArray(props) {
+  return Object.entries(props).map(([name, value]) => {
+    return { name, ...value };
+  });
 }
 
 function typeFromRef(ref) {
+  if (!ref) {
+    return ref;
+  }
   const lastItem = _.split(ref, '/').pop();
   return classNameFromComponents(lastItem);
 }
@@ -83,15 +80,92 @@ function mapPrimitiveValue(value, type) {
 
 
 //////////////////////////////////////////////////////////////////////
+// Resolving $ref and allOf
+//////////////////////////////////////////////////////////////////////
+
+// Given a $ref string and an object, return the value that the reference points to
+//   in refTarget.
+// For example: resolveRef('#/definitions/Something', { definitions: { Something: 42 } }) => 42
+function resolveRef(ref, refTarget) {
+  if (!ref) {
+    return undefined;
+  }
+  const split = ref.split('/');
+  assert(split[0] === '#', `No support for refs that don\'t start with '#': ${ref}`);
+  let idx = 1;
+  let retVal = refTarget;
+  _.each(_.tail(split), s => {
+    retVal = retVal && retVal[s];
+  });
+  return _.cloneDeep(retVal);
+}
+
+function objectByResolving(args) {
+  const { obj, refTarget, shouldResolveRef, shouldResolveAllOf, ignoreRef } = args;
+  const ref = obj.$ref;
+  const allOf = obj.allOf;
+  const clone = _.clone(obj);
+
+  // If this obj doesn't have any of the things we're trying to resolve, then we don't have to do
+  //   anything. Return a clone of obj for consistency.
+  const needsRefResolution = shouldResolveRef && ref;
+  const needsAllOfResolution = shouldResolveAllOf && allOf;
+  if (!clone || (!needsRefResolution && !needsAllOfResolution)) {
+    return clone;
+  }
+
+  // Remove any fields that we're about to resolve
+  if (shouldResolveRef) {
+    delete clone.$ref;
+  }
+  if (shouldResolveAllOf) {
+    delete clone.allOf;
+  }
+
+  // If we have a ref, get the object referenced by it
+  const objFromRef = shouldResolveRef && ref !== ignoreRef && resolveRef(ref, refTarget);
+
+  // If we have an allOf, get an array of the resolved version of each object in the allOf.
+  // We always have to resolve the $refs of any objects in the allOf, or else when we merge
+  //   the objects together, if there are multiple objects with a $ref, all but one $ref will be
+  //   overwritten.
+  const objsFromAllOf = shouldResolveAllOf ?
+        _.flatMap(allOf, item => objectByResolving({ ...args, obj: item, shouldResolveRef: true }))
+        : [];
+
+  // Merge this object and all the objects from its ref and/or allOf together.
+  const resolved = deepMerge(objFromRef, ...objsFromAllOf, clone);
+
+  // Ensure we don't return an object containing anything we're trying to resolve by recursing.
+  return objectByResolving({ ...args, obj: resolved });
+}
+
+function objectByResolvingRef(obj, refTarget, opts) {
+  return objectByResolving({ obj, refTarget, ...opts, shouldResolveRef: true });
+}
+
+function objectByResolvingRefAndAllOf(obj, refTarget, opts) {
+  return objectByResolving({ obj, refTarget, ...opts, shouldResolveRef: true, shouldResolveAllOf: true });
+}
+
+
+//////////////////////////////////////////////////////////////////////
 // Models
 //////////////////////////////////////////////////////////////////////
 
-function typeInfoAndModelsFromSchema(schema, defaultName, refTarget) {
+function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
   let name = defaultName;
-  if (schema.$ref) {
-    name = typeFromRef(schema.$ref);
+  if (unresolvedSchema.$ref) {
+    name = typeFromRef(unresolvedSchema.$ref);
   }
-  schema = objectByResolvingRefAndAllOf(schema, refTarget);
+
+  const refResolvedSchema = objectByResolvingRef(unresolvedSchema, refTarget);
+  const superclassSchema = refResolvedSchema.allOf && _.find(refResolvedSchema.allOf, item => item.$ref);
+  const superclassRef = superclassSchema && superclassSchema.$ref;
+  const superclassType = typeFromRef(superclassRef);
+  const { models: superclassModels } = superclassType ? typeInfoAndModelsFromSchema(superclassSchema, undefined, refTarget) : {};
+
+  const schema = objectByResolvingRefAndAllOf(unresolvedSchema, refTarget, { ignoreRef: superclassRef });
 
   if (schema.enum) {
     const enumSchema = {
@@ -121,8 +195,8 @@ function typeInfoAndModelsFromSchema(schema, defaultName, refTarget) {
   } else if (schema.type === 'object' && schema.properties) {
     delete schema.description;
 
-    const properties = { ...schema.properties };
-    const model = { name, schema };
+    const propertiesObj = { ...schema.properties };
+    const model = { name, schema, superclass: superclassType };
     const models = _.flatMap(schema.properties, (property, propertyName) => {
       const newDefaultName = classNameFromComponents(name, propertyName);
       const { typeInfo: propertyTypeInfo, models: propertyModels } = typeInfoAndModelsFromSchema(
@@ -134,8 +208,8 @@ function typeInfoAndModelsFromSchema(schema, defaultName, refTarget) {
       let clientName = nameFromComponents(propertyName);
 
       // TODO: Sneaky mutation
-      delete properties[propertyName];
-      properties[clientName] = {
+      delete propertiesObj[propertyName];
+      propertiesObj[clientName] = {
         type: propertyTypeInfo.name,
         format: propertyTypeInfo.format,
         isRequired,
@@ -144,9 +218,24 @@ function typeInfoAndModelsFromSchema(schema, defaultName, refTarget) {
       //
       return propertyModels || [];
     });
+    const properties = propertiesToArray(propertiesObj);
+    // This model's inherited properties are all the non-inherited properties of its superclass
+    //   plus all the inherited properties of its superclass.
+    let inheritedProperties = [];
+    const superSchema = superclassModels
+                     && superclassModels[0]
+                     && superclassModels[0].schema;
+    if (superSchema && superSchema.properties) {
+      inheritedProperties = inheritedProperties.concat(superSchema.properties);
+    }
+    if (superSchema && superSchema.inheritedProperties) {
+      inheritedProperties = inheritedProperties.concat(superSchema.inheritedProperties);
+    }
     schema.properties = properties;
+    schema.inheritedProperties = [...inheritedProperties];
+    schema.initializerProperties = [...properties,  ...inheritedProperties];
 
-    return { typeInfo: { name }, models: _.concat(model, models) };
+    return { typeInfo: { name }, models: _.concat(model, models, superclassModels) };
   } else if (schema.type === 'integer') {
       if (schema.format === 'int64') {
           return { typeInfo: { name: 'Int64' }, models: [] };
@@ -190,8 +279,8 @@ function methodFromSpec(path, pathParams, basePath, method, methodSpec, refTarge
   params = _.map(params, param => {
     param = objectByResolvingRefAndAllOf(param, refTarget);
     // Sometimes params have a schema, sometimes they just have the properties
-    // that a schema would normally have. This normalizes all params to be
-    // objects that have a schema.
+    //   that a schema would normally have. This normalizes all params to be
+    //   objects that have a schema.
     if (!param.schema) {
       const schema = param;
       param = {
@@ -330,9 +419,9 @@ _.forEach(templateDatas, (templateData, apiName) => {
 
   templateData.apiClassName = specConfig.className;
   const rendered = template(templateData);
-  fs.writeFileSync(`./generated/${apiName}.swift`, rendered);
+  fs.writeFileSync(`../gasbuddy-ios/DevelopmentPods/Generated/${apiName}.swift`, rendered);
 
   const renderedPodSpec = podtemplate({ apiName, apiVersion });
-  fs.writeFileSync(`./generated/${apiName}.podspec`, renderedPodSpec);
+  fs.writeFileSync(`../gasbuddy-ios/DevelopmentPods/Generated/${apiName}.podspec`, renderedPodSpec);
 });
 

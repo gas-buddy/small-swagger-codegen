@@ -17,8 +17,8 @@
     "@gasbuddy/loves-api-spec": "^2.11.0",
     "@gasbuddy/loyalty-api-spec": "^3.0.0",
     "@gasbuddy/mobile-orchestration-api-spec": "^9.5.0",
-    "@gasbuddy/payment-api-spec": "^5.12.0",
-    "@gasbuddy/vehicle-api-spec": "^1.2.2",
+    "@gasbuddy/payment-api-spec": "^6.1.0",
+    "@gasbuddy/vehicle-api-spec": "^1.5.0",
     "handlebars": "^4.0.11",
     "lodash": "^4.16.4",
     "url-join": "^4.0.0"
