@@ -36,12 +36,15 @@ function propertiesToArray(props) {
   });
 }
 
-function typeFromRef(ref) {
+function lastRefComponent(ref) {
   if (!ref) {
     return ref;
   }
-  const lastItem = _.split(ref, '/').pop();
-  return classNameFromComponents(lastItem);
+  return _.split(ref, '/').pop();
+}
+
+function typeFromRef(ref) {
+  return classNameFromComponents(lastRefComponent(ref));
 }
 
 function nameFromComponents(...components) {
@@ -155,16 +158,16 @@ function objectByResolvingRefAndAllOf(obj, refTarget, opts) {
 
 function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
   let name = defaultName;
+  let specName = name;
   if (unresolvedSchema.$ref) {
     name = typeFromRef(unresolvedSchema.$ref);
+    specName = lastRefComponent(unresolvedSchema.$ref);
   }
 
   const refResolvedSchema = objectByResolvingRef(unresolvedSchema, refTarget);
   const superclassSchema = refResolvedSchema.allOf && _.find(refResolvedSchema.allOf, item => item.$ref);
   const superclassRef = superclassSchema && superclassSchema.$ref;
   const superclassType = typeFromRef(superclassRef);
-  const { models: superclassModels } = superclassType ? typeInfoAndModelsFromSchema(superclassSchema, undefined, refTarget) : {};
-
   const schema = objectByResolvingRefAndAllOf(unresolvedSchema, refTarget, { ignoreRef: superclassRef });
 
   if (schema.enum) {
@@ -192,11 +195,12 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
     } else {
       return { typeInfo: { name: 'String' }, models: [] };
     }
+
   } else if (schema.type === 'object' && schema.properties) {
     delete schema.description;
 
     const propertiesObj = { ...schema.properties };
-    const model = { name, schema, superclass: superclassType };
+    const model = { name, schema, specName, superclass: superclassType, discriminator: schema.discriminator };
     const models = _.flatMap(schema.properties, (property, propertyName) => {
       const newDefaultName = classNameFromComponents(name, propertyName);
       const { typeInfo: propertyTypeInfo, models: propertyModels } = typeInfoAndModelsFromSchema(
@@ -221,6 +225,8 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
       return propertyModels || [];
     });
     const properties = propertiesToArray(propertiesObj);
+
+    const { models: superclassModels } = superclassType ? typeInfoAndModelsFromSchema(superclassSchema, undefined, refTarget) : {};
     // This model's inherited properties are all the non-inherited properties of its superclass
     //   plus all the inherited properties of its superclass.
     let inheritedProperties = [];
@@ -238,6 +244,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
     schema.initializerProperties = [...properties,  ...inheritedProperties];
 
     return { typeInfo: { name }, models: _.concat(model, models, superclassModels) };
+
   } else if (schema.type === 'integer') {
       if (schema.format === 'int64') {
           return { typeInfo: { name: 'Int64' }, models: [] };
@@ -376,12 +383,32 @@ function splitModels(models) {
   return retVal;
 }
 
+// For any model that has a discriminator, find all of that model's subclasses,
+//   and put some information about those subclasses on the discriminating model.
+function resolveDiscriminators(templateDataWithoutResolvedDiscriminators) {
+  const td = templateDataWithoutResolvedDiscriminators;
+  console.log(td.objectModels)
+  _.forEach(td.objectModels, model => {
+    const discriminator = model.discriminator;
+    if (!discriminator) { return; }
+    const subclasses = _.filter(td.objectModels, subModel => (
+      subModel.superclass == model.name
+    ));
+    model.subclasses = _.map(subclasses, subModel => ({
+      specName: subModel.specName,
+      name: subModel.name,
+    }));
+  });
+  return td;
+}
+
 function templateDataFromSpec(spec, apiName) {
   const basePath = urlJoin(config.specs[apiName].basePath, spec.basePath || '');
   const methods = methodsFromPaths(spec.paths, basePath, spec);
   const models = moveModelsOffMethods(methods);
   const { objectModels, enumModels } = splitModels(models);
-  const templateData = { methods, objectModels, enumModels, apiName };
+  const templateDataWithoutResolvedDiscriminators = { methods, objectModels, enumModels, apiName };
+  const templateData = resolveDiscriminators(templateDataWithoutResolvedDiscriminators);
   return templateData;
 }
 

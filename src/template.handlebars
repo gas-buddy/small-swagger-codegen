@@ -67,10 +67,22 @@ open class {{{name}}}: {{#if superclass}}{{{superclass}}}{{else}}SwaggerModel{{/
         return retVal.filter { (_: String, val: Any?) -> Bool in return val != nil }
     }
 
-    {{#if ../superclass}}override {{/if}}public class func deserialize(json: Any?, format: String? = nil) -> Self {
+    {{#if ../superclass}}override {{/if}}public class func genericDeserialize(json: Any?, format: String? = nil) -> Any {
         guard let dictionary = json as? [String: Any] else {
             fatalError("Deserialization error: Trying to deserialize a {{{../name}}} but got \(String(describing: json))")
         }
+        {{#if ../discriminator}}
+        if let discriminator = dictionary["{{{../discriminator}}}"] as? String {
+            switch discriminator {
+            {{#each ../subclasses}}
+            case "{{{specName}}}":
+                return {{{name}}}.deserialize(json: json, format: format)
+            {{/each}}
+            default:
+                break
+            }
+        }
+        {{/if}}
         return self.init(
         {{#each initializerProperties}}
             {{{name}}}: {{#unless isRequired}}Optional<{{/unless}}{{{type}}}{{#unless isRequired}}>{{/unless}}.deserialize(json: dictionary["{{{specName}}}"], format: {{#if format}}"{{format}}"{{else}}nil{{/if}}){{#unless @last}},{{/unless}}
@@ -94,7 +106,7 @@ public enum {{{name}}}: {{{schema.enumType}}}, SwaggerEnum {
     public func serializeToString(format: String? = nil) -> String? {
         return rawValue.serializeToString(format: format);
     }
-    public static func deserialize(json: Any?, format: String? = nil) -> {{{../name}}} {
+    public static func genericDeserialize(json: Any?, format: String? = nil) -> Any {
         guard let asType = json as? {{{enumType}}},
             let asEnum = {{{../name}}}(rawValue: asType) else {
             fatalError("Deserialization error: Trying to deserialize a {{{../name}}}, expected {{{enumType}}} but got \(String(describing: json))")
