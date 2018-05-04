@@ -15,6 +15,23 @@ const HTTP_METHODS = [
 // Helpers
 //////////////////////////////////////////////////////////////////////
 
+// Given an object and a key name, return a clone of the object where any fields matching the name are removed deeply.
+// For example:
+//   deepOmit({ a: 1, b: 2, c: [ { a: 42 } ] }, 'a')
+// Results in this (all the 'a' have been omitted):
+//   { b: 2, c: [ { } ] }
+function deepOmit(obj, keyName) {
+  if (Array.isArray(obj)) {
+    return obj.map(o => deepOmit(o, keyName));
+  } else if (obj instanceof Object) {
+    return _.chain(obj)
+      .pickBy((value, key) => key !== keyName)
+      .mapValues(o => deepOmit(o, keyName))
+      .value();
+  }
+  return obj;
+}
+
 // Merge all the argument objects together. If any of the objects have properties with the
 //   same name where the values are arrays, then combine those arrays in the output.
 // For example:
@@ -28,6 +45,16 @@ function deepMerge(...objs) {
     }
     return undefined;
   });
+}
+
+// Deeply omit any fields named 'description' from the arguments and check if the results are equal.
+// Useful to compare swagger schemas since we generally care whether the 'real stuff' (types, formats, etc.)
+// are equal, and not whether the descriptions (i.e. comments) are equal.
+function isEqualIgnoringDescription(a, b) {
+  return _.isEqual(
+    deepOmit(a, 'description'),
+    deepOmit(b, 'description')
+  );
 }
 
 function propertiesToArray(props) {
@@ -224,11 +251,11 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
       //
       return propertyModels || [];
     });
-    const properties = propertiesToArray(propertiesObj);
+    let properties = propertiesToArray(propertiesObj);
 
-    const { models: superclassModels } = superclassType ? typeInfoAndModelsFromSchema(superclassSchema, undefined, refTarget) : {};
     // This model's inherited properties are all the non-inherited properties of its superclass
     //   plus all the inherited properties of its superclass.
+    const { models: superclassModels } = superclassType ? typeInfoAndModelsFromSchema(superclassSchema, undefined, refTarget) : {};
     let inheritedProperties = [];
     const superSchema = superclassModels
                      && superclassModels[0]
@@ -239,6 +266,14 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
     if (superSchema && superSchema.inheritedProperties) {
       inheritedProperties = inheritedProperties.concat(superSchema.inheritedProperties);
     }
+
+    // If this model has any properties with the same name and type as one of its inherited properties, then
+    //   remove the non-inherited property and use the inherited one.
+    properties = _.filter(properties, prop => {
+      const matchingInheritedProp = _.find(inheritedProperties, iProp => isEqualIgnoringDescription(prop, iProp));
+      return !matchingInheritedProp;
+    });
+
     schema.properties = properties;
     schema.inheritedProperties = [...inheritedProperties];
     schema.initializerProperties = [...properties,  ...inheritedProperties];
@@ -387,7 +422,6 @@ function splitModels(models) {
 //   and put some information about those subclasses on the discriminating model.
 function resolveDiscriminators(templateDataWithoutResolvedDiscriminators) {
   const td = templateDataWithoutResolvedDiscriminators;
-  console.log(td.objectModels)
   _.forEach(td.objectModels, model => {
     const discriminator = model.discriminator;
     if (!discriminator) { return; }
