@@ -307,6 +307,31 @@ function typeInfoAndModelsFromParam(param, methodName, refTarget) {
 //////////////////////////////////////////////////////////////////////
 // Methods
 //////////////////////////////////////////////////////////////////////
+function paramAndModelsFromSpec(paramSpec, name, refTarget) {
+  paramSpec = objectByResolvingRefAndAllOf(paramSpec, refTarget);
+  // Sometimes params have a schema, sometimes they just have the properties
+  //   that a schema would normally have. This normalizes all params to be
+  //   objects that have a schema.
+  if (!paramSpec.schema) {
+    const schema = paramSpec;
+    paramSpec = {
+      name: paramSpec.name,
+        in: paramSpec.in,
+      description: paramSpec.description,
+      required: paramSpec.required,
+      schema,
+    };
+  }
+  const ret = objectByResolvingRefAndAllOf(paramSpec, refTarget);
+  const { typeInfo: responseTypeInfo, models: responseModels } = typeInfoAndModelsFromParam(ret, name, refTarget);
+  ret.type = responseTypeInfo.name || ret.type || 'Void';
+  ret.format = responseTypeInfo.format;
+  if (ret.name) {
+    ret.serverName = ret.name;
+    ret.name = _.camelCase(ret.name);
+  }
+  return { param: ret, models: responseModels };
+}
 
 function methodFromSpec(path, pathParams, basePath, method, methodSpec, refTarget) {
   if (!methodSpec) {
@@ -318,43 +343,16 @@ function methodFromSpec(path, pathParams, basePath, method, methodSpec, refTarge
   const description = methodSpec.description;
 
   let params = _.concat(pathParams || [], methodSpec.parameters || []);
-  params = _.map(params, param => {
-    param = objectByResolvingRefAndAllOf(param, refTarget);
-    // Sometimes params have a schema, sometimes they just have the properties
-    //   that a schema would normally have. This normalizes all params to be
-    //   objects that have a schema.
-    if (!param.schema) {
-      const schema = param;
-      param = {
-        name: param.name,
-        in: param.in,
-        description: param.description,
-        required: param.required,
-        schema,
-      };
-    }
-
-    const { typeInfo: paramTypeInfo, models: paramModels } = typeInfoAndModelsFromParam(param, name, refTarget);
+  params = _.map(params, paramSpec => {
+    const { param, models: paramModels } = paramAndModelsFromSpec(paramSpec, name, refTarget);
     models = models.concat(paramModels);
-    param.type = paramTypeInfo.name || param.type;
-    param.format = paramTypeInfo.format || param.format;
-    if (param.name) {
-      param.serverName = param.name;
-      param.name = _.camelCase(param.name);
-    }
     return param;
   });
 
   const goodResponseKey = _.find(Object.keys(methodSpec.responses), k => k[0] === '2');
-  let response = methodSpec.responses[goodResponseKey];
-
-  // TODO: Many similarities with how we treat `param` above.
-  response = objectByResolvingRefAndAllOf(response, refTarget);
-  const { typeInfo: responseTypeInfo, models: responseModels } = typeInfoAndModelsFromParam(response, name, refTarget);
+  const responseSpec = methodSpec.responses[goodResponseKey];
+  const { param: response, models: responseModels } = paramAndModelsFromSpec(responseSpec, name, refTarget);
   models = models.concat(responseModels);
-  response.type = responseTypeInfo.name || response.type || 'Void';
-  response.format = responseTypeInfo.format;
-  //
 
   return { path: urlJoin('/', basePath, path), name, description, method, params, response, models };
 }
