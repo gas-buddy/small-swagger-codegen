@@ -224,7 +224,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
     }
 
   } else if (schema.type === 'object' && schema.properties) {
-    const propertiesObj = { ...schema.properties };
+    const propertiesObj =  _.cloneDeep(schema.properties);
     const model = { name, schema, specName, superclass: superclassType, discriminator: schema.discriminator };
     const models = _.flatMap(schema.properties, (property, propertyName) => {
       const newDefaultName = classNameFromComponents(name, propertyName);
@@ -255,9 +255,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
     //   plus all the inherited properties of its superclass.
     const { models: superclassModels } = superclassType ? typeInfoAndModelsFromSchema(superclassSchema, undefined, refTarget) : {};
     let inheritedProperties = [];
-    const superSchema = superclassModels
-                     && superclassModels[0]
-                     && superclassModels[0].schema;
+    const superSchema = superclassModels && superclassModels[0] && superclassModels[0].schema;
     if (superSchema && superSchema.properties) {
       inheritedProperties = inheritedProperties.concat(superSchema.properties);
     }
@@ -279,11 +277,8 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
     return { typeInfo: { name }, models: _.concat(model, models, superclassModels) };
 
   } else if (schema.type === 'integer') {
-      if (schema.format === 'int64') {
-          return { typeInfo: { name: 'Int64' }, models: [] };
-      } else {
-          return { typeInfo: { name: 'Int32' }, models: [] };
-      }
+    const typeName = schema.format === 'int64' ? 'Int64' : 'Int32';
+    return { typeInfo: { name: typeName }, models: [] };
 
   } else if (mapPrimitiveType(schema.type)) {
     return { typeInfo: { name: mapPrimitiveType(schema.type) }, models: []};
@@ -316,7 +311,7 @@ function paramAndModelsFromSpec(paramSpec, name, refTarget) {
     const schema = paramSpec;
     paramSpec = {
       name: paramSpec.name,
-        in: paramSpec.in,
+      in: paramSpec.in,
       description: paramSpec.description,
       required: paramSpec.required,
       schema,
@@ -498,4 +493,3 @@ _.forEach(templateDatas, (templateData, apiName) => {
   const renderedPodSpec = podtemplate({ apiName, apiVersion });
   fs.writeFileSync(`../gasbuddy-ios/DevelopmentPods/Generated/${apiName}.podspec`, renderedPodSpec);
 });
-
