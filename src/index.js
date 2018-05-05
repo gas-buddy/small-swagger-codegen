@@ -224,8 +224,6 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
     }
 
   } else if (schema.type === 'object' && schema.properties) {
-    delete schema.description;
-
     const propertiesObj = { ...schema.properties };
     const model = { name, schema, specName, superclass: superclassType, discriminator: schema.discriminator };
     const models = _.flatMap(schema.properties, (property, propertyName) => {
@@ -396,7 +394,7 @@ function moveModelsOffMethods(methods) {
           return models;
         })
         .filter()
-        .uniqWith(_.isEqual)
+        .uniqWith(isEqualIgnoringDescription)
         .value();
   return models;
 }

@@ -32,6 +32,9 @@ public let {{{apiClassName}}} = {{{apiClassName}}}Class()
 
 
 {{#each objectModels}}
+{{~#maybeComment schema.description}}
+{{{schema.description}}}
+{{/maybeComment}}
 open class {{{name}}}: {{#if superclass}}{{{superclass}}}{{else}}SwaggerModel{{/if}} {
 {{#with schema}}
     {{#each properties}}
