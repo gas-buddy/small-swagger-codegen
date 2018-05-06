@@ -47,6 +47,14 @@ function deepMerge(...objs) {
   });
 }
 
+// Given an object and 0 or more keys, return an array concatenating all the named values
+//   on obj that are truthy. For example:
+//   concatenatedValues({ a: [1], b: [2, 3], c: 4}, 'a', 'b', 'x', 'c') => [1, 2, 3, 4]
+function concatenatedValues(obj, ...keys) {
+  if (!obj) { return []; }
+  return _.chain(keys).map(key => obj[key]).flatten().filter().value();
+}
+
 // Deeply omit any fields named 'description' from the arguments and check if the results are equal.
 // Useful to compare swagger schemas since we generally care whether the 'real stuff' (types, formats, etc.)
 // are equal, and not whether the descriptions (i.e. comments) are equal.
@@ -182,6 +190,48 @@ function objectByResolvingRefAndAllOf(obj, refTarget, opts) {
 //////////////////////////////////////////////////////////////////////
 // Models
 //////////////////////////////////////////////////////////////////////
+function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget) {
+  const superclassRef = unresolvedSuperclassSchema && unresolvedSuperclassSchema.$ref;
+  const superclassType = typeFromRef(superclassRef);
+
+  const model = { name, schema, specName, superclass: superclassType, discriminator: schema.discriminator };
+
+  const mappedProperties = _.mapValues(schema.properties, (property, propertyName) => {
+    const newDefaultName = classNameFromComponents(name, propertyName);
+    return typeInfoAndModelsFromSchema(property, newDefaultName, refTarget);
+  });
+
+  const models = _.flatMap(mappedProperties, typeInfoAndModels => typeInfoAndModels.models);
+  const properties = _.map(mappedProperties, (typeInfoAndModels, propertyName) => {
+    const typeInfo = typeInfoAndModels.typeInfo;
+    return {
+      name: nameFromComponents(propertyName),
+      description: schema.properties[propertyName].description,
+      type: typeInfo.name,
+      format: typeInfo.format,
+      isRequired: !!_.find(schema.required, r => r === propertyName),
+      specName: propertyName
+    };
+  });
+
+  // This model's inherited properties are all the non-inherited properties of its superclass
+  //   plus all the inherited properties of its superclass.
+  const { models: superclassModels } = superclassType ? typeInfoAndModelsFromSchema(unresolvedSuperclassSchema, undefined, refTarget) : {};
+  const superSchema = superclassModels && superclassModels[0] && superclassModels[0].schema;
+  const inheritedProperties = concatenatedValues(superSchema, 'properties', 'inheritedProperties');
+  // If this model has any properties with the same name and type as one of its inherited properties, then
+  //   remove the non-inherited property and use the inherited one.
+  const nonInheritedProperties = _.filter(properties, prop => {
+    const matchingInheritedProp = _.find(inheritedProperties, iProp => isEqualIgnoringDescription(prop, iProp));
+    return !matchingInheritedProp;
+  });
+
+  schema.properties = nonInheritedProperties;
+  schema.inheritedProperties = [...inheritedProperties];
+  schema.initializerProperties = [...nonInheritedProperties, ...inheritedProperties];
+
+  return { typeInfo: { name }, models: _.concat(model, models, superclassModels) };
+}
 
 function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
   let name = defaultName;
@@ -192,9 +242,8 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
   }
 
   const refResolvedSchema = objectByResolvingRef(unresolvedSchema, refTarget);
-  const superclassSchema = refResolvedSchema.allOf && _.find(refResolvedSchema.allOf, item => item.$ref);
-  const superclassRef = superclassSchema && superclassSchema.$ref;
-  const superclassType = typeFromRef(superclassRef);
+  const unresolvedSuperclassSchema = refResolvedSchema.allOf && _.find(refResolvedSchema.allOf, item => item.$ref);
+  const superclassRef = unresolvedSuperclassSchema && unresolvedSuperclassSchema.$ref;
   const schema = objectByResolvingRefAndAllOf(unresolvedSchema, refTarget, { ignoreRef: superclassRef });
 
   if (schema.enum) {
@@ -224,57 +273,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
     }
 
   } else if (schema.type === 'object' && schema.properties) {
-    const propertiesObj =  _.cloneDeep(schema.properties);
-    const model = { name, schema, specName, superclass: superclassType, discriminator: schema.discriminator };
-    const models = _.flatMap(schema.properties, (property, propertyName) => {
-      const newDefaultName = classNameFromComponents(name, propertyName);
-      const { typeInfo: propertyTypeInfo, models: propertyModels } = typeInfoAndModelsFromSchema(
-        property,
-        newDefaultName,
-        refTarget
-      );
-      const isRequired = !!_.find(schema.required, r => r === propertyName);
-      let clientName = nameFromComponents(propertyName);
-
-      // TODO: Sneaky mutation
-      const desc = propertiesObj[propertyName].description;
-      delete propertiesObj[propertyName];
-      propertiesObj[clientName] = {
-        description: desc,
-        type: propertyTypeInfo.name,
-        format: propertyTypeInfo.format,
-        isRequired,
-        specName: propertyName
-      };
-      //
-      return propertyModels || [];
-    });
-    let properties = propertiesToArray(propertiesObj);
-
-    // This model's inherited properties are all the non-inherited properties of its superclass
-    //   plus all the inherited properties of its superclass.
-    const { models: superclassModels } = superclassType ? typeInfoAndModelsFromSchema(superclassSchema, undefined, refTarget) : {};
-    let inheritedProperties = [];
-    const superSchema = superclassModels && superclassModels[0] && superclassModels[0].schema;
-    if (superSchema && superSchema.properties) {
-      inheritedProperties = inheritedProperties.concat(superSchema.properties);
-    }
-    if (superSchema && superSchema.inheritedProperties) {
-      inheritedProperties = inheritedProperties.concat(superSchema.inheritedProperties);
-    }
-
-    // If this model has any properties with the same name and type as one of its inherited properties, then
-    //   remove the non-inherited property and use the inherited one.
-    properties = _.filter(properties, prop => {
-      const matchingInheritedProp = _.find(inheritedProperties, iProp => isEqualIgnoringDescription(prop, iProp));
-      return !matchingInheritedProp;
-    });
-
-    schema.properties = properties;
-    schema.inheritedProperties = [...inheritedProperties];
-    schema.initializerProperties = [...properties,  ...inheritedProperties];
-
-    return { typeInfo: { name }, models: _.concat(model, models, superclassModels) };
+    return typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget);
 
   } else if (schema.type === 'integer') {
     const typeName = schema.format === 'int64' ? 'Int64' : 'Int32';
