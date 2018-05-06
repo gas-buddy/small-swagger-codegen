@@ -157,8 +157,6 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
   const superclassRef = _.get(unresolvedSuperclassSchema, '$ref');
   const superclass = typeFromRef(superclassRef);
 
-  const model = { name, schema, specName, superclass, discriminator: schema.discriminator };
-
   const propertyTypeInfoAndModels = _.mapValues(schema.properties, (property, propertyName) => (
     typeInfoAndModelsFromSchema(property, classNameFromComponents(name, propertyName), refTarget)
   ));
@@ -193,11 +191,15 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
     return !matching;
   });
 
-  schema.properties = nonInheritedProperties;
-  schema.inheritedProperties = [...inheritedProperties];
-  schema.initializerProperties = [...nonInheritedProperties, ...inheritedProperties];
+  const myModel = { name, specName, superclass, discriminator: schema.discriminator };
+  myModel.schema = {
+    ...schema,
+    properties: nonInheritedProperties,
+    inheritedProperties: [...inheritedProperties],
+    initializerProperties: [...nonInheritedProperties, ...inheritedProperties],
+  };
 
-  return { typeInfo: { name }, models: _.concat(model, propertyModels, superclassModels) };
+  return { typeInfo: { name }, models: _.concat(myModel, propertyModels, superclassModels) };
 }
 
 function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
