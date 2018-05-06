@@ -69,11 +69,19 @@ function verifyModels(models) {
   ]);
 }
 
-export function verify(data) {
+function verifyTemplateData(data) {
   let problems = []
       .concat(verifyMethods(data.methods))
       .concat(verifyModels(data.objectModels))
       .concat(verifyModels(data.enumModels))
       .join('');
   return _.isEmpty(problems) ? undefined : problems;
+}
+
+export function verify(templateDatas) {
+  const problems = _.map(templateDatas, (templateData, apiName) => {
+    const problems = verifyTemplateData(templateData);
+    return _.isEmpty(problems) ? '' : `Problems with ${apiName}: ${problems}`;
+  }).join('');
+  assert(_.isEmpty(problems), problems);
 }
