@@ -61,10 +61,7 @@ function verifyModels(models) {
     model => !model.name,
     problem => `\nFound models without name: ${problem}`
   ], [
-    model => !model.schema,
-    problem => `\nFound models without schema: ${problem}`
-  ], [
-    model => model.schema && model.schema.type !== 'object' && model.schema.type !== 'enum',
+    model => model.type !== 'object' && model.type !== 'enum',
     problem => `\nFound non-object-or-enum model: ${problem}`
   ]);
 }

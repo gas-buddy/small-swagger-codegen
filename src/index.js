@@ -175,13 +175,13 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
   const { models: superclassModels } = superclass && typeInfoAndModelsFromSchema(
     unresolvedSuperclassSchema, undefined, refTarget
   );
-  const superSchema = _.get(superclassModels, '[0].schema');
+  const superModel = _.get(superclassModels, '[0]');
   // This model's inherited properties are all the non-inherited properties of its superclass
   //   plus all the inherited properties of its superclass.
   const inheritedProperties = _.get(
-    superSchema, 'properties', []
+    superModel, 'properties', []
   ).concat(_.get(
-    superSchema, 'inheritedProperties', []
+    superModel, 'inheritedProperties', []
   ));
 
   // If this model has any properties with the same name and type as one of its inherited
@@ -191,9 +191,8 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
     return !matching;
   });
 
-  const myModel = { name, specName, superclass, discriminator: schema.discriminator };
-  myModel.schema = {
-    ...schema,
+  const myModel = {
+    name, specName, superclass, ..._.pick(schema, 'discriminator', 'description', 'type'),
     properties: nonInheritedProperties,
     inheritedProperties: [...inheritedProperties],
     initializerProperties: [...nonInheritedProperties, ...inheritedProperties],
@@ -215,15 +214,14 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
   );
 
   if (schema.enum) {
-    const enumSchema = {
-      type: 'enum',
+    const model = {
+      name, type: 'enum',
       enumType: mapPrimitiveType(schema.type),
       values: _.map(schema.enum, e => ({
         name: nameFromComponents(e),
         value: mapPrimitiveValue(e, schema.type)
       }))
     };
-    const model = { name, schema: enumSchema };
     return { typeInfo: { name }, models: [model] };
 
   } else if (schema.type === 'array') {
@@ -352,7 +350,7 @@ function moveModelsOffMethods(methodsWithModels) {
 
 function splitModels(combinedModels) {
   return _.reduce(combinedModels, (acc, model) => {
-    const type = _.get(model, 'schema.type');
+    const type = model.type;
     assert(type === 'object' || type === 'enum', `Found non-object-or-enum model: ${describe(model)}`);
     acc[type === 'object' ? 'objectModels' : 'enumModels'].push(model);
     return acc;
