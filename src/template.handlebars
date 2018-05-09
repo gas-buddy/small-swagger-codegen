@@ -100,6 +100,7 @@ public enum {{{name}}}: {{{enumType}}}, SwaggerEnum {
     {{#each values}}
     case {{{name}}} = {{{value}}}
     {{/each}}
+    case _unknown = "_unknown"
     public func serialize(format: String? = nil) -> Any? {
         return rawValue;
     }
@@ -109,7 +110,7 @@ public enum {{{name}}}: {{{enumType}}}, SwaggerEnum {
     public static func deserialize(json: Any?, format: String? = nil) throws -> {{{name}}} {
         guard let asType = json as? {{{enumType}}},
             let asEnum = {{{name}}}(rawValue: asType) else {
-            throw deserializationError("Trying to deserialize a {{{name}}}, expected {{{enumType}}} but got \(String(describing: json))")
+            return ._unknown;
         }
         return asEnum
     }
