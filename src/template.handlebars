@@ -102,6 +102,9 @@ public enum {{{name}}}: {{{enumType}}}, SwaggerEnum {
     {{/each}}
     case _unknown = "_unknown"
     public func serialize(format: String? = nil) -> Any? {
+        if SwaggerApi.debugMode && self == ._unknown {
+            fatalError("Attempting to serialize {{{name}}}._unknown! (This error will not happen in release mode.)")
+        }
         return rawValue;
     }
     public func serializeToString(format: String? = nil) -> String? {
@@ -110,6 +113,9 @@ public enum {{{name}}}: {{{enumType}}}, SwaggerEnum {
     public static func deserialize(json: Any?, format: String? = nil) throws -> {{{name}}} {
         guard let asType = json as? {{{enumType}}},
             let asEnum = {{{name}}}(rawValue: asType) else {
+            if SwaggerApi.debugMode {
+                fatalError("Attempting to deserialize {{{name}}}._unknown! (This error will not happen in release mode.)")
+            }
             return ._unknown;
         }
         return asEnum
