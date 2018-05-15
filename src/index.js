@@ -267,9 +267,6 @@ function typeInfoAndModelsFromParam(param, methodName, refTarget) {
 // Methods
 //////////////////////////////////////////////////////////////////////
 function paramAndModelsFromSpec(paramSpec, name, refTarget) {
-  if (!paramSpec) {
-    return { param: { type: 'Void' }, models: [] };
-  }
   paramSpec = objectByResolvingRefAndAllOf(paramSpec, refTarget);
   // Sometimes params have a schema, sometimes they just have the properties
   //   that a schema would normally have. This normalizes all params to be
@@ -310,7 +307,7 @@ function methodFromSpec(path, pathParams, basePath, method, methodSpec, refTarge
   const paramModels = _.flatten(_.map(mappedParams, paramAndModels => paramAndModels.models));
   const params = _.map(mappedParams, paramAndModels => paramAndModels.param);
 
-  const goodResponseKey = _.find(Object.keys(methodSpec.responses), k => k[0] === '2');
+  const goodResponseKey = _.find(Object.keys(methodSpec.responses), k => k[0] === '2') || 'default';
   const responseSpec = methodSpec.responses[goodResponseKey];
   const { param: response, models: responseModels } = paramAndModelsFromSpec(responseSpec, name, refTarget);
 
