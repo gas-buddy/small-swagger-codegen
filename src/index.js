@@ -267,6 +267,9 @@ function typeInfoAndModelsFromParam(param, methodName, refTarget) {
 // Methods
 //////////////////////////////////////////////////////////////////////
 function paramAndModelsFromSpec(paramSpec, name, refTarget) {
+  if (!paramSpec) {
+    return { param: { type: 'Void' }, models: [] };
+  }
   paramSpec = objectByResolvingRefAndAllOf(paramSpec, refTarget);
   // Sometimes params have a schema, sometimes they just have the properties
   //   that a schema would normally have. This normalizes all params to be
