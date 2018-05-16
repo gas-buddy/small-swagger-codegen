@@ -153,7 +153,7 @@ function objectByResolvingRefAndAllOf(obj, refTarget, opts) {
 //////////////////////////////////////////////////////////////////////
 // Models
 //////////////////////////////////////////////////////////////////////
-function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget) {
+function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget, notNested) {
   const superclassRef = _.get(unresolvedSuperclassSchema, '$ref');
   const superclass = typeFromRef(superclassRef);
 
@@ -191,14 +191,24 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
     return !matching;
   });
 
+  const nestedModels = _.filter(propertyModels, model => {
+    return model && model.isNested;
+  });
+
+  const nonNestedPropertyModels = _.filter(propertyModels, model => {
+    return model && !model.isNested;
+  });
+
   const myModel = {
     name, specName, superclass, ..._.pick(schema, 'discriminator', 'description', 'type'),
     properties: nonInheritedProperties,
     inheritedProperties: [...inheritedProperties],
     initializerProperties: [...nonInheritedProperties, ...inheritedProperties],
+    isNested: !notNested,
+    nestedModels: nestedModels
   };
 
-  return { typeInfo: { name }, models: _.concat(myModel, propertyModels, superclassModels) };
+  return { typeInfo: { name }, models: _.concat(myModel, nonNestedPropertyModels, superclassModels) };
 }
 
 function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
@@ -240,7 +250,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
 
   } else if (schema.type === 'object' && schema.properties) {
     return typeInfoAndModelsFromObjectSchema(
-      schema, name, specName, unresolvedSuperclassSchema, refTarget
+      schema, name, specName, unresolvedSuperclassSchema, refTarget, ref != undefined
     );
 
   } else if (schema.type === 'integer') {
@@ -404,6 +414,8 @@ handlebars.registerHelper('maybeComment', function(arg, options) {
 });
 
 const template = handlebars.compile(fs.readFileSync('src/template.handlebars', 'utf8'));
+const modelClassTemplate = handlebars.compile(fs.readFileSync('src/modelClassTemplate.handlebars', 'utf8'));
+handlebars.registerPartial('modelClassTemplate', modelClassTemplate)
 const podtemplate = handlebars.compile(fs.readFileSync('src/podtemplate.handlebars', 'utf8'));
 _.forEach(templateDatas, (templateData, apiName) => {
   const specConfig = config.specs[apiName];
