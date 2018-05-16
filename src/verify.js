@@ -51,11 +51,13 @@ function verifyMethods(methods) {
 }
 
 function verifyModels(models) {
-  const names = _.map(models, m => m.name);
-  const dupes = _.filter(names, function (value, index, iteratee) {
-    return _.includes(iteratee, value, index + 1);
-  });
-  assert(dupes.length < 1, `Duplicate names! ${dupes}`);
+  const dupes = _.filter(_.map(models, (model, index) => {
+    // Find any other models with the same name.
+    const duplicates =  _.filter(models, otherModel => otherModel !== model && otherModel.name === model.name);
+    // If we found any duplicates, add this model to the list.
+    return duplicates.length > 0 ? model : undefined;
+  }));
+  assert(dupes.length < 1, `Duplicate names!\n${describe(dupes)}`);
 
   return findAllProblems(models, [
     model => !model.name,
