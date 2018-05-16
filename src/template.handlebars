@@ -60,14 +60,25 @@ open class {{{name}}}: {{#if superclass}}{{{superclass}}}{{else}}SwaggerModel{{/
     {{/if}}
     }
 
-    {{#if superclass}}override {{/if}}public func serialize(format: String? = nil) -> Any? {
+    {{#if superclass}}override public func serialize(format: String? = nil) -> Any? {
+        var retVal: [String: Any?] = (super.serialize(format: format) as? [String: Any?]) ?? [:]
+        let dictionary: [String: Any?] = [
+        {{#each properties}}
+            "{{{specName}}}": {{{name}}}{{#unless isRequired}}?{{/unless}}.serialize(format: {{#if format}}"{{format}}"{{else}}nil{{/if}}),
+        {{/each}}
+        ]
+        for (key, value) in dictionary {
+            retVal[key] = value
+        }
+        return retVal.filter { (_: String, val: Any?) -> Bool in return val != nil }
+    }{{else}}public func serialize(format: String? = nil) -> Any? {
         let retVal: [String: Any?] = [
         {{#each properties}}
             "{{{specName}}}": {{{name}}}{{#unless isRequired}}?{{/unless}}.serialize(format: {{#if format}}"{{format}}"{{else}}nil{{/if}}),
         {{/each}}
         ]
         return retVal.filter { (_: String, val: Any?) -> Bool in return val != nil }
-    }
+    }{{/if}}
 
     {{#if superclass}}override {{/if}}public class func deserialize(json: Any?, format: String? = nil) throws -> Self {
         guard let dictionary = json as? [String: Any] else {
