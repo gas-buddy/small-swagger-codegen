@@ -170,7 +170,8 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
   //   flag to mark properties that are inline objects.
   const propertyTypeInfoAndModels = _.mapValues(schema.properties, (property, propertyName) => {
     const isNested = property.type === 'object' && property.properties;
-    const typeInfoAndModels = typeInfoAndModelsFromSchema(property, classNameFromComponents(isNested ? '' : name, propertyName), refTarget);
+    const defaultTypeName = classNameFromComponents(isNested ? '' : name, propertyName);
+    const typeInfoAndModels = typeInfoAndModelsFromSchema(property, defaultTypeName, refTarget);
     typeInfoAndModels.isNested = isNested;
     return typeInfoAndModels;
   });
