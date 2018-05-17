@@ -2,10 +2,6 @@
 {{{description}}}
 {{/maybeComment}}
 open class {{{name}}}: {{#if superclass}}{{{superclass}}}{{else}}SwaggerModel{{/if}} {
-    {{#each nestedModels}}
-    {{> modelClassTemplate}}
-    
-    {{/each}}
     {{#each properties}}
     {{~#maybeComment description}}
     {{{description}}}
@@ -65,4 +61,8 @@ open class {{{name}}}: {{#if superclass}}{{{superclass}}}{{else}}SwaggerModel{{/
         {{/each}}
         )
     }
+    {{#each nestedModels}}
+
+    {{> modelClassTemplate}}
+    {{/each}}
 }
