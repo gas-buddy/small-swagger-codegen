@@ -153,20 +153,39 @@ function objectByResolvingRefAndAllOf(obj, refTarget, opts) {
 //////////////////////////////////////////////////////////////////////
 // Models
 //////////////////////////////////////////////////////////////////////
-function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget, notNested) {
+function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget) {
   const superclassRef = _.get(unresolvedSuperclassSchema, '$ref');
   const superclass = typeFromRef(superclassRef);
 
-  const propertyTypeInfoAndModels = _.mapValues(schema.properties, (property, propertyName) => (
-    typeInfoAndModelsFromSchema(property, classNameFromComponents(name, propertyName), refTarget)
+  // When there is an object with a property that's also an object, the spec can do one of two things:
+  //   use a '$ref', or declare the object 'inline', i.e. without using a $ref.
+  // If this object has any properties definied that are inline objects, we want to nest the class
+  //   generated for that inline object inside the class generated for this object.
+
+  // Get the type info and models for each of this object's properties, and then add on as 'isNested'
+  //   flag to mark properties that are inline objects.
+  const propertyTypeInfoAndModels = _.mapValues(schema.properties, (property, propertyName) => {
+    const isNested = property.type === 'object' && property.properties;
+    const typeInfoAndModels = typeInfoAndModelsFromSchema(property, classNameFromComponents(isNested ? '' : name, propertyName), refTarget);
+    typeInfoAndModels.isNested = isNested;
+    return typeInfoAndModels;
+  });
+
+  // Get all the nested models (models representing classes of inline objects) from this object's properties.
+  const nestedModels = _.flatMap(propertyTypeInfoAndModels, ({ models, isNested }) => (
+    // If this info was from an inline object, then the first model of models will represent the inline object's class.
+    isNested ? _.head(models) : []
   ));
 
-  const propertyModels = _.flatMap(propertyTypeInfoAndModels, ({ models }) => models);
+  // All the other models from this object's properties.
+  const propertyModels = _.flatMap(propertyTypeInfoAndModels, ({ models, isNested }) => (
+    isNested ? _.tail(models) : models
+  ));
 
-  const properties = _.map(propertyTypeInfoAndModels, ({ typeInfo }, propertyName) => ({
+  const properties = _.map(propertyTypeInfoAndModels, ({ typeInfo, isNested }, propertyName) => ({
     name: nameFromComponents(propertyName),
     description: schema.properties[propertyName].description,
-    type: typeInfo.name,
+    type: isNested ? `${name}.${typeInfo.name}` : typeInfo.name,
     format: typeInfo.format,
     isRequired: !!_.find(schema.required, r => r === propertyName),
     specName: propertyName
@@ -191,24 +210,15 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
     return !matching;
   });
 
-  const nestedModels = _.filter(propertyModels, model => {
-    return model && model.isNested;
-  });
-
-  const nonNestedPropertyModels = _.filter(propertyModels, model => {
-    return model && !model.isNested;
-  });
-
   const myModel = {
-    name, specName, superclass, ..._.pick(schema, 'discriminator', 'description', 'type'),
+    name, specName, superclass, nestedModels,
+    ..._.pick(schema, 'discriminator', 'description', 'type'),
     properties: nonInheritedProperties,
     inheritedProperties: [...inheritedProperties],
     initializerProperties: [...nonInheritedProperties, ...inheritedProperties],
-    isNested: !notNested,
-    nestedModels: nestedModels
   };
 
-  return { typeInfo: { name }, models: _.concat(myModel, nonNestedPropertyModels, superclassModels) };
+  return { typeInfo: { name }, models: _.concat(myModel, propertyModels, superclassModels) };
 }
 
 function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
@@ -250,7 +260,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
 
   } else if (schema.type === 'object' && schema.properties) {
     return typeInfoAndModelsFromObjectSchema(
-      schema, name, specName, unresolvedSuperclassSchema, refTarget, ref != undefined
+      schema, name, specName, unresolvedSuperclassSchema, refTarget
     );
 
   } else if (schema.type === 'integer') {
@@ -415,7 +425,7 @@ handlebars.registerHelper('maybeComment', function(arg, options) {
 
 const template = handlebars.compile(fs.readFileSync('src/template.handlebars', 'utf8'));
 const modelClassTemplate = handlebars.compile(fs.readFileSync('src/modelClassTemplate.handlebars', 'utf8'));
-handlebars.registerPartial('modelClassTemplate', modelClassTemplate)
+handlebars.registerPartial('modelClassTemplate', modelClassTemplate);
 const podtemplate = handlebars.compile(fs.readFileSync('src/podtemplate.handlebars', 'utf8'));
 _.forEach(templateDatas, (templateData, apiName) => {
   const specConfig = config.specs[apiName];
