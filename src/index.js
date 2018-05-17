@@ -75,7 +75,11 @@ function nameFromComponents(...components) {
 }
 
 function classNameFromComponents(...components) {
-  return _.upperFirst(nameFromComponents(...components));
+  const name = _.upperFirst(nameFromComponents(...components));
+  if (name === 'Type') {
+    return 'TypeObj';
+  }
+  return name;
 }
 
 function mapPrimitiveType(type) {
