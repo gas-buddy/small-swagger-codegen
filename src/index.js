@@ -74,10 +74,23 @@ function nameFromComponents(...components) {
   return name;
 }
 
-function classNameFromComponents(...components) {
-  const name = _.upperFirst(nameFromComponents(...components));
-  if (name === 'Type') {
-    return 'TypeObj';
+// Create a class name by combining the given component strings.
+// One of the arguments my be an options object. Currently the only option is 'skip'.
+// If 'skip' is given, skip the first N components when creating the name.
+// For example:
+//   classNameFromComponents('aa', 'bb', 'cc', 'dd', { skip: 2 })
+// The result would be 'CcDd'.
+function classNameFromComponents(...args) {
+  // The options are the first argument that isn't a string.
+  // The components are all arguments that are strings.
+  const [ components, [ options ] ] = _.partition(args, _.isString);
+  const { skip } = options || { skip: 0 };
+  const skippedComponents = _.drop(components, skip);
+  const name = _.upperFirst(nameFromComponents(...skippedComponents));
+  // If we're about to name this class a reserved word becuase we skipped some components,
+  //   then fallback to using all the components.
+  if (name === 'Type' && skip) {
+    return classNameFromComponents(...components);
   }
   return name;
 }
@@ -170,7 +183,7 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
   //   flag to mark properties that are inline objects.
   const propertyTypeInfoAndModels = _.mapValues(schema.properties, (property, propertyName) => {
     const isNested = property.type === 'object' && property.properties;
-    const defaultTypeName = classNameFromComponents(isNested ? '' : name, propertyName);
+    const defaultTypeName = classNameFromComponents(name, propertyName, { skip: isNested ? 1 : 0 });
     const typeInfoAndModels = typeInfoAndModelsFromSchema(property, defaultTypeName, refTarget);
     typeInfoAndModels.isNested = isNested;
     return typeInfoAndModels;
