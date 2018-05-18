@@ -3,16 +3,18 @@ import _ from 'lodash';
 import assert from 'assert';
 import handlebars from 'handlebars';
 import urlJoin from 'url-join';
+// eslint-disable-next-line no-unused-vars
 import { describe, log, verify } from './verify';
 
-const config = require('../config.json');
+import config from '../config.json';
+
 const HTTP_METHODS = [
-  'get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'
+  'get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace',
 ];
 
-//////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////
 // Helpers
-//////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////
 
 // Given an object and a key name, return a clone of the object where any fields matching the name
 //   are removed deeply.
@@ -53,22 +55,13 @@ function deepMerge(...objs) {
 function isEqualIgnoringDescription(a, b) {
   return _.isEqual(
     deepOmit(a, 'description'),
-    deepOmit(b, 'description')
+    deepOmit(b, 'description'),
   );
-}
-
-function lastRefComponent(ref) {
-  if (!ref) { return ref; }
-  return _.split(ref, '/').pop();
-}
-
-function typeFromRef(ref) {
-  return classNameFromComponents(lastRefComponent(ref));
 }
 
 function nameFromComponents(...components) {
   const name = _.camelCase(components.join('/'));
-  if (!isNaN(name[0])) {
+  if (!Number.isNaN(Number(name[0]))) {
     return `_${name}`;
   }
   return name;
@@ -83,7 +76,7 @@ function nameFromComponents(...components) {
 function classNameFromComponents(...args) {
   // The options are the first argument that isn't a string.
   // The components are all arguments that are strings.
-  const [ components, [ options ] ] = _.partition(args, _.isString);
+  const [components, [options]] = _.partition(args, _.isString);
   const { skip } = options || { skip: 0 };
   const skippedComponents = _.drop(components, skip);
   const name = _.upperFirst(nameFromComponents(...skippedComponents));
@@ -93,6 +86,15 @@ function classNameFromComponents(...args) {
     return classNameFromComponents(...components);
   }
   return name;
+}
+
+function lastRefComponent(ref) {
+  if (!ref) { return ref; }
+  return _.split(ref, '/').pop();
+}
+
+function typeFromRef(ref) {
+  return classNameFromComponents(lastRefComponent(ref));
 }
 
 function mapPrimitiveType(type) {
@@ -115,9 +117,9 @@ function mapPrimitiveValue(value, type) {
 }
 
 
-//////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////
 // Resolving $ref and allOf
-//////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////
 
 // Given a $ref string and an object, return the value that the reference points to
 //   in refTarget.
@@ -128,7 +130,9 @@ function resolveRef(ref, refTarget) {
 }
 
 function objectByResolving(args) {
-  const { obj, refTarget, shouldResolveRef, shouldResolveAllOf, ignoreRef } = args;
+  const {
+    obj, refTarget, shouldResolveRef, shouldResolveAllOf, ignoreRef,
+  } = args;
   const { $ref: ref, allOf } = obj;
   const needsRefResolution = shouldResolveRef && ref;
   const needsAllOfResolution = shouldResolveAllOf && allOf;
@@ -156,20 +160,20 @@ function objectByResolving(args) {
 
 function objectByResolvingRef(obj, refTarget, opts) {
   return objectByResolving({
-    obj, refTarget, ...opts, shouldResolveRef: true
+    obj, refTarget, ...opts, shouldResolveRef: true,
   });
 }
 
 function objectByResolvingRefAndAllOf(obj, refTarget, opts) {
   return objectByResolving({
-    obj, refTarget, ...opts, shouldResolveRef: true, shouldResolveAllOf: true
+    obj, refTarget, ...opts, shouldResolveRef: true, shouldResolveAllOf: true,
   });
 }
 
 
-//////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////
 // Models
-//////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////
 function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget) {
   const superclassRef = _.get(unresolvedSuperclassSchema, '$ref');
   const superclass = typeFromRef(superclassRef);
@@ -206,30 +210,28 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
     type: isNested ? `${name}.${typeInfo.name}` : typeInfo.name,
     format: typeInfo.format,
     isRequired: !!_.find(schema.required, r => r === propertyName),
-    specName: propertyName
+    specName: propertyName,
   }));
 
-  const { models: superclassModels } = superclass && typeInfoAndModelsFromSchema(
-    unresolvedSuperclassSchema, undefined, refTarget
-  );
+  const { models: superclassModels } =
+    superclass && typeInfoAndModelsFromSchema(unresolvedSuperclassSchema, undefined, refTarget);
   const superModel = _.get(superclassModels, '[0]');
   // This model's inherited properties are all the non-inherited properties of its superclass
   //   plus all the inherited properties of its superclass.
-  const inheritedProperties = _.get(
-    superModel, 'properties', []
-  ).concat(_.get(
-    superModel, 'inheritedProperties', []
-  ));
+  const inheritedProperties = _.get(superModel, 'properties', []).concat(_.get(superModel, 'inheritedProperties', []));
 
   // If this model has any properties with the same name and type as one of its inherited
   //   properties, then remove the non-inherited property and use the inherited one.
-  const nonInheritedProperties = _.filter(properties, prop => {
+  const nonInheritedProperties = _.filter(properties, (prop) => {
     const matching = _.find(inheritedProperties, iProp => isEqualIgnoringDescription(prop, iProp));
     return !matching;
   });
 
   const myModel = {
-    name, specName, superclass, nestedModels,
+    name,
+    specName,
+    superclass,
+    nestedModels,
     ..._.pick(schema, 'discriminator', 'description', 'type'),
     properties: nonInheritedProperties,
     inheritedProperties: [...inheritedProperties],
@@ -247,52 +249,40 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
   const refResolvedSchema = objectByResolvingRef(unresolvedSchema, refTarget);
   const unresolvedSuperclassSchema = _.find(refResolvedSchema.allOf, item => item.$ref);
   const superclassRef = _.get(unresolvedSuperclassSchema, '$ref');
-  const schema = objectByResolvingRefAndAllOf(
-    unresolvedSchema, refTarget, { ignoreRef: superclassRef }
-  );
+  const schema = objectByResolvingRefAndAllOf(unresolvedSchema, refTarget, { ignoreRef: superclassRef });
 
   if (schema.enum) {
     const model = {
-      name, type: 'enum',
+      name,
+      type: 'enum',
       enumType: mapPrimitiveType(schema.type),
       values: _.map(schema.enum, e => ({
         name: nameFromComponents(e),
-        value: mapPrimitiveValue(e, schema.type)
-      }))
+        value: mapPrimitiveValue(e, schema.type),
+      })),
     };
     return { typeInfo: { name }, models: [model] };
-
   } else if (schema.type === 'array') {
-    const { typeInfo: itemTypeInfo, models: itemModels } = typeInfoAndModelsFromSchema(
-      schema.items, name, refTarget
-    );
+    const { typeInfo: itemTypeInfo, models: itemModels } = typeInfoAndModelsFromSchema(schema.items, name, refTarget);
     const typeName = `Array<${itemTypeInfo.name}>`;
     return { typeInfo: { name: typeName, format: itemTypeInfo.format }, models: itemModels };
-
   } else if (schema.type === 'string') {
-    if (schema.format === 'date' || schema.format ==='date-time') {
+    if (schema.format === 'date' || schema.format === 'date-time') {
       return { typeInfo: { name: 'Date', format: schema.format }, models: [] };
-    } else {
-      return { typeInfo: { name: 'String' }, models: [] };
     }
-
+    return { typeInfo: { name: 'String' }, models: [] };
   } else if (schema.type === 'object' && schema.properties) {
-    return typeInfoAndModelsFromObjectSchema(
-      schema, name, specName, unresolvedSuperclassSchema, refTarget
-    );
-
+    return typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget);
   } else if (schema.type === 'integer') {
     const typeName = schema.format === 'int64' ? 'Int64' : 'Int32';
     return { typeInfo: { name: typeName }, models: [] };
-
   } else if (mapPrimitiveType(schema.type)) {
-    return { typeInfo: { name: mapPrimitiveType(schema.type) }, models: []};
-
+    return { typeInfo: { name: mapPrimitiveType(schema.type) }, models: [] };
   } else if (!schema.type) {
-    return { typeInfo: { name: 'Void' }, models: []};
+    return { typeInfo: { name: 'Void' }, models: [] };
   }
 
-  assert(false, `I don't know how to process a schema of type ${schema.type} 🤔\n  ${describe(schema)}`);
+  return assert(false, `I don't know how to process a schema of type ${schema.type} 🤔\n  ${describe(schema)}`);
 }
 
 function typeInfoAndModelsFromParam(param, methodName, refTarget) {
@@ -301,11 +291,11 @@ function typeInfoAndModelsFromParam(param, methodName, refTarget) {
 }
 
 
-//////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////
 // Methods
-//////////////////////////////////////////////////////////////////////
-function paramAndModelsFromSpec(paramSpec, name, refTarget) {
-  paramSpec = objectByResolvingRefAndAllOf(paramSpec, refTarget);
+// ////////////////////////////////////////////////////////////////////
+function paramAndModelsFromSpec(unresolvedParamSpec, name, refTarget) {
+  let paramSpec = objectByResolvingRefAndAllOf(unresolvedParamSpec, refTarget);
   // Sometimes params have a schema, sometimes they just have the properties
   //   that a schema would normally have. This normalizes all params to be
   //   objects that have a schema.
@@ -320,9 +310,7 @@ function paramAndModelsFromSpec(paramSpec, name, refTarget) {
     };
   }
   const ret = objectByResolvingRefAndAllOf(paramSpec, refTarget);
-  const { typeInfo: responseTypeInfo, models: responseModels } = typeInfoAndModelsFromParam(
-    ret, name, refTarget
-  );
+  const { typeInfo: responseTypeInfo, models: responseModels } = typeInfoAndModelsFromParam(ret, name, refTarget);
   ret.type = responseTypeInfo.name || ret.type || 'Void';
   ret.format = responseTypeInfo.format;
   if (ret.name) {
@@ -338,7 +326,7 @@ function methodFromSpec(path, pathParams, basePath, method, methodSpec, refTarge
   }
 
   const name = _.camelCase(methodSpec.operationId || urlJoin(path, method));
-  const description = methodSpec.description;
+  const { description } = methodSpec;
 
   const paramSpecs = _.concat(pathParams || [], methodSpec.parameters || []);
   const mappedParams = _.map(paramSpecs, paramSpec => paramAndModelsFromSpec(paramSpec, name, refTarget));
@@ -350,7 +338,9 @@ function methodFromSpec(path, pathParams, basePath, method, methodSpec, refTarge
   const { param: response, models: responseModels } = paramAndModelsFromSpec(responseSpec, name, refTarget);
 
   const models = paramModels.concat(responseModels);
-  return { path: urlJoin('/', basePath, path), name, description, method, params, response, models };
+  return {
+    path: urlJoin('/', basePath, path), name, description, method, params, response, models,
+  };
 }
 
 function methodsFromPath(path, pathSpec, basePath, refTarget) {
@@ -360,24 +350,22 @@ function methodsFromPath(path, pathSpec, basePath, refTarget) {
     basePath,
     method,
     pathSpec[method],
-    refTarget
+    refTarget,
   ));
 }
 
 function methodsFromPaths(paths, basePath, refTarget) {
   return _(paths)
-    .flatMap((pathSpec, path) => {
-      return methodsFromPath(path, pathSpec, basePath, refTarget);
-    })
+    .flatMap((pathSpec, path) => methodsFromPath(path, pathSpec, basePath, refTarget))
     .filter()
     .sortBy('path')
     .value();
 }
 
 
-//////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////
 // Process Specs
-//////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////
 
 function moveModelsOffMethods(methodsWithModels) {
   const rawModels = _.flatMap(methodsWithModels, method => method.models);
@@ -388,7 +376,7 @@ function moveModelsOffMethods(methodsWithModels) {
 
 function splitModels(combinedModels) {
   return _.reduce(combinedModels, (acc, model) => {
-    const type = model.type;
+    const { type } = model;
     assert(type === 'object' || type === 'enum', `Found non-object-or-enum model: ${describe(model)}`);
     acc[type === 'object' ? 'objectModels' : 'enumModels'].push(model);
     return acc;
@@ -399,8 +387,8 @@ function splitModels(combinedModels) {
 //   and put some information about those subclasses on the superclass model.
 function resolveSubclasses(objectModelsWithoutResolvedSubclasses) {
   const om = objectModelsWithoutResolvedSubclasses;
-  return _.map(om, model => {
-    const subclasses = _.filter(_.map(om, subModel => {
+  return _.map(om, (model) => {
+    const subclasses = _.filter(_.map(om, (subModel) => {
       if (subModel.superclass !== model.name) { return undefined; }
       return _.pick(subModel, ['specName', 'name']);
     }));
@@ -413,7 +401,9 @@ function templateDataFromSpec(spec, apiName) {
   const methodsWithModels = methodsFromPaths(spec.paths, basePath, spec);
   const { combinedModels, methods } = moveModelsOffMethods(methodsWithModels);
   const { objectModels, enumModels } = splitModels(combinedModels);
-  return { methods, objectModels: resolveSubclasses(objectModels), enumModels, apiName };
+  return {
+    methods, objectModels: resolveSubclasses(objectModels), enumModels, apiName,
+  };
 }
 
 function templateDatasFromSpecs(specs) {
@@ -421,15 +411,17 @@ function templateDatasFromSpecs(specs) {
 }
 
 
-//////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////
 // Script
-//////////////////////////////////////////////////////////////////////
+// ////////////////////////////////////////////////////////////////////
 
+// eslint-disable-next-line global-require, import/no-dynamic-require
 const specs = _.mapValues(config.specs, c => require(c.spec));
 const templateDatas = templateDatasFromSpecs(specs);
 verify(templateDatas);
 
-handlebars.registerHelper('maybeComment', function(arg, options) {
+// eslint-disable-next-line func-names
+handlebars.registerHelper('maybeComment', function (arg, options) {
   if (!arg) { return arg; }
   const data = options.data ? undefined : { data: handlebars.createFrame(options.data) };
   const string = options.fn ? options.fn(this, data) : '';
@@ -447,10 +439,10 @@ handlebars.registerPartial('modelClassTemplate', modelClassTemplate);
 const podtemplate = handlebars.compile(fs.readFileSync('src/podtemplate.handlebars', 'utf8'));
 _.forEach(templateDatas, (templateData, apiName) => {
   const specConfig = config.specs[apiName];
+  // eslint-disable-next-line global-require, import/no-dynamic-require
   const apiVersion = require(`../node_modules/${specConfig.spec}/package.json`).version;
 
-  templateData.apiClassName = specConfig.className;
-  const rendered = template(templateData);
+  const rendered = template({ ...templateData, apiClassName: specConfig.className });
   fs.writeFileSync(`../gasbuddy-ios/DevelopmentPods/Generated/${apiName}.swift`, rendered);
 
   const renderedPodSpec = podtemplate({ apiName, apiVersion });

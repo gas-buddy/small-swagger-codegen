@@ -1,26 +1,28 @@
 import _ from 'lodash';
 import assert from 'assert';
+import util from 'util';
 
 export function describe(it) {
-  return require('util').inspect(it, {depth:10, colors:true, breakLength:150});
+  return util.inspect(it, { depth: 10, colors: true, breakLength: 150 });
 }
 
 export function log(it) {
+  // eslint-disable-next-line no-console
   console.log(`\n${describe(it)}`);
 }
 
 function findProblems(array, pred, foundProblem) {
   const problems = array
-        .filter(pred)
-        .map(item => foundProblem(describe(item)))
-        .join('');
+    .filter(pred)
+    .map(item => foundProblem(describe(item)))
+    .join('');
   return problems === '' ? undefined : problems;
 }
 
 function findAllProblems(array, ...problemFinders) {
   let retVal = '';
-  _.each(problemFinders, problemFinder => {
-    findProblems(array, problemFinder[0], problem => {
+  _.each(problemFinders, (problemFinder) => {
+    findProblems(array, problemFinder[0], (problem) => {
       if (problem) {
         retVal += problemFinder[1](problem);
         retVal += '\n---------------------------';
@@ -32,28 +34,26 @@ function findAllProblems(array, ...problemFinders) {
 
 function verifyMethods(methods) {
   return findAllProblems(methods, [
-    method => {
+    (method) => {
       const params = _.concat(method.params || [], method.response);
       return _.find(params, param => !param.type);
     },
-    problems => `\nFound methods with params or responses without a type: ${problems}`
+    problems => `\nFound methods with params or responses without a type: ${problems}`,
   ], [
-    method => {
-      for (const param of method.params) {
-        if (param.in === 'formData' && param.schema && param.schema.type !== 'file') {
-          return method;
-        }
+    method => _.find(method.params, (param) => {
+      if (param.in === 'formData' && param.schema && param.schema.type !== 'file') {
+        return method;
       }
       return undefined;
-    },
-    problems => `\nFound methods with form data params that are not of type 'file': ${problems}`
+    }),
+    problems => `\nFound methods with form data params that are not of type 'file': ${problems}`,
   ]);
 }
 
 function verifyModels(models) {
-  const dupes = _.filter(_.map(models, (model, index) => {
+  const dupes = _.filter(_.map(models, (model) => {
     // Find any other models with the same name.
-    const duplicates =  _.filter(models, otherModel => otherModel !== model && otherModel.name === model.name);
+    const duplicates = _.filter(models, otherModel => otherModel !== model && otherModel.name === model.name);
     // If we found any duplicates, add this model to the list.
     return duplicates.length > 0 ? model : undefined;
   }));
@@ -61,26 +61,26 @@ function verifyModels(models) {
 
   return findAllProblems(models, [
     model => !model.name,
-    problem => `\nFound models without name: ${problem}`
+    problem => `\nFound models without name: ${problem}`,
   ], [
     model => model.type !== 'object' && model.type !== 'enum',
-    problem => `\nFound non-object-or-enum model: ${problem}`
+    problem => `\nFound non-object-or-enum model: ${problem}`,
   ]);
 }
 
 function verifyTemplateData(data) {
-  let problems = []
-      .concat(verifyMethods(data.methods))
-      .concat(verifyModels(data.objectModels))
-      .concat(verifyModels(data.enumModels))
-      .join('');
+  const problems = []
+    .concat(verifyMethods(data.methods))
+    .concat(verifyModels(data.objectModels))
+    .concat(verifyModels(data.enumModels))
+    .join('');
   return _.isEmpty(problems) ? undefined : problems;
 }
 
 export function verify(templateDatas) {
   const problems = _.map(templateDatas, (templateData, apiName) => {
-    const problems = verifyTemplateData(templateData);
-    return _.isEmpty(problems) ? '' : `Problems with ${apiName}: ${problems}`;
+    const apiProblems = verifyTemplateData(templateData);
+    return _.isEmpty(apiProblems) ? '' : `Problems with ${apiName}: ${apiProblems}`;
   }).join('');
   assert(_.isEmpty(problems), problems);
 }

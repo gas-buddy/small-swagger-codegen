@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "build": "babel src/ -Dd build/",
-    "gen": "npm run build && node build/index.js"
+    "gen": "npm run build && node build/index.js",
+    "lint": "eslint ."
   },
   "engines": {
     "node": ">=8.9"
@@ -13,18 +14,19 @@
   "author": "",
   "license": "UNLICENSED",
   "dependencies": {
-    "@gasbuddy/identity-api-spec": "^1.6.1",
-    "@gasbuddy/loves-api-spec": "^2.11.0",
-    "@gasbuddy/loyalty-api-spec": "^3.0.0",
-    "@gasbuddy/mobile-orchestration-api-spec": "^10.0.1",
-    "@gasbuddy/payment-api-spec": "^7.2.0",
-    "@gasbuddy/vehicle-api-spec": "^1.5.0",
+    "@gasbuddy/identity-api-spec": "1.6.1",
+    "@gasbuddy/loves-api-spec": "2.11.0",
+    "@gasbuddy/loyalty-api-spec": "3.0.0",
+    "@gasbuddy/mobile-orchestration-api-spec": "10.0.1",
+    "@gasbuddy/payment-api-spec": "7.2.0",
+    "@gasbuddy/vehicle-api-spec": "1.5.0",
     "handlebars": "^4.0.11",
     "lodash": "^4.16.4",
     "url-join": "^4.0.0"
   },
   "devDependencies": {
     "babel-cli": "^6.4.5",
-    "babel-preset-gasbuddy": "^3.3.0"
+    "babel-preset-gasbuddy": "^3.3.0",
+    "eslint-config-gasbuddy": "^4.1.0"
   }
 }
