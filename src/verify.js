@@ -20,16 +20,14 @@ function findProblems(array, pred, foundProblem) {
 }
 
 function findAllProblems(array, ...problemFinders) {
-  let retVal = '';
-  _.each(problemFinders, (problemFinder) => {
+  return _.reduce(problemFinders, (acc, problemFinder) => {
     findProblems(array, problemFinder[0], (problem) => {
       if (problem) {
-        retVal += problemFinder[1](problem);
-        retVal += '\n---------------------------';
+        return `${acc}${problemFinder[1](problem)}\n---------------------------`;
       }
+      return acc;
     });
-  });
-  return retVal;
+  }, '');
 }
 
 function verifyMethods(methods) {

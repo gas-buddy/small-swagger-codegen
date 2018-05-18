@@ -189,8 +189,7 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
     const isNested = property.type === 'object' && property.properties;
     const defaultTypeName = classNameFromComponents(name, propertyName, { skip: isNested ? 1 : 0 });
     const typeInfoAndModels = typeInfoAndModelsFromSchema(property, defaultTypeName, refTarget);
-    typeInfoAndModels.isNested = isNested;
-    return typeInfoAndModels;
+    return { ...typeInfoAndModels, isNested };
   });
 
   // Get all the nested models (models representing classes of inline objects) from this object's properties.
@@ -295,29 +294,26 @@ function typeInfoAndModelsFromParam(param, methodName, refTarget) {
 // Methods
 // ////////////////////////////////////////////////////////////////////
 function paramAndModelsFromSpec(unresolvedParamSpec, name, refTarget) {
-  let paramSpec = objectByResolvingRefAndAllOf(unresolvedParamSpec, refTarget);
+  const resolved = objectByResolvingRefAndAllOf(unresolvedParamSpec, refTarget);
   // Sometimes params have a schema, sometimes they just have the properties
   //   that a schema would normally have. This normalizes all params to be
   //   objects that have a schema.
-  if (!paramSpec.schema) {
-    const schema = paramSpec;
-    paramSpec = {
-      name: paramSpec.name,
-      in: paramSpec.in,
-      description: paramSpec.description,
-      required: paramSpec.required,
-      schema,
-    };
-  }
-  const ret = objectByResolvingRefAndAllOf(paramSpec, refTarget);
-  const { typeInfo: responseTypeInfo, models: responseModels } = typeInfoAndModelsFromParam(ret, name, refTarget);
-  ret.type = responseTypeInfo.name || ret.type || 'Void';
-  ret.format = responseTypeInfo.format;
-  if (ret.name) {
-    ret.serverName = ret.name;
-    ret.name = _.camelCase(ret.name);
-  }
-  return { param: ret, models: responseModels };
+  const paramSpec = resolved.schema ? resolved : {
+    name: resolved.name,
+    in: resolved.in,
+    description: resolved.description,
+    required: resolved.required,
+    schema: resolved,
+  };
+  const { typeInfo: responseTypeInfo, models: responseModels } = typeInfoAndModelsFromParam(paramSpec, name, refTarget);
+  const param = {
+    ...paramSpec,
+    type: responseTypeInfo.name || paramSpec.type || 'Void',
+    format: responseTypeInfo.format,
+    serverName: paramSpec.name,
+    name: _.camelCase(paramSpec.name),
+  };
+  return { param, models: responseModels };
 }
 
 function methodFromSpec(path, pathParams, basePath, method, methodSpec, refTarget) {
@@ -424,6 +420,7 @@ verify(templateDatas);
 handlebars.registerHelper('maybeComment', function (arg, options) {
   if (!arg) { return arg; }
   const data = options.data ? undefined : { data: handlebars.createFrame(options.data) };
+  // eslint-disable-next-line func-names
   const string = options.fn ? options.fn(this, data) : '';
   if (!string || string.trim() === '') {
     return undefined;
