@@ -23,13 +23,11 @@ const HTTP_METHODS = [
 // Results in this (all the 'a' have been omitted):
 //   { b: 2, c: [ { } ] }
 function deepOmit(obj, keyName) {
-  if (Array.isArray(obj)) {
-    return obj.map(o => deepOmit(o, keyName));
+  if (_.isArray(obj)) {
+    return obj.map(value => deepOmit(value, keyName));
   } else if (obj instanceof Object) {
-    return _.chain(obj)
-      .pickBy((value, key) => key !== keyName)
-      .mapValues(o => deepOmit(o, keyName))
-      .value();
+    const picked = _.pickBy(obj, (value, key) => key !== keyName);
+    return _.mapValues(picked, value => deepOmit(value, keyName));
   }
   return obj;
 }
@@ -41,30 +39,23 @@ function deepOmit(obj, keyName) {
 // The result would be:
 //   { a: [1, 2, 3], b: 2 }
 function deepMerge(...objs) {
-  return _.mergeWith({}, ...objs, (objValue, srcValue) => {
-    if (_.isArray(objValue)) {
-      return objValue.concat(srcValue);
-    }
-    return undefined;
-  });
+  return _.mergeWith({}, ...objs, (objValue, srcValue) => (
+    // Returning undefined will fallback to default merge behavior
+    _.isArray(objValue) ? objValue.concat(srcValue) : undefined
+  ));
 }
 
 // Deeply omit any fields named 'description' from the arguments and check if the results are equal.
 // Useful to compare swagger schemas since we generally care whether the 'real stuff' (types, formats, etc.)
 // are equal, and not whether the descriptions (i.e. comments) are equal.
 function isEqualIgnoringDescription(a, b) {
-  return _.isEqual(
-    deepOmit(a, 'description'),
-    deepOmit(b, 'description'),
-  );
+  return _.isEqual(deepOmit(a, 'description'), deepOmit(b, 'description'));
 }
 
 function nameFromComponents(...components) {
   const name = _.camelCase(components.join('/'));
-  if (!Number.isNaN(Number(name[0]))) {
-    return `_${name}`;
-  }
-  return name;
+  // Don't create names that start with a number.
+  return Number.isNaN(Number(name[0])) ? name : `_${name}`;
 }
 
 // Create a class name by combining the given component strings.
@@ -89,27 +80,21 @@ function classNameFromComponents(...args) {
 }
 
 function lastRefComponent(ref) {
-  if (!ref) { return ref; }
-  return _.last(_.split(ref, '/'));
+  return ref ? _.last(_.split(ref, '/')) : ref;
 }
 
-function typeFromRef(ref) {
+function classNameFromRef(ref) {
   return classNameFromComponents(lastRefComponent(ref));
 }
 
 function mapPrimitiveType(type) {
-  if (type === 'string') {
-    return 'String';
-  } else if (type === 'boolean') {
-    return 'Bool';
-  } else if (type === 'number') {
-    return 'Double';
-  } else if (type === 'file') {
-    return 'URL';
-  } else if (type === 'object') {
-    return 'Dictionary<String, Any>';
-  }
-  return undefined;
+  return {
+    string: 'String',
+    boolean: 'Bool',
+    number: 'Double',
+    file: 'URL',
+    object: 'Dictionary<String, Any>',
+  }[type];
 }
 
 function mapPrimitiveValue(value, type) {
@@ -176,7 +161,7 @@ function objectByResolvingRefAndAllOf(obj, refTarget, opts) {
 // ////////////////////////////////////////////////////////////////////
 function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget) {
   const superclassRef = _.get(unresolvedSuperclassSchema, '$ref');
-  const superclass = typeFromRef(superclassRef);
+  const superclass = classNameFromRef(superclassRef);
 
   // When there is an object with a property that's also an object, the spec can do one of two things:
   //   use a '$ref', or declare the object 'inline', i.e. without using a $ref.
@@ -212,19 +197,18 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
     specName: propertyName,
   }));
 
-  const { models: superclassModels } =
-    superclass && typeInfoAndModelsFromSchema(unresolvedSuperclassSchema, undefined, refTarget);
-  const superModel = _.get(superclassModels, '[0]');
+  const superclassModels = superclass && typeInfoAndModelsFromSchema(unresolvedSuperclassSchema, '', refTarget).models;
+  const superModel = _.first(superclassModels);
+
   // This model's inherited properties are all the non-inherited properties of its superclass
   //   plus all the inherited properties of its superclass.
   const inheritedProperties = _.get(superModel, 'properties', []).concat(_.get(superModel, 'inheritedProperties', []));
 
   // If this model has any properties with the same name and type as one of its inherited
   //   properties, then remove the non-inherited property and use the inherited one.
-  const nonInheritedProperties = _.filter(properties, (prop) => {
-    const matching = _.find(inheritedProperties, iProp => isEqualIgnoringDescription(prop, iProp));
-    return !matching;
-  });
+  const nonInheritedProperties = _.filter(properties, prop => (
+    !_.find(inheritedProperties, iProp => isEqualIgnoringDescription(prop, iProp))
+  ));
 
   const myModel = {
     name,
@@ -242,7 +226,7 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
 
 function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
   const ref = unresolvedSchema.$ref;
-  const name = ref ? typeFromRef(ref) : defaultName;
+  const name = ref ? classNameFromRef(ref) : defaultName;
   const specName = ref ? lastRefComponent(ref) : defaultName;
 
   const refResolvedSchema = objectByResolvingRef(unresolvedSchema, refTarget);
@@ -295,16 +279,9 @@ function typeInfoAndModelsFromParam(param, methodName, refTarget) {
 // ////////////////////////////////////////////////////////////////////
 function paramAndModelsFromSpec(unresolvedParamSpec, name, refTarget) {
   const resolved = objectByResolvingRefAndAllOf(unresolvedParamSpec, refTarget);
-  // Sometimes params have a schema, sometimes they just have the properties
-  //   that a schema would normally have. This normalizes all params to be
-  //   objects that have a schema.
-  const paramSpec = resolved.schema ? resolved : {
-    name: resolved.name,
-    in: resolved.in,
-    description: resolved.description,
-    required: resolved.required,
-    schema: resolved,
-  };
+  // Sometimes params have a schema, sometimes they just have the properties that a schema would normally have.
+  // This normalizes all params to be objects that have a schema.
+  const paramSpec = resolved.schema ? resolved : { ...resolved, schema: resolved };
   const { typeInfo: responseTypeInfo, models: responseModels } = typeInfoAndModelsFromParam(paramSpec, name, refTarget);
   const param = {
     ...paramSpec,
@@ -316,17 +293,15 @@ function paramAndModelsFromSpec(unresolvedParamSpec, name, refTarget) {
   return { param, models: responseModels };
 }
 
-function methodFromSpec(path, pathParams, basePath, method, methodSpec, refTarget) {
-  if (!methodSpec) {
-    return undefined;
-  }
+function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTarget) {
+  if (!methodSpec) { return undefined; }
 
-  const name = _.camelCase(methodSpec.operationId || urlJoin(path, method));
+  const name = _.camelCase(methodSpec.operationId || urlJoin(endPath, method));
   const { description } = methodSpec;
 
   const paramSpecs = _.concat(pathParams || [], methodSpec.parameters || []);
   const mappedParams = _.map(paramSpecs, paramSpec => paramAndModelsFromSpec(paramSpec, name, refTarget));
-  const paramModels = _.flatten(_.map(mappedParams, paramAndModels => paramAndModels.models));
+  const paramModels = _.flatMap(mappedParams, paramAndModels => paramAndModels.models);
   const params = _.map(mappedParams, paramAndModels => paramAndModels.param);
 
   const goodResponseKey = _.find(Object.keys(methodSpec.responses), k => k[0] === '2') || 'default';
@@ -334,13 +309,12 @@ function methodFromSpec(path, pathParams, basePath, method, methodSpec, refTarge
   const { param: response, models: responseModels } = paramAndModelsFromSpec(responseSpec, name, refTarget);
 
   const models = paramModels.concat(responseModels);
-  return {
-    path: urlJoin('/', basePath, path), name, description, method, params, response, models,
-  };
+  const path = urlJoin('/', basePath, endPath);
+  return { path, name, description, method, params, response, models };
 }
 
 function methodsFromPath(path, pathSpec, basePath, refTarget) {
-  return _.flatMap(HTTP_METHODS, method => methodFromSpec(
+  return _.map(HTTP_METHODS, method => methodFromSpec(
     path,
     pathSpec.parameters,
     basePath,
@@ -351,11 +325,8 @@ function methodsFromPath(path, pathSpec, basePath, refTarget) {
 }
 
 function methodsFromPaths(paths, basePath, refTarget) {
-  return _(paths)
-    .flatMap((pathSpec, path) => methodsFromPath(path, pathSpec, basePath, refTarget))
-    .filter()
-    .sortBy('path')
-    .value();
+  const rawMethods = _.flatMap(paths, (pathSpec, path) => methodsFromPath(path, pathSpec, basePath, refTarget));
+  return _.sortBy(rawMethods.filter(m => m), 'path');
 }
 
 
@@ -393,9 +364,7 @@ function templateDataFromSpec(spec, apiName) {
   const methodsWithModels = methodsFromPaths(spec.paths, basePath, spec);
   const { combinedModels, methods } = moveModelsOffMethods(methodsWithModels);
   const { objectModels, enumModels } = splitModels(combinedModels);
-  return {
-    methods, objectModels: resolveSubclasses(objectModels), enumModels, apiName,
-  };
+  return { methods, objectModels: resolveSubclasses(objectModels), enumModels, apiName };
 }
 
 function templateDatasFromSpecs(specs) {
