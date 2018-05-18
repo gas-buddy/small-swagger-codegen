@@ -32,10 +32,9 @@ function findAllProblems(array, ...problemFinders) {
 
 function verifyMethods(methods) {
   return findAllProblems(methods, [
-    (method) => {
-      const params = _.concat(method.params || [], method.response);
-      return _.find(params, param => !param.type);
-    },
+    method => (
+      _.find([method.response].concat(method.params), param => !_.get(param, 'type'))
+    ),
     problems => `\nFound methods with params or responses without a type: ${problems}`,
   ], [
     method => _.find(method.params, (param) => {

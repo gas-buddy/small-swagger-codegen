@@ -90,7 +90,7 @@ function classNameFromComponents(...args) {
 
 function lastRefComponent(ref) {
   if (!ref) { return ref; }
-  return _.split(ref, '/').pop();
+  return _.last(_.split(ref, '/'));
 }
 
 function typeFromRef(ref) {
@@ -371,12 +371,8 @@ function moveModelsOffMethods(methodsWithModels) {
 }
 
 function splitModels(combinedModels) {
-  return _.reduce(combinedModels, (acc, model) => {
-    const { type } = model;
-    assert(type === 'object' || type === 'enum', `Found non-object-or-enum model: ${describe(model)}`);
-    acc[type === 'object' ? 'objectModels' : 'enumModels'].push(model);
-    return acc;
-  }, { objectModels: [], enumModels: [] });
+  const [objectModels, enumModels] = _.partition(combinedModels, model => model.type === 'object');
+  return { objectModels, enumModels };
 }
 
 // For any model that is the superclass of another model, find all of that model's subclasses
