@@ -19,5 +19,4 @@ npm install --save @gasbuddy/payment-api-spec@latest
 Things I would like to improve, in the order that I'm probably going to address them:
 - This repo should not include our specs or codegen config, those belong in `gasbuddy-ios`. There should be a way to pass in the specs and config.
 - There should be some tests.
-- This repo should be integrated with the GasBuddy CI system to run the tests automatically.
 - This repo should not be public once the above issues are addressed.

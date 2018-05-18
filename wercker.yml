@@ -1,0 +1,18 @@
+box: node
+
+build:
+  steps:
+    - gasbuddy/npm-install@1.0.0
+
+    - script:
+      name: lint
+      code: npm run lint
+
+deploy:
+  steps:
+    - script:
+      name: npm publish
+      code: |
+        echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+        cd api
+        npm publish . --tag latest
