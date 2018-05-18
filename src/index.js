@@ -87,16 +87,6 @@ function classNameFromRef(ref) {
   return classNameFromComponents(lastRefComponent(ref));
 }
 
-function mapPrimitiveType(type) {
-  return {
-    string: 'String',
-    boolean: 'Bool',
-    number: 'Double',
-    file: 'URL',
-    object: 'Dictionary<String, Any>',
-  }[type];
-}
-
 function mapPrimitiveValue(value, type) {
   return type === 'string' ? `"${value}"` : value;
 }
@@ -115,9 +105,7 @@ function resolveRef(ref, refTarget) {
 }
 
 function objectByResolving(args) {
-  const {
-    obj, refTarget, shouldResolveRef, shouldResolveAllOf, ignoreRef,
-  } = args;
+  const { obj, refTarget, shouldResolveRef, shouldResolveAllOf, ignoreRef } = args;
   const { $ref: ref, allOf } = obj;
   const needsRefResolution = shouldResolveRef && ref;
   const needsAllOfResolution = shouldResolveAllOf && allOf;
@@ -125,9 +113,7 @@ function objectByResolving(args) {
   const filtered = _.omit(obj, [shouldResolveRef && '$ref', shouldResolveAllOf && 'allOf']);
   // If this obj doesn't have any of the things we're trying to resolve, then we don't have to do
   //   anything.
-  if (!needsRefResolution && !needsAllOfResolution) {
-    return filtered;
-  }
+  if (!needsRefResolution && !needsAllOfResolution) { return filtered; }
   // If we have a ref, get the object referenced by it
   const objFromRef = needsRefResolution && ref !== ignoreRef && resolveRef(ref, refTarget);
   // If we have an allOf, get an array of the resolved version of each object in the allOf.
@@ -224,6 +210,25 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
   return { typeInfo: { name }, models: _.concat(myModel, propertyModels, superclassModels) };
 }
 
+function typeInfoFromPrimitiveSchema(schema) {
+  if (!schema) { return { name: 'Void' }; }
+  const mapped = _.get({
+    undefined: 'Void',
+    boolean: 'Bool',
+    number: 'Double',
+    file: 'URL',
+    object: 'Dictionary<String, Any>',
+    integer: { int64: 'Int64', default: 'Int32' },
+    string: { date: 'Date', 'date-time': 'Date', default: 'String' },
+  }, schema.type);
+  const preserveFormat = _.get({
+    string: { date: true, 'date-time': true },
+  }, [schema.type, schema.format], false);
+  assert(!!mapped, `I don't know how to process a schema of type ${schema.type} 🤔\n  ${describe(schema)}`);
+  const name = mapped[schema.format] || mapped.default || mapped;
+  return { name, format: preserveFormat ? schema.format : undefined };
+}
+
 function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
   const ref = unresolvedSchema.$ref;
   const name = ref ? classNameFromRef(ref) : defaultName;
@@ -238,7 +243,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
     const model = {
       name,
       type: 'enum',
-      enumType: mapPrimitiveType(schema.type),
+      enumType: typeInfoFromPrimitiveSchema(schema).name,
       values: _.map(schema.enum, e => ({
         name: nameFromComponents(e),
         value: mapPrimitiveValue(e, schema.type),
@@ -249,23 +254,10 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
     const { typeInfo: itemTypeInfo, models: itemModels } = typeInfoAndModelsFromSchema(schema.items, name, refTarget);
     const typeName = `Array<${itemTypeInfo.name}>`;
     return { typeInfo: { name: typeName, format: itemTypeInfo.format }, models: itemModels };
-  } else if (schema.type === 'string') {
-    if (schema.format === 'date' || schema.format === 'date-time') {
-      return { typeInfo: { name: 'Date', format: schema.format }, models: [] };
-    }
-    return { typeInfo: { name: 'String' }, models: [] };
   } else if (schema.type === 'object' && schema.properties) {
     return typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget);
-  } else if (schema.type === 'integer') {
-    const typeName = schema.format === 'int64' ? 'Int64' : 'Int32';
-    return { typeInfo: { name: typeName }, models: [] };
-  } else if (mapPrimitiveType(schema.type)) {
-    return { typeInfo: { name: mapPrimitiveType(schema.type) }, models: [] };
-  } else if (!schema.type) {
-    return { typeInfo: { name: 'Void' }, models: [] };
   }
-
-  return assert(false, `I don't know how to process a schema of type ${schema.type} 🤔\n  ${describe(schema)}`);
+  return { typeInfo: typeInfoFromPrimitiveSchema(schema), models: [] };
 }
 
 function typeInfoAndModelsFromParam(param, methodName, refTarget) {
@@ -315,12 +307,7 @@ function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTa
 
 function methodsFromPath(path, pathSpec, basePath, refTarget) {
   return _.map(HTTP_METHODS, method => methodFromSpec(
-    path,
-    pathSpec.parameters,
-    basePath,
-    method,
-    pathSpec[method],
-    refTarget,
+    path, pathSpec.parameters, basePath, method, pathSpec[method], refTarget,
   ));
 }
 
