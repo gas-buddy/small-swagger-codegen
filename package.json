@@ -1,18 +1,18 @@
 {
   "name": "small-swagger-codegen",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A small version of swagger-codegen. Does fewer things with less code.",
-  "main": "./build/index.js",
+  "main": "./build/small-swagger-codegen.js",
   "scripts": {
     "build": "babel src/ -Dd build/",
     "lint": "eslint .",
-    "gen": "npm run build && node build/index.js"
+    "gen": "npm run build && node ./build/small-swagger-codegen.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/gas-buddy/small-swagger-codegen.git"
   },
-  "bin": "./build/index.js",
+  "bin": "./build/small-swagger-codegen.js",
   "engines": {
     "node": ">=8.9"
   },
