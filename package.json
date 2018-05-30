@@ -1,12 +1,9 @@
 {
   "name": "small-swagger-codegen",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "",
   "main": "./build/index.js",
   "bin": "./build/index.js",
-  "files": [
-    "build/"
-  ],
   "scripts": {
     "build": "npx babel src/ -Dd build/",
     "lint": "eslint .",
