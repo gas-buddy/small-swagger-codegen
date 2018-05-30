@@ -1,12 +1,8 @@
-import fs from 'fs';
-import _ from 'lodash';
 import assert from 'assert';
-import handlebars from 'handlebars';
+import _ from 'lodash';
 import urlJoin from 'url-join';
 // eslint-disable-next-line no-unused-vars
 import { describe, log, verify } from './verify';
-
-import config from '../config.json';
 
 const HTTP_METHODS = [
   'get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace',
@@ -346,7 +342,7 @@ function resolveSubclasses(objectModelsWithoutResolvedSubclasses) {
   });
 }
 
-function templateDataFromSpec(spec, apiName) {
+function templateDataFromSpec(spec, apiName, config) {
   const basePath = urlJoin(config.specs[apiName].basePath, spec.basePath || '');
   const methodsWithModels = methodsFromPaths(spec.paths, basePath, spec);
   const { combinedModels, methods } = moveModelsOffMethods(methodsWithModels);
@@ -354,46 +350,6 @@ function templateDataFromSpec(spec, apiName) {
   return { methods, objectModels: resolveSubclasses(objectModels), enumModels, apiName };
 }
 
-function templateDatasFromSpecs(specs) {
-  return _.mapValues(specs, (spec, apiName) => templateDataFromSpec(spec, apiName));
+export default function templateDatasFromSpecs(specs, config) {
+  return _.mapValues(specs, (spec, apiName) => templateDataFromSpec(spec, apiName, config));
 }
-
-
-// ////////////////////////////////////////////////////////////////////
-// Script
-// ////////////////////////////////////////////////////////////////////
-
-// eslint-disable-next-line global-require, import/no-dynamic-require
-const specs = _.mapValues(config.specs, c => require(c.spec));
-const templateDatas = templateDatasFromSpecs(specs);
-verify(templateDatas);
-
-// eslint-disable-next-line func-names
-handlebars.registerHelper('maybeComment', function (arg, options) {
-  if (!arg) { return arg; }
-  const data = options.data ? undefined : { data: handlebars.createFrame(options.data) };
-  // eslint-disable-next-line func-names
-  const string = options.fn ? options.fn(this, data) : '';
-  if (!string || string.trim() === '') {
-    return undefined;
-  }
-  const trimmed = string.trim().replace(/\n/g, ' ');
-  const numSpaces = string.search(/\S/);
-  return `${' '.repeat(numSpaces)}/// ${trimmed}\n`;
-});
-
-const template = handlebars.compile(fs.readFileSync('src/template.handlebars', 'utf8'));
-const modelClassTemplate = handlebars.compile(fs.readFileSync('src/modelClassTemplate.handlebars', 'utf8'));
-handlebars.registerPartial('modelClassTemplate', modelClassTemplate);
-const podtemplate = handlebars.compile(fs.readFileSync('src/podtemplate.handlebars', 'utf8'));
-_.forEach(templateDatas, (templateData, apiName) => {
-  const specConfig = config.specs[apiName];
-  // eslint-disable-next-line global-require, import/no-dynamic-require
-  const apiVersion = require(`../node_modules/${specConfig.spec}/package.json`).version;
-
-  const rendered = template({ ...templateData, apiClassName: specConfig.className });
-  fs.writeFileSync(`../gasbuddy-ios/DevelopmentPods/Generated/${apiName}.swift`, rendered);
-
-  const renderedPodSpec = podtemplate({ apiName, apiVersion });
-  fs.writeFileSync(`../gasbuddy-ios/DevelopmentPods/Generated/${apiName}.podspec`, renderedPodSpec);
-});

@@ -7,7 +7,6 @@ export function describe(it) {
 }
 
 export function log(it) {
-  // eslint-disable-next-line no-console
   console.log(`\n${describe(it)}`);
 }
 
