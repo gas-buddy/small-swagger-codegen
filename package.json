@@ -1,9 +1,12 @@
 {
   "name": "small-swagger-codegen",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "./build/index.js",
   "bin": "./build/index.js",
+  "files": [
+    "build/"
+  ],
   "scripts": {
     "prepublish": "npm run build",
     "build": "babel src/ -Dd build/",
