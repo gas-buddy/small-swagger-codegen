@@ -1,6 +1,6 @@
 {
   "name": "small-swagger-codegen",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "",
   "main": "./build/index.js",
   "bin": "./build/index.js",
@@ -8,8 +8,8 @@
     "build/"
   ],
   "scripts": {
-    "prepublish": "npm run build",
-    "build": "babel src/ -Dd build/",
+    "prepublish": "babel src/ -Dd build/",
+    "build": "npm run prepublish",
     "lint": "eslint .",
     "gen": "npm run build && node build/index.js"
   },
