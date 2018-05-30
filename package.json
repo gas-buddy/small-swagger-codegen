@@ -1,19 +1,27 @@
 {
   "name": "small-swagger-codegen",
-  "version": "1.0.6",
-  "description": "",
+  "version": "1.0.7",
+  "description": "A small version of swagger-codegen. Does fewer things with less code.",
   "main": "./build/index.js",
-  "bin": "./build/index.js",
   "scripts": {
-    "build": "npx babel src/ -Dd build/",
+    "build": "babel src/ -Dd build/",
     "lint": "eslint .",
     "gen": "npm run build && node build/index.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gas-buddy/small-swagger-codegen.git"
+  },
+  "bin": "./build/index.js",
   "engines": {
     "node": ">=8.9"
   },
-  "author": "",
-  "license": "UNLICENSED",
+  "author": "GasBuddy",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gas-buddy/small-swagger-codegen/issues"
+  },
+  "homepage": "https://github.com/gas-buddy/small-swagger-codegen#readme",
   "dependencies": {
     "handlebars": "^4.0.11",
     "lodash": "^4.16.4",

@@ -1,4 +1,4 @@
-box: node
+box: gasbuddy/node-app:wercker-node8
 
 build:
   steps:
@@ -8,11 +8,14 @@ build:
       name: lint
       code: npm run lint
 
+    - script:
+      name: build
+      code: npm run build
+
 deploy:
   steps:
     - script:
       name: npm publish
       code: |
         echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
-        npm run build
         npm publish . --tag latest
