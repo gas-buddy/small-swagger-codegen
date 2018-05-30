@@ -14,4 +14,5 @@ deploy:
       name: npm publish
       code: |
         echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+        npm run build
         npm publish . --tag latest
