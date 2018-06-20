@@ -292,7 +292,9 @@ function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTa
   const paramModels = _.flatMap(mappedParams, paramAndModels => paramAndModels.models);
   const params = _.map(mappedParams, paramAndModels => paramAndModels.param);
 
-  const goodResponseKey = _.find(Object.keys(methodSpec.responses), k => k[0] === '2') || 'default';
+  const goodResponseKey = _.find(Object.keys(methodSpec.responses), k => k[0] === '2') ||
+    _.find(Object.keys(methodSpec.responses), k => k[0] === '3') ||
+    'default';
   const responseSpec = methodSpec.responses[goodResponseKey];
   const { param: response, models: responseModels } = paramAndModelsFromSpec(responseSpec, name, refTarget);
 
