@@ -54,9 +54,9 @@ function nameFromComponents(...components) {
   const nonNumberName = Number.isNaN(Number(name[0])) ? name : `_${name}`;
   // Names that are reserved words would be escaped.
   return [
-      'default',
-      'as'
-  ].includes(nonNumberName) ? `\`${nonNumberName}\`` : nonNumberName
+    'default',
+    'as',
+  ].includes(nonNumberName) ? `\`${nonNumberName}\`` : nonNumberName;
 }
 
 // Create a class name by combining the given component strings.
