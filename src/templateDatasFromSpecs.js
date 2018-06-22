@@ -252,6 +252,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
     };
     return { typeInfo: { name }, models: [model] };
   } else if (schema.type === 'array') {
+    assert(schema.items, `Found an array schema with no items: ${describe(schema)}`);
     const { typeInfo: itemTypeInfo, models: itemModels } = typeInfoAndModelsFromSchema(schema.items, name, refTarget);
     const typeName = `Array<${itemTypeInfo.name}>`;
     return { typeInfo: { name: typeName, format: itemTypeInfo.format }, models: itemModels };
@@ -263,6 +264,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
 
 function typeInfoAndModelsFromParam(param, methodName, refTarget) {
   const defaultName = classNameFromComponents(methodName, param.name || 'response');
+  assert(param.schema, `Found a param with no schema: ${describe(param)}`);
   return typeInfoAndModelsFromSchema(param.schema, defaultName, refTarget);
 }
 
