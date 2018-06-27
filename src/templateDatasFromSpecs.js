@@ -214,13 +214,13 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
 function typeInfoFromPrimitiveSchema(schema) {
   if (!schema) { return { name: 'Void' }; }
   const mapped = _.get({
-    undefined: 'Void',
-    boolean: 'Bool',
+    undefined: 'Response<Void>',
+    boolean: 'Boolean',
     number: 'Double',
-    file: 'URL',
-    object: 'Dictionary<String, Any>',
-    integer: { int64: 'Int64', default: 'Int32' },
-    string: { date: 'Date', 'date-time': 'Date', default: 'String' },
+    file: 'MultipartBody.Part',
+    object: 'Any',
+    integer: { int64: 'Int', default: 'Int' },
+    string: { date: 'OffsetDateTime', 'date-time': 'OffsetDateTime', default: 'String' },
   }, schema.type);
   const preserveFormat = _.get({
     string: { date: true, 'date-time': true },
@@ -254,7 +254,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
   } else if (schema.type === 'array') {
     assert(schema.items, `Found an array schema with no items: ${describe(schema)}`);
     const { typeInfo: itemTypeInfo, models: itemModels } = typeInfoAndModelsFromSchema(schema.items, name, refTarget);
-    const typeName = `Array<${itemTypeInfo.name}>`;
+    const typeName = `List<${itemTypeInfo.name}>`;
     return { typeInfo: { name: typeName, format: itemTypeInfo.format }, models: itemModels };
   } else if (schema.type === 'object' && schema.properties) {
     return typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget);
@@ -284,6 +284,7 @@ function paramAndModelsFromSpec(unresolvedParamSpec, name, refTarget) {
     format: responseTypeInfo.format,
     serverName: paramSpec.name,
     name: _.camelCase(paramSpec.name),
+    inCap: _.capitalize(paramSpec.in)
   };
   return { param, models: responseModels };
 }
@@ -307,7 +308,8 @@ function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTa
 
   const models = paramModels.concat(responseModels);
   const path = urlJoin('/', basePath, endPath);
-  return { path, name, description, method, params, response, models };
+  const capMethod = _.upperCase(method)
+  return { path, name, description, method, params, response, models, capMethod };
 }
 
 function methodsFromPath(path, pathSpec, basePath, refTarget) {
