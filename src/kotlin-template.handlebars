@@ -1,10 +1,8 @@
-package com.gasbuddy.mobile.webservices.rx.{{{apiClassName}}}
+package com.gasbuddy.mobile.webservices.rx.{{{packageName}}}
 
 import com.gasbuddy.mobile.webservices.GBIORxWebServices
 import com.gasbuddy.mobile.webservices.RxWebServices
 import com.google.gson.annotations.SerializedName
-import io.gasbuddy.webservices.model.Address
-import io.gasbuddy.webservices.model.EmpyrCards
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
 import retrofit2.Response
@@ -12,6 +10,7 @@ import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
+
 
 class {{{apiClassName}}}WebServices : GBIORxWebServices() {
 
@@ -43,9 +42,9 @@ class {{{apiClassName}}}WebServices : GBIORxWebServices() {
             @Headers("Content-Type:application/json")
             @{{{capMethod}}}("{{{path}}}")
             fun {{{name}}}(
-                @HeaderMap headerMap: Map<String, String>, 
+                @HeaderMap headerMap: Map<String, String>{{#if params.length}},{{/if}}
             {{#each params}}
-                @{{{inCap}}}("{{{serverName}}}") {{{name}}}: {{{type}}}{{#unless required}}? = null{{/unless}},
+                @{{{inCap}}}{{#isNotBodyParam this}}("{{{serverName}}}"){{/isNotBodyParam}} {{{name}}}: {{{type}}}{{#unless required}}? = null{{/unless}}{{~#unless @last}},{{/unless}}
             {{/each}}
             ) : Single<{{{response.type}}}>
         {{/each}}
@@ -55,11 +54,17 @@ class {{{apiClassName}}}WebServices : GBIORxWebServices() {
 
     //region Models
     {{#each objectModels}}
-
+    {{> modelClassTemplate}}
     {{/each}}
+    //endregion
 
+    //region Enums
     {{#each enumModels}}
-
+    enum class {{{name}}} { 
+        {{#each values}}
+            @SerializedName({{{value}}}) {{{name}}}{{~#unless @last}},{{/unless}}
+        {{/each}}
+    }
     {{/each}}
     //endregion
     

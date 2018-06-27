@@ -12,12 +12,12 @@ import { describe, log, verify } from './verify';
 // Process command line args.
 const argv = minimist(process.argv.slice(2));
 const pathArg = argv._ && argv._.length && argv._[0];
-const outputArg = argv._ && argv._.length && argv._[1];
+const outputArg = argv._ && argv._.length && _.lowerCase(argv._[1]);
 if (!pathArg) {
   console.log('Missing argument: pass the path to your config file as an argument.');
   process.exit(1);
 }
-if (!outputArg || !_.includes(["swift", "kotlin"], _.lowerCase(outputArg)) ) {
+if (!outputArg || !_.includes(["swift", "kotlin"], outputArg) ) {
   console.log('Missing argument: pass either kotlin or swift for output.');
   process.exit(1);
 }
@@ -47,41 +47,36 @@ handlebars.registerHelper('maybeComment', function maybeComment(arg, options) {
   return `${' '.repeat(numSpaces)}/// ${trimmed}\n`;
 });
 
-if (outputArg == "kotlin") {
-  const kotlinTemplate = handlebars.compile(fs.readFileSync(path.join(__dirname, 'template-kotlin.handlebars'), 'utf8'));
-  // Render everything and write output files.
-  _.forEach(templateDatas, (templateData, apiName) => {
-    const specConfig = config.specs[apiName];
-    const apiVersion = specs[apiName].info.version;
-    const kotlinRendered = kotlinTemplate({ ...templateData, apiClassName: specConfig.className });
+handlebars.registerHelper('isNotBodyParam', function isNotBodyParam(arg, options) {
+  if (!arg) { return arg; }
+  if (arg.inCap != "Body") {
+    return options.fn(this)
+  } else {
+    return options.inverse(this)
+  }
+});
 
-    _.forEach([[kotlinRendered, `${apiName}.kt`]], ([output, file]) => {
-      fs.writeFileSync(path.join(configDir, config.output, file), output);
-    });
-  });
-} else {
-  const [template, modelClassTemplate, podtemplate] = _.map([
-    'template.handlebars', 'modelClassTemplate.handlebars', 'podtemplate.handlebars',
-  ], t => handlebars.compile(fs.readFileSync(path.join(__dirname, t), 'utf8')));
+const templateFiles = [`${outputArg}-template.handlebars`, `${outputArg}-modelClassTemplate.handlebars`]
+if (outputArg === "swift") {
+  templateFiles.push(`${outputArg}-podtemplate.handlebars`)
+} 
+const [template, modelClassTemplate, podtemplate] = _.map(templateFiles, t => handlebars.compile(fs.readFileSync(path.join(__dirname, t), 'utf8')));
 
-  handlebars.registerPartial('modelClassTemplate', modelClassTemplate);
+handlebars.registerPartial('modelClassTemplate', modelClassTemplate);
 
-  // Render everything and write output files.
-  _.forEach(templateDatas, (templateData, apiName) => {
-    const specConfig = config.specs[apiName];
-    const apiVersion = specs[apiName].info.version;
+const ext = outputArg == "kotlin" ? "kt" : "swift"
+// Render everything and write output files.
+_.forEach(templateDatas, (templateData, apiName) => {
+  const specConfig = config.specs[apiName];
+  const apiVersion = specs[apiName].info.version;
 
-    const rendered = template({ ...templateData, apiClassName: specConfig.className });
-    const kotlinRendered = kotlinTemplate({ ...templateData, apiClassName: specConfig.className });
-    const renderedPodSpec = podtemplate({ apiName, apiVersion });
+  const rendered = template({ ...templateData, apiClassName: specConfig.className, packageName: _.lowerCase(specConfig.className).replace(/\s+/g, "") });
+  fs.writeFileSync(path.join(configDir, config.output, `${apiName}.${ext}`), rendered);
+  if (podtemplate) {
+    const renderedPodSpec = podtemplate({ apiName, apiVersion });    
+    fs.writeFileSync(path.join(configDir, config.output, `${apiName}.podspec`), renderedPodSpec);
+  }
+});
 
-    _.forEach([
-      [rendered, `${apiName}.swift`],
-      [renderedPodSpec, `${apiName}.podspec`],
-      [kotlinRendered, `${apiName}.kt`]
-    ], ([output, file]) => {
-      fs.writeFileSync(path.join(configDir, config.output, file), output);
-    });
-  });
-}
+
 
