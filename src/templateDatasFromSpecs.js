@@ -59,6 +59,17 @@ function nameFromComponents(...components) {
   ].includes(nonNumberName) ? `\`${nonNumberName}\`` : nonNumberName;
 }
 
+function enumNameFromComponents(...components) {
+  const name = _.upperCase(components.join('/')).replace(/[\W]+/g, "_");
+  // Don't create names that start with a number.
+  const nonNumberName = Number.isNaN(Number(name[0])) ? name : `_${name}`;
+  // Names that are reserved words would be escaped.
+  return [
+    'default',
+    'as',
+  ].includes(nonNumberName) ? `\`${nonNumberName}\`` : nonNumberName;
+}
+
 // Create a class name by combining the given component strings.
 // One of the arguments my be an options object. Currently the only option is 'skip'.
 // If 'skip' is given, skip the first N components when creating the name.
@@ -175,9 +186,10 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
     isNested ? _.tail(models) : models
   ));
 
-  const properties = _.map(propertyTypeInfoAndModels, ({ typeInfo, isNested }, propertyName) => ({
+
+  const properties = _.map(propertyTypeInfoAndModels, ({ typeInfo, isNested }, propertyName) => ({ 
     name: nameFromComponents(propertyName),
-    description: schema.properties[propertyName].description,
+    description: schema.properties[propertyName].description ? schema.properties[propertyName].description.replace(/\n/g, "") : schema.properties[propertyName].description,
     type: isNested ? `${name}.${typeInfo.name}` : typeInfo.name,
     format: typeInfo.format,
     isRequired: !!_.find(schema.required, r => r === propertyName),
@@ -247,6 +259,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
       enumType: typeInfoFromPrimitiveSchema(schema).name,
       values: _.map(schema.enum, e => ({
         name: nameFromComponents(e),
+        uName: enumNameFromComponents(e),
         value: mapPrimitiveValue(e, schema.type),
       })),
     };
@@ -284,7 +297,7 @@ function paramAndModelsFromSpec(unresolvedParamSpec, name, refTarget) {
     format: responseTypeInfo.format,
     serverName: paramSpec.name,
     name: _.camelCase(paramSpec.name),
-    inCap: _.capitalize(paramSpec.in)
+    inCap: (paramSpec.in === "formData") ? "Part" : _.capitalize(paramSpec.in)
   };
   return { param, models: responseModels };
 }
@@ -293,7 +306,7 @@ function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTa
   if (!methodSpec) { return undefined; }
 
   const name = _.camelCase(methodSpec.operationId || urlJoin(endPath, method));
-  const { description } = methodSpec;
+  let { description } = methodSpec;
 
   const paramSpecs = _.concat(pathParams || [], methodSpec.parameters || []);
   const mappedParams = _.map(paramSpecs, paramSpec => paramAndModelsFromSpec(paramSpec, name, refTarget));

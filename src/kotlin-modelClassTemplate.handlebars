@@ -1,18 +1,16 @@
-
 {{#if description.length}}
 /**
- * {{ description }}
+ * {{{ description }}}
  */
-{{/if}}
+ {{/if}}
 data class {{{name}}} (
 	{{#each properties}}
     @SerializedName("{{{specName}}}") val {{{name}}}: {{{type}}} {{~#unless isRequired}}? = null{{/unless}} {{~#unless @last}},{{/unless}} {{#if description.length }} // {{{ description }}} {{/if}}
     {{/each}}
-)	
-{{#if nestedModels.length}}
-{
+) {{#if nestedModels.length}} {
 	{{#each nestedModels}}
-		{{> modelClassTemplate}}
+	{{> modelClassTemplate}}
+
 	{{/each}}
 }
 {{/if}}

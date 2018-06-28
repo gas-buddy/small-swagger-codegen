@@ -1,4 +1,6 @@
-package com.gasbuddy.mobile.webservices.rx.{{{packageName}}}
+@file:Suppress("unused", "UnusedImport", "EnumEntryName")
+
+package com.gasbuddy.mobile.webservices.rx.webservices
 
 import com.gasbuddy.mobile.webservices.GBIORxWebServices
 import com.gasbuddy.mobile.webservices.RxWebServices
@@ -10,6 +12,8 @@ import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
+import java.time.OffsetDateTime
+import okhttp3.MultipartBody
 
 
 class {{{apiClassName}}}WebServices : GBIORxWebServices() {
@@ -17,7 +21,7 @@ class {{{apiClassName}}}WebServices : GBIORxWebServices() {
     //region Companion
     companion object {
         @JvmStatic
-        val api = Retrofit.Builder()
+        val api: API = Retrofit.Builder()
                 .baseUrl(GBIORxWebServices.getHost())
                 .addConverterFactory(GsonConverterFactory.create())
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.createWithScheduler(Schedulers.io()))
@@ -32,21 +36,21 @@ class {{{apiClassName}}}WebServices : GBIORxWebServices() {
     interface API {
         {{#each methods}}
         
-            /**
-             * {{{description}}}
-             {{#each params}}
-             * @param {{{name}}} {{{description}}}
-             {{/each}}
-             * @return Single<{{{response.type}}}>
-             */
-            @Headers("Content-Type:application/json")
-            @{{{capMethod}}}("{{{path}}}")
-            fun {{{name}}}(
-                @HeaderMap headerMap: Map<String, String>{{#if params.length}},{{/if}}
-            {{#each params}}
-                @{{{inCap}}}{{#isNotBodyParam this}}("{{{serverName}}}"){{/isNotBodyParam}} {{{name}}}: {{{type}}}{{#unless required}}? = null{{/unless}}{{~#unless @last}},{{/unless}}
-            {{/each}}
-            ) : Single<{{{response.type}}}>
+        /**
+         * {{{description}}}
+         {{#each params}}
+         * @param {{{name}}} {{{description}}}
+         {{/each}}
+         * @return Single<{{{response.type}}}>
+         */
+        @Headers("Content-Type:application/json")
+        @{{{capMethod}}}("{{{path}}}")
+        fun {{{name}}}(
+            @HeaderMap headerMap: Map<String, String>{{#if params.length}},{{/if}}
+        {{#each params}}
+            @{{{inCap}}}{{#isNotBodyParam this}}("{{{serverName}}}"){{/isNotBodyParam}} {{{name}}}: {{{type}}}{{#unless required}}? = null{{/unless}}{{~#unless @last}},{{/unless}}
+        {{/each}}
+        ) : Single<{{{response.type}}}>
         {{/each}}
     }
     //endregion
@@ -55,6 +59,7 @@ class {{{apiClassName}}}WebServices : GBIORxWebServices() {
     //region Models
     {{#each objectModels}}
     {{> modelClassTemplate}}
+
     {{/each}}
     //endregion
 
@@ -62,9 +67,10 @@ class {{{apiClassName}}}WebServices : GBIORxWebServices() {
     {{#each enumModels}}
     enum class {{{name}}} { 
         {{#each values}}
-            @SerializedName({{{value}}}) {{{name}}}{{~#unless @last}},{{/unless}}
+        @SerializedName({{{value}}}) {{{uName}}}{{~#unless @last}},{{/unless}}
         {{/each}}
     }
+
     {{/each}}
     //endregion
     

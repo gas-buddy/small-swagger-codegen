@@ -70,7 +70,7 @@ _.forEach(templateDatas, (templateData, apiName) => {
   const specConfig = config.specs[apiName];
   const apiVersion = specs[apiName].info.version;
 
-  const rendered = template({ ...templateData, apiClassName: specConfig.className, packageName: _.lowerCase(specConfig.className).replace(/\s+/g, "") });
+  const rendered = template({ ...templateData, apiClassName: specConfig.className });
   fs.writeFileSync(path.join(configDir, config.output, `${apiName}.${ext}`), rendered);
   if (podtemplate) {
     const renderedPodSpec = podtemplate({ apiName, apiVersion });    
