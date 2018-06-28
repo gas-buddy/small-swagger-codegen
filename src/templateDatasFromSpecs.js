@@ -157,7 +157,7 @@ function objectByResolvingRefAndAllOf(obj, refTarget, opts) {
 // ////////////////////////////////////////////////////////////////////
 // Models
 // ////////////////////////////////////////////////////////////////////
-function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget) {
+function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget, isKotlin) {
   const superclassRef = _.get(unresolvedSuperclassSchema, '$ref');
   const superclass = classNameFromRef(superclassRef);
 
@@ -171,7 +171,7 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
   const propertyTypeInfoAndModels = _.mapValues(schema.properties, (property, propertyName) => {
     const isNested = property.type === 'object' && property.properties;
     const defaultTypeName = classNameFromComponents(name, propertyName, { skip: isNested ? 1 : 0 });
-    const typeInfoAndModels = typeInfoAndModelsFromSchema(property, defaultTypeName, refTarget);
+    const typeInfoAndModels = typeInfoAndModelsFromSchema(property, defaultTypeName, refTarget, isKotlin);
     return { ...typeInfoAndModels, isNested };
   });
 
@@ -196,7 +196,7 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
     specName: propertyName,
   }));
 
-  const superclassModels = superclass && typeInfoAndModelsFromSchema(unresolvedSuperclassSchema, '', refTarget).models;
+  const superclassModels = superclass && typeInfoAndModelsFromSchema(unresolvedSuperclassSchema, '', refTarget, isKotlin).models;
   const superModel = _.first(superclassModels);
 
   // This model's inherited properties are all the non-inherited properties of its superclass
@@ -223,16 +223,16 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
   return { typeInfo: { name }, models: _.concat(myModel, propertyModels, superclassModels) };
 }
 
-function typeInfoFromPrimitiveSchema(schema) {
+function typeInfoFromPrimitiveSchema(schema, isKotlin) {
   if (!schema) { return { name: 'Void' }; }
   const mapped = _.get({
-    undefined: 'Response<Void>',
-    boolean: 'Boolean',
+    undefined: (isKotlin ? 'Response<Void>' : 'Void'),
+    boolean: (isKotlin ? 'Boolean' : 'Bool'),
     number: 'Double',
-    file: 'MultipartBody.Part',
-    object: 'Any',
-    integer: { int64: 'Int', default: 'Int' },
-    string: { date: 'OffsetDateTime', 'date-time': 'OffsetDateTime', default: 'String' },
+    file: (isKotlin ? 'MultipartBody.Part' : 'URL'),
+    object: (isKotlin ? 'Any' : 'Dictionary<String, Any>'),
+    integer: { int64: (isKotlin ? 'Int' : 'Int64'), default: (isKotlin ? 'Int' : 'Int32')},
+    string: { date: (isKotlin ? 'OffsetDateTime' : 'Date'), 'date-time': (isKotlin ? 'OffsetDateTime' : 'Date'), default: 'String' },
   }, schema.type);
   const preserveFormat = _.get({
     string: { date: true, 'date-time': true },
@@ -242,7 +242,7 @@ function typeInfoFromPrimitiveSchema(schema) {
   return { name, format: preserveFormat ? schema.format : undefined };
 }
 
-function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
+function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, isKotlin) {
   const ref = unresolvedSchema.$ref;
   const name = ref ? classNameFromRef(ref) : defaultName;
   const specName = ref ? lastRefComponent(ref) : defaultName;
@@ -256,7 +256,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
     const model = {
       name,
       type: 'enum',
-      enumType: typeInfoFromPrimitiveSchema(schema).name,
+      enumType: typeInfoFromPrimitiveSchema(schema, isKotlin).name,
       values: _.map(schema.enum, e => ({
         name: nameFromComponents(e),
         uName: enumNameFromComponents(e),
@@ -266,31 +266,31 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget) {
     return { typeInfo: { name }, models: [model] };
   } else if (schema.type === 'array') {
     assert(schema.items, `Found an array schema with no items: ${describe(schema)}`);
-    const { typeInfo: itemTypeInfo, models: itemModels } = typeInfoAndModelsFromSchema(schema.items, name, refTarget);
-    const typeName = `List<${itemTypeInfo.name}>`;
+    const { typeInfo: itemTypeInfo, models: itemModels } = typeInfoAndModelsFromSchema(schema.items, name, refTarget, isKotlin);
+    const typeName = (isKotlin ? `List<${itemTypeInfo.name}>` : `Array<${itemTypeInfo.name}>`);
     return { typeInfo: { name: typeName, format: itemTypeInfo.format }, models: itemModels };
   } else if (schema.type === 'object' && schema.properties) {
-    return typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget);
+    return typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget, isKotlin);
   }
-  return { typeInfo: typeInfoFromPrimitiveSchema(schema), models: [] };
+  return { typeInfo: typeInfoFromPrimitiveSchema(schema, isKotlin), models: [] };
 }
 
-function typeInfoAndModelsFromParam(param, methodName, refTarget) {
+function typeInfoAndModelsFromParam(param, methodName, refTarget, isKotlin) {
   const defaultName = classNameFromComponents(methodName, param.name || 'response');
   assert(param.schema, `Found a param with no schema: ${describe(param)}`);
-  return typeInfoAndModelsFromSchema(param.schema, defaultName, refTarget);
+  return typeInfoAndModelsFromSchema(param.schema, defaultName, refTarget, isKotlin);
 }
 
 
 // ////////////////////////////////////////////////////////////////////
 // Methods
 // ////////////////////////////////////////////////////////////////////
-function paramAndModelsFromSpec(unresolvedParamSpec, name, refTarget) {
+function paramAndModelsFromSpec(unresolvedParamSpec, name, refTarget, isKotlin) {
   const resolved = objectByResolvingRefAndAllOf(unresolvedParamSpec, refTarget);
   // Sometimes params have a schema, sometimes they just have the properties that a schema would normally have.
   // This normalizes all params to be objects that have a schema.
   const paramSpec = resolved.schema ? resolved : { ...resolved, schema: resolved };
-  const { typeInfo: responseTypeInfo, models: responseModels } = typeInfoAndModelsFromParam(paramSpec, name, refTarget);
+  const { typeInfo: responseTypeInfo, models: responseModels } = typeInfoAndModelsFromParam(paramSpec, name, refTarget, isKotlin);
   const param = {
     ...paramSpec,
     type: responseTypeInfo.name || paramSpec.type || 'Void',
@@ -302,14 +302,14 @@ function paramAndModelsFromSpec(unresolvedParamSpec, name, refTarget) {
   return { param, models: responseModels };
 }
 
-function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTarget) {
+function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTarget, isKotlin) {
   if (!methodSpec) { return undefined; }
 
   const name = _.camelCase(methodSpec.operationId || urlJoin(endPath, method));
   let { description } = methodSpec;
 
   const paramSpecs = _.concat(pathParams || [], methodSpec.parameters || []);
-  const mappedParams = _.map(paramSpecs, paramSpec => paramAndModelsFromSpec(paramSpec, name, refTarget));
+  const mappedParams = _.map(paramSpecs, paramSpec => paramAndModelsFromSpec(paramSpec, name, refTarget, isKotlin));
   const paramModels = _.flatMap(mappedParams, paramAndModels => paramAndModels.models);
   const params = _.map(mappedParams, paramAndModels => paramAndModels.param);
 
@@ -317,7 +317,7 @@ function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTa
     _.find(Object.keys(methodSpec.responses), k => k[0] === '3') ||
     'default';
   const responseSpec = methodSpec.responses[goodResponseKey];
-  const { param: response, models: responseModels } = paramAndModelsFromSpec(responseSpec, name, refTarget);
+  const { param: response, models: responseModels } = paramAndModelsFromSpec(responseSpec, name, refTarget, isKotlin);
 
   const models = paramModels.concat(responseModels);
   const path = urlJoin('/', basePath, endPath);
@@ -325,14 +325,14 @@ function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTa
   return { path, name, description, method, params, response, models, capMethod };
 }
 
-function methodsFromPath(path, pathSpec, basePath, refTarget) {
+function methodsFromPath(path, pathSpec, basePath, refTarget, isKotlin) {
   return _.map(HTTP_METHODS, method => methodFromSpec(
-    path, pathSpec.parameters, basePath, method, pathSpec[method], refTarget,
+    path, pathSpec.parameters, basePath, method, pathSpec[method], refTarget, isKotlin
   ));
 }
 
-function methodsFromPaths(paths, basePath, refTarget) {
-  const rawMethods = _.flatMap(paths, (pathSpec, path) => methodsFromPath(path, pathSpec, basePath, refTarget));
+function methodsFromPaths(paths, basePath, refTarget, isKotlin) {
+  const rawMethods = _.flatMap(paths, (pathSpec, path) => methodsFromPath(path, pathSpec, basePath, refTarget, isKotlin));
   return _.sortBy(rawMethods.filter(m => m), 'path');
 }
 
@@ -366,14 +366,14 @@ function resolveSubclasses(objectModelsWithoutResolvedSubclasses) {
   });
 }
 
-function templateDataFromSpec(spec, apiName, config) {
+function templateDataFromSpec(spec, apiName, config, isKotlin) {
   const basePath = urlJoin(config.specs[apiName].basePath, spec.basePath || '');
-  const methodsWithModels = methodsFromPaths(spec.paths, basePath, spec);
+  const methodsWithModels = methodsFromPaths(spec.paths, basePath, spec, isKotlin);
   const { combinedModels, methods } = moveModelsOffMethods(methodsWithModels);
   const { objectModels, enumModels } = splitModels(combinedModels);
   return { methods, objectModels: resolveSubclasses(objectModels), enumModels, apiName };
 }
 
-export default function templateDatasFromSpecs(specs, config) {
-  return _.mapValues(specs, (spec, apiName) => templateDataFromSpec(spec, apiName, config));
+export default function templateDatasFromSpecs(specs, config, isKotlin) {
+  return _.mapValues(specs, (spec, apiName) => templateDataFromSpec(spec, apiName, config, isKotlin));
 }

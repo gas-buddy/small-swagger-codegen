@@ -17,12 +17,11 @@ if (!pathArg) {
   console.log('Missing argument: pass the path to your config file as an argument.');
   process.exit(1);
 }
-if (!outputArg || !_.includes(["swift", "kotlin"], outputArg) ) {
-  console.log('Missing argument: pass either kotlin or swift for output.');
-  process.exit(1);
-}
 const configPath = path.resolve(pathArg);
 const configDir = path.dirname(configPath);
+const isKotlin = outputArg === "kotlin"
+const lang = isKotlin ? "kotlin" : "swift"
+const ext = isKotlin ? "kt" : "swift"
 
 
 // Turn the specs into data we'll use to render our templates.
@@ -31,7 +30,7 @@ const specs = _.mapValues(config.specs, (specConfig) => {
   const specPath = path.resolve(path.join(configDir, specConfig.spec));
   return JSON.parse(fs.readFileSync(specPath));
 });
-const templateDatas = templateDatasFromSpecs(specs, config);
+const templateDatas = templateDatasFromSpecs(specs, config, isKotlin);
 verify(templateDatas);
 
 // Setup handlebars.
@@ -56,15 +55,14 @@ handlebars.registerHelper('isNotBodyParam', function isNotBodyParam(arg, options
   }
 });
 
-const templateFiles = [`${outputArg}-template.handlebars`, `${outputArg}-modelClassTemplate.handlebars`]
-if (outputArg === "swift") {
-  templateFiles.push(`${outputArg}-podtemplate.handlebars`)
+const templateFiles = [`${lang}-template.handlebars`, `${lang}-modelClassTemplate.handlebars`]
+if (!isKotlin) {
+  templateFiles.push(`${lang}-podtemplate.handlebars`)
 } 
 const [template, modelClassTemplate, podtemplate] = _.map(templateFiles, t => handlebars.compile(fs.readFileSync(path.join(__dirname, t), 'utf8')));
 
 handlebars.registerPartial('modelClassTemplate', modelClassTemplate);
 
-const ext = outputArg == "kotlin" ? "kt" : "swift"
 // Render everything and write output files.
 _.forEach(templateDatas, (templateData, apiName) => {
   const specConfig = config.specs[apiName];
