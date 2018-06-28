@@ -5,7 +5,7 @@
  {{/if}}
 data class {{{name}}} (
 	{{#each properties}}
-    @SerializedName("{{{specName}}}") val {{{name}}}: {{{type}}} {{~#unless isRequired}}? = null{{/unless}} {{~#unless @last}},{{/unless}} {{#if description.length }} // {{{ description }}} {{/if}}
+    @SerializedName("{{{specName}}}") val {{{name}}}: {{{type}}} {{~#unless isRequired}}? = null{{/unless}} {{~#unless @last}},{{/unless}} {{#if description.length }} // {{{ onelineDescription }}} {{/if}}
     {{/each}}
 ) {{#if nestedModels.length}} {
 	{{#each nestedModels}}
@@ -14,3 +14,4 @@ data class {{{name}}} (
 	{{/each}}
 }
 {{/if}}
+

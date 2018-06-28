@@ -189,7 +189,8 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
 
   const properties = _.map(propertyTypeInfoAndModels, ({ typeInfo, isNested }, propertyName) => ({ 
     name: nameFromComponents(propertyName),
-    description: schema.properties[propertyName].description ? schema.properties[propertyName].description.replace(/\n/g, "") : schema.properties[propertyName].description,
+    description: schema.properties[propertyName].description, 
+    onelineDescription: schema.properties[propertyName].description ? schema.properties[propertyName].description.replace(/\n/g, "") : schema.properties[propertyName].description,
     type: isNested ? `${name}.${typeInfo.name}` : typeInfo.name,
     format: typeInfo.format,
     isRequired: !!_.find(schema.required, r => r === propertyName),
