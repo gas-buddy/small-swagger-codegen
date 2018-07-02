@@ -186,19 +186,14 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
     isNested ? _.tail(models) : models
   ));
 
-
-  const properties = _.map(propertyTypeInfoAndModels, ({ typeInfo, isNested }, propertyName) => {
-    const description = schema.properties[propertyName].description;
-    return {
-      name: nameFromComponents(propertyName),
-      description,
-      onelineDescription: description && description.replace(/\n/g, ''),
-      type: isNested ? `${name}.${typeInfo.name}` : typeInfo.name,
-      format: typeInfo.format,
-      isRequired: !!_.find(schema.required, r => r === propertyName),
-      specName: propertyName,
-    };
-  });
+  const properties = _.map(propertyTypeInfoAndModels, ({ typeInfo, isNested }, propertyName) => ({
+    name: nameFromComponents(propertyName),
+    description: schema.properties[propertyName].description,
+    type: isNested ? `${name}.${typeInfo.name}` : typeInfo.name,
+    format: typeInfo.format,
+    isRequired: !!_.find(schema.required, r => r === propertyName),
+    specName: propertyName,
+  }));
 
   const superclassModels = superclass && typeInfoAndModelsFromSchema(
     unresolvedSuperclassSchema, '', refTarget, lang,

@@ -48,6 +48,10 @@ handlebars.registerHelper('maybeComment', function maybeComment(arg, options) {
   return `${' '.repeat(numSpaces)}/// ${trimmed}\n`;
 });
 
+handlebars.registerHelper('oneline', function oneline(options) {
+  return options.fn(this).trim().replace(/\n/g, ' ').trim();
+});
+
 handlebars.registerHelper('isNotBodyParam', function isNotBodyParam(arg, options) {
   if (!arg) { return arg; }
   if (arg.inCap !== 'Body') {
