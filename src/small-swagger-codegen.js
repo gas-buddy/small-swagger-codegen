@@ -12,17 +12,12 @@ import { describe, log, verify } from './verify';
 // Process command line args.
 const argv = minimist(process.argv.slice(2));
 const pathArg = argv._ && argv._.length && argv._[0];
-const outputArg = argv._ && argv._.length && _.lowerCase(argv._[1]);
 if (!pathArg) {
-  console.log('Missing argument: pass the path to your config file as an argument.');
+  console.error('Missing argument: pass the path to your config file as an argument.');
   process.exit(1);
 }
 const configPath = path.resolve(pathArg);
 const configDir = path.dirname(configPath);
-const isKotlin = outputArg === 'kotlin';
-const lang = isKotlin ? 'kotlin' : 'swift';
-const ext = isKotlin ? 'kt' : 'swift';
-
 
 // Turn the specs into data we'll use to render our templates.
 const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
@@ -30,7 +25,14 @@ const specs = _.mapValues(config.specs, (specConfig) => {
   const specPath = path.resolve(path.join(configDir, specConfig.spec));
   return JSON.parse(fs.readFileSync(specPath));
 });
-const templateDatas = templateDatasFromSpecs(specs, config, isKotlin);
+const lang = config.language;
+if (!lang) {
+  console.error(
+    'Missing language: Please add "language": "swift" or "language": "kotlin" to the top level of your config file.',
+  );
+  process.exit(1);
+}
+const templateDatas = templateDatasFromSpecs(specs, config, lang);
 verify(templateDatas);
 
 // Setup handlebars.
@@ -48,17 +50,19 @@ handlebars.registerHelper('maybeComment', function maybeComment(arg, options) {
 
 handlebars.registerHelper('isNotBodyParam', function isNotBodyParam(arg, options) {
   if (!arg) { return arg; }
-  if (arg.inCap != 'Body') {
+  if (arg.inCap !== 'Body') {
     return options.fn(this);
   }
   return options.inverse(this);
 });
 
 const templateFiles = [`${lang}-template.handlebars`, `${lang}-modelClassTemplate.handlebars`];
-if (!isKotlin) {
+if (lang === 'swift') {
   templateFiles.push(`${lang}-podtemplate.handlebars`);
 }
-const [template, modelClassTemplate, podtemplate] = _.map(templateFiles, t => handlebars.compile(fs.readFileSync(path.join(__dirname, t), 'utf8')));
+const [
+  template, modelClassTemplate, podtemplate,
+] = _.map(templateFiles, t => handlebars.compile(fs.readFileSync(path.join(__dirname, t), 'utf8')));
 
 handlebars.registerPartial('modelClassTemplate', modelClassTemplate);
 
@@ -68,10 +72,10 @@ _.forEach(templateDatas, (templateData, apiName) => {
   const apiVersion = specs[apiName].info.version;
 
   const rendered = template({ ...templateData, apiClassName: specConfig.className });
-  fs.writeFileSync(path.join(configDir, config.output, `${apiName}.${ext}`), rendered);
+  const extension = { kotlin: 'kt', swift: 'swift' }[lang];
+  fs.writeFileSync(path.join(configDir, config.output, `${apiName}.${extension}`), rendered);
   if (podtemplate) {
     const renderedPodSpec = podtemplate({ apiName, apiVersion });
     fs.writeFileSync(path.join(configDir, config.output, `${apiName}.podspec`), renderedPodSpec);
   }
 });
-
