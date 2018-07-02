@@ -1,0 +1,77 @@
+@file:Suppress("unused", "UnusedImport", "EnumEntryName")
+
+package com.gasbuddy.mobile.webservices.rx.webservices
+
+import com.gasbuddy.mobile.webservices.GBIORxWebServices
+import com.gasbuddy.mobile.webservices.RxWebServices
+import com.google.gson.annotations.SerializedName
+import io.reactivex.Single
+import io.reactivex.schedulers.Schedulers
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.*
+import java.time.OffsetDateTime
+import okhttp3.MultipartBody
+
+
+class {{{apiClassName}}}WebServices : GBIORxWebServices() {
+
+    //region Companion
+    companion object {
+        @JvmStatic
+        val api: API = Retrofit.Builder()
+                .baseUrl(GBIORxWebServices.getHost())
+                .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.createWithScheduler(Schedulers.io()))
+                .client(RxWebServices.httpClient().newBuilder().build())
+                .build()
+                .create(API::class.java)
+    }
+    //endregion
+
+
+    //region Web Services
+    interface API {
+        {{#each methods}}
+        
+        /**
+         * {{{description}}}
+         {{#each params}}
+         * @param {{{name}}} {{{description}}}
+         {{/each}}
+         * @return Single<{{{response.type}}}>
+         */
+        @Headers("Content-Type:application/json")
+        @{{{capMethod}}}("{{{path}}}")
+        fun {{{name}}}(
+            @HeaderMap headerMap: Map<String, String>{{#if params.length}},{{/if}}
+        {{#each params}}
+            @{{{inCap}}}{{#isNotBodyParam this}}("{{{serverName}}}"){{/isNotBodyParam}} {{{name}}}: {{{type}}}{{#unless required}}? = null{{/unless}}{{~#unless @last}},{{/unless}}
+        {{/each}}
+        ) : Single<{{{response.type}}}>
+        {{/each}}
+    }
+    //endregion
+
+
+    //region Models
+    {{#each objectModels}}
+    {{> modelClassTemplate}}
+
+    {{/each}}
+    //endregion
+
+    //region Enums
+    {{#each enumModels}}
+    enum class {{{name}}} { 
+        {{#each values}}
+        @SerializedName({{{value}}}) {{{uName}}}{{~#unless @last}},{{/unless}}
+        {{/each}}
+    }
+
+    {{/each}}
+    //endregion
+    
+}

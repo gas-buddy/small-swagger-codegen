@@ -13,7 +13,7 @@ import { describe, log, verify } from './verify';
 const argv = minimist(process.argv.slice(2));
 const pathArg = argv._ && argv._.length && argv._[0];
 if (!pathArg) {
-  console.log('Missing argument: pass the path to your config file as an argument.');
+  console.error('Missing argument: pass the path to your config file as an argument.');
   process.exit(1);
 }
 const configPath = path.resolve(pathArg);
@@ -25,7 +25,14 @@ const specs = _.mapValues(config.specs, (specConfig) => {
   const specPath = path.resolve(path.join(configDir, specConfig.spec));
   return JSON.parse(fs.readFileSync(specPath));
 });
-const templateDatas = templateDatasFromSpecs(specs, config);
+const lang = config.language;
+if (!lang) {
+  console.error(
+    'Missing language: Please add "language": "swift" or "language": "kotlin" to the top level of your config file.',
+  );
+  process.exit(1);
+}
+const templateDatas = templateDatasFromSpecs(specs, config, lang);
 verify(templateDatas);
 
 // Setup handlebars.
@@ -41,9 +48,21 @@ handlebars.registerHelper('maybeComment', function maybeComment(arg, options) {
   return `${' '.repeat(numSpaces)}/// ${trimmed}\n`;
 });
 
-const [template, modelClassTemplate, podtemplate] = _.map([
-  'template.handlebars', 'modelClassTemplate.handlebars', 'podtemplate.handlebars',
-], t => handlebars.compile(fs.readFileSync(path.join(__dirname, t), 'utf8')));
+handlebars.registerHelper('isNotBodyParam', function isNotBodyParam(arg, options) {
+  if (!arg) { return arg; }
+  if (arg.inCap !== 'Body') {
+    return options.fn(this);
+  }
+  return options.inverse(this);
+});
+
+const templateFiles = [`${lang}-template.handlebars`, `${lang}-modelClassTemplate.handlebars`];
+if (lang === 'swift') {
+  templateFiles.push(`${lang}-podtemplate.handlebars`);
+}
+const [
+  template, modelClassTemplate, podtemplate,
+] = _.map(templateFiles, t => handlebars.compile(fs.readFileSync(path.join(__dirname, t), 'utf8')));
 
 handlebars.registerPartial('modelClassTemplate', modelClassTemplate);
 
@@ -53,12 +72,10 @@ _.forEach(templateDatas, (templateData, apiName) => {
   const apiVersion = specs[apiName].info.version;
 
   const rendered = template({ ...templateData, apiClassName: specConfig.className });
-  const renderedPodSpec = podtemplate({ apiName, apiVersion });
-
-  _.forEach([
-    [rendered, `${apiName}.swift`],
-    [renderedPodSpec, `${apiName}.podspec`],
-  ], ([output, file]) => {
-    fs.writeFileSync(path.join(configDir, config.output, file), output);
-  });
+  const extension = { kotlin: 'kt', swift: 'swift' }[lang];
+  fs.writeFileSync(path.join(configDir, config.output, `${apiName}.${extension}`), rendered);
+  if (podtemplate) {
+    const renderedPodSpec = podtemplate({ apiName, apiVersion });
+    fs.writeFileSync(path.join(configDir, config.output, `${apiName}.podspec`), renderedPodSpec);
+  }
 });
