@@ -60,7 +60,7 @@ function nameFromComponents(...components) {
 }
 
 function enumNameFromComponents(...components) {
-  const name = _.upperCase(components.join('/')).replace(/[\W]+/g, "_");
+  const name = _.upperCase(components.join('/')).replace(/[\W]+/g, '_');
   // Don't create names that start with a number.
   const nonNumberName = Number.isNaN(Number(name[0])) ? name : `_${name}`;
   // Names that are reserved words would be escaped.
@@ -187,10 +187,10 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
   ));
 
 
-  const properties = _.map(propertyTypeInfoAndModels, ({ typeInfo, isNested }, propertyName) => ({ 
+  const properties = _.map(propertyTypeInfoAndModels, ({ typeInfo, isNested }, propertyName) => ({
     name: nameFromComponents(propertyName),
-    description: schema.properties[propertyName].description, 
-    onelineDescription: schema.properties[propertyName].description ? schema.properties[propertyName].description.replace(/\n/g, "") : schema.properties[propertyName].description,
+    description: schema.properties[propertyName].description,
+    onelineDescription: schema.properties[propertyName].description ? schema.properties[propertyName].description.replace(/\n/g, '') : schema.properties[propertyName].description,
     type: isNested ? `${name}.${typeInfo.name}` : typeInfo.name,
     format: typeInfo.format,
     isRequired: !!_.find(schema.required, r => r === propertyName),
@@ -232,7 +232,7 @@ function typeInfoFromPrimitiveSchema(schema, isKotlin) {
     number: 'Double',
     file: (isKotlin ? 'MultipartBody.Part' : 'URL'),
     object: (isKotlin ? 'Any' : 'Dictionary<String, Any>'),
-    integer: { int64: (isKotlin ? 'Int' : 'Int64'), default: (isKotlin ? 'Int' : 'Int32')},
+    integer: { int64: (isKotlin ? 'Int' : 'Int64'), default: (isKotlin ? 'Int' : 'Int32') },
     string: { date: (isKotlin ? 'OffsetDateTime' : 'Date'), 'date-time': (isKotlin ? 'OffsetDateTime' : 'Date'), default: 'String' },
   }, schema.type);
   const preserveFormat = _.get({
@@ -298,7 +298,7 @@ function paramAndModelsFromSpec(unresolvedParamSpec, name, refTarget, isKotlin) 
     format: responseTypeInfo.format,
     serverName: paramSpec.name,
     name: _.camelCase(paramSpec.name),
-    inCap: (paramSpec.in === "formData") ? "Part" : _.capitalize(paramSpec.in)
+    inCap: (paramSpec.in === 'formData') ? 'Part' : _.capitalize(paramSpec.in),
   };
   return { param, models: responseModels };
 }
@@ -307,7 +307,7 @@ function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTa
   if (!methodSpec) { return undefined; }
 
   const name = _.camelCase(methodSpec.operationId || urlJoin(endPath, method));
-  let { description } = methodSpec;
+  const { description } = methodSpec;
 
   const paramSpecs = _.concat(pathParams || [], methodSpec.parameters || []);
   const mappedParams = _.map(paramSpecs, paramSpec => paramAndModelsFromSpec(paramSpec, name, refTarget, isKotlin));
@@ -322,13 +322,13 @@ function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTa
 
   const models = paramModels.concat(responseModels);
   const path = urlJoin('/', basePath, endPath);
-  const capMethod = _.upperCase(method)
+  const capMethod = _.upperCase(method);
   return { path, name, description, method, params, response, models, capMethod };
 }
 
 function methodsFromPath(path, pathSpec, basePath, refTarget, isKotlin) {
   return _.map(HTTP_METHODS, method => methodFromSpec(
-    path, pathSpec.parameters, basePath, method, pathSpec[method], refTarget, isKotlin
+    path, pathSpec.parameters, basePath, method, pathSpec[method], refTarget, isKotlin,
   ));
 }
 
