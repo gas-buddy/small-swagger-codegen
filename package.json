@@ -31,6 +31,7 @@
   "devDependencies": {
     "babel-cli": "^6.4.5",
     "babel-preset-gasbuddy": "^3.3.0",
+    "eslint": "^4.16.0",
     "eslint-config-gasbuddy": "^4.1.0",
     "eslint-plugin-immutable": "^1.0.0"
   }
