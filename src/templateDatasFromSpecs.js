@@ -55,6 +55,7 @@ function nameFromComponents(...components) {
   // Names that are reserved words would be escaped.
   return [
     'default',
+    'internal',
     'as',
   ].includes(nonNumberName) ? `\`${nonNumberName}\`` : nonNumberName;
 }
@@ -66,6 +67,7 @@ function enumNameFromComponents(...components) {
   // Names that are reserved words would be escaped.
   return [
     'default',
+    'internal',
     'as',
   ].includes(nonNumberName) ? `\`${nonNumberName}\`` : nonNumberName;
 }
