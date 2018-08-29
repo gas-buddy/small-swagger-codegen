@@ -55,11 +55,12 @@ open class {{{name}}}: {{#if superclass}}{{{superclass}}}{{else}}SwaggerModel{{/
             }
         }
         {{/if}}
-        return self.init(
+        let object = {{{name}}}(
         {{#each initializerProperties}}
             {{{name}}}: try {{#unless isRequired}}Optional<{{/unless}}{{{type}}}{{#unless isRequired}}>{{/unless}}.deserialize(json: dictionary["{{{specName}}}"], format: {{#if format}}"{{format}}"{{else}}nil{{/if}}){{#unless @last}},{{/unless}}
         {{/each}}
         )
+		return try cast(object)
     }
     {{#each nestedModels}}
 
