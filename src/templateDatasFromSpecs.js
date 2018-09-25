@@ -152,14 +152,33 @@ function objectByResolvingRefAndAllOf(obj, refTarget, opts) {
 // Language-specific type mappings
 // ////////////////////////////////////////////////////////////////////
 
-function mapType(typeName, format, lang) {
+function typeNameFromAdditionalProperties(additionalProperties, lang) {
+  if (!additionalProperties) { return 'Any'; }
+  const ref = additionalProperties.$ref;
+  if (ref) {
+    return classNameFromRef(ref);
+  }
+  assert(
+    additionalProperties.type !== 'object',
+    'Schemas with additionalProperties of type object that don\'t use $ref are not supported.',
+  );
+  return mapType(
+    additionalProperties.type,
+    additionalProperties.format,
+    additionalProperties.additionalProperties,
+    lang,
+  );
+}
+
+function mapType(typeName, format, additionalProperties, lang) {
+  const additionalPropertiesTypeName = typeNameFromAdditionalProperties(additionalProperties, lang);
   const languageTypeMap = {
     kotlin: {
       undefined: 'Response<Void>',
       boolean: 'Boolean',
       number: 'Double',
       file: 'MultipartBody.Part',
-      object: 'Any',
+      object: `Map<String, ${additionalPropertiesTypeName}>`,
       integer: 'Int',
       string: { date: 'OffsetDateTime', 'date-time': 'OffsetDateTime', default: 'String' },
     },
@@ -168,7 +187,7 @@ function mapType(typeName, format, lang) {
       boolean: 'Bool',
       number: 'Double',
       file: 'URL',
-      object: 'Dictionary<String, Any>',
+      object: `Dictionary<String, ${additionalPropertiesTypeName}>`,
       integer: { int64: 'Int64', default: 'Int32' },
       string: { date: 'Date', 'date-time': 'Date', default: 'String' },
     },
@@ -185,12 +204,20 @@ function arrayify(typeName, lang) {
 // ////////////////////////////////////////////////////////////////////
 // Models
 // ////////////////////////////////////////////////////////////////////
-function typeInfoFromPrimitiveSchema(schema, lang) {
-  if (!schema) { return { name: 'Void' }; }
-  const name = mapType(schema.type, schema.format, lang);
+function typeInfoAndModelsFromPrimitiveSchema(schema, refTarget, lang) {
+  if (!schema) { return { typeInfo: { name: 'Void' }, models: [] }; }
+
+  const additionalProperties = schema.additionalProperties;
+  const additionalPropertiesModels = (additionalProperties && typeInfoAndModelsFromSchema(
+    additionalProperties, '', refTarget, lang,
+  ).models) || [];
+
+  const name = mapType(schema.type, schema.format, additionalProperties, lang);
   assert(!!name, `I don't know how to process a schema of type ${schema.type} 🤔\n  ${describe(schema)}`);
+
   // Currently, we only pass the format from the spec through to our templates for strings.
-  return { name, format: schema.type === 'string' ? schema.format : undefined };
+  const typeInfo = { name, format: schema.type === 'string' ? schema.format : undefined };
+  return { typeInfo, models: additionalPropertiesModels };
 }
 
 function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget, lang) {
@@ -275,7 +302,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, l
     const model = {
       name,
       type: 'enum',
-      enumType: typeInfoFromPrimitiveSchema(schema, lang).name,
+      enumType: typeInfoAndModelsFromPrimitiveSchema(schema, refTarget, lang).typeInfo.name,
       values: _.map(schema.enum, e => ({
         name: nameFromComponents(e),
         uName: enumNameFromComponents(e),
@@ -295,7 +322,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, l
   } else if (schema.type === 'object' && schema.properties) {
     return typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget, lang);
   }
-  return { typeInfo: typeInfoFromPrimitiveSchema(schema, lang), models: [] };
+  return typeInfoAndModelsFromPrimitiveSchema(schema, refTarget, lang);
 }
 
 function typeInfoAndModelsFromParam(param, methodName, refTarget, lang) {
