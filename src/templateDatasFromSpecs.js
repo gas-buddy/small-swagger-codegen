@@ -48,28 +48,20 @@ function isEqualIgnoringDescription(a, b) {
   return _.isEqual(deepOmit(a, 'description'), deepOmit(b, 'description'));
 }
 
+function escapeName(name) {
+  // Don't create names that start with a number.
+  const escaped = Number.isNaN(Number(name[0])) ? name : `_${name}`;
+  return ['default', 'internal', 'as'].includes(escaped) ? `\`${escaped}\`` : escaped;
+}
+
 function nameFromComponents(...components) {
   const name = _.camelCase(components.join('/'));
-  // Don't create names that start with a number.
-  const nonNumberName = Number.isNaN(Number(name[0])) ? name : `_${name}`;
-  // Names that are reserved words would be escaped.
-  return [
-    'default',
-    'internal',
-    'as',
-  ].includes(nonNumberName) ? `\`${nonNumberName}\`` : nonNumberName;
+  return escapeName(name);
 }
 
 function enumNameFromComponents(...components) {
   const name = _.upperCase(components.join('/')).replace(/[\W]+/g, '_');
-  // Don't create names that start with a number.
-  const nonNumberName = Number.isNaN(Number(name[0])) ? name : `_${name}`;
-  // Names that are reserved words would be escaped.
-  return [
-    'default',
-    'internal',
-    'as',
-  ].includes(nonNumberName) ? `\`${nonNumberName}\`` : nonNumberName;
+  return escapeName(name);
 }
 
 // Create a class name by combining the given component strings.
@@ -157,8 +149,50 @@ function objectByResolvingRefAndAllOf(obj, refTarget, opts) {
 
 
 // ////////////////////////////////////////////////////////////////////
+// Language-specific type mappings
+// ////////////////////////////////////////////////////////////////////
+
+function mapType(typeName, format, lang) {
+  const languageTypeMap = {
+    kotlin: {
+      undefined: 'Response<Void>',
+      boolean: 'Boolean',
+      number: 'Double',
+      file: 'MultipartBody.Part',
+      object: 'Any',
+      integer: 'Int',
+      string: { date: 'OffsetDateTime', 'date-time': 'OffsetDateTime', default: 'String' },
+    },
+    swift: {
+      undefined: 'Void',
+      boolean: 'Bool',
+      number: 'Double',
+      file: 'URL',
+      object: 'Dictionary<String, Any>',
+      integer: { int64: 'Int64', default: 'Int32' },
+      string: { date: 'Date', 'date-time': 'Date', default: 'String' },
+    },
+  };
+  const mapped = _.get(languageTypeMap, [lang, typeName]);
+  return mapped[format] || mapped.default || mapped;
+}
+
+function arrayify(typeName, lang) {
+  return { kotlin: `List<${typeName}>`, swift: `Array<${typeName}>` }[lang];
+}
+
+
+// ////////////////////////////////////////////////////////////////////
 // Models
 // ////////////////////////////////////////////////////////////////////
+function typeInfoFromPrimitiveSchema(schema, lang) {
+  if (!schema) { return { name: 'Void' }; }
+  const name = mapType(schema.type, schema.format, lang);
+  assert(!!name, `I don't know how to process a schema of type ${schema.type} 🤔\n  ${describe(schema)}`);
+  // Currently, we only pass the format from the spec through to our templates for strings.
+  return { name, format: schema.type === 'string' ? schema.format : undefined };
+}
+
 function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget, lang) {
   const superclassRef = _.get(unresolvedSuperclassSchema, '$ref');
   const superclass = classNameFromRef(superclassRef);
@@ -227,39 +261,6 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
 }
 
 
-// Language => Swagger Type => [Swagger Format =>] Language Type
-const languageTypeMap = {
-  kotlin: {
-    undefined: 'Response<Void>',
-    boolean: 'Boolean',
-    number: 'Double',
-    file: 'MultipartBody.Part',
-    object: 'Any',
-    integer: 'Int',
-    string: { date: 'OffsetDateTime', 'date-time': 'OffsetDateTime', default: 'String' },
-  },
-  swift: {
-    undefined: 'Void',
-    boolean: 'Bool',
-    number: 'Double',
-    file: 'URL',
-    object: 'Dictionary<String, Any>',
-    integer: { int64: 'Int64', default: 'Int32' },
-    string: { date: 'Date', 'date-time': 'Date', default: 'String' },
-  },
-};
-
-function typeInfoFromPrimitiveSchema(schema, lang) {
-  if (!schema) { return { name: 'Void' }; }
-  const mapped = _.get(languageTypeMap, [lang, schema.type]);
-  const preserveFormat = _.get({
-    string: { date: true, 'date-time': true },
-  }, [schema.type, schema.format], false);
-  assert(!!mapped, `I don't know how to process a schema of type ${schema.type} 🤔\n  ${describe(schema)}`);
-  const name = mapped[schema.format] || mapped.default || mapped;
-  return { name, format: preserveFormat ? schema.format : undefined };
-}
-
 function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, lang) {
   const ref = unresolvedSchema.$ref;
   const name = ref ? classNameFromRef(ref) : defaultName;
@@ -287,11 +288,10 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, l
     const { typeInfo: itemTypeInfo, models: itemModels } = typeInfoAndModelsFromSchema(
       schema.items, name, refTarget, lang,
     );
-    const typeName = {
-      kotlin: `List<${itemTypeInfo.name}>`,
-      swift: `Array<${itemTypeInfo.name}>`,
-    }[lang];
-    return { typeInfo: { name: typeName, format: itemTypeInfo.format }, models: itemModels };
+    return {
+      typeInfo: { name: arrayify(itemTypeInfo.name, lang), format: itemTypeInfo.format },
+      models: itemModels,
+    };
   } else if (schema.type === 'object' && schema.properties) {
     return typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget, lang);
   }
