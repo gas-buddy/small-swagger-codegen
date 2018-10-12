@@ -374,7 +374,8 @@ function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTa
   const models = paramModels.concat(responseModels);
   const path = urlJoin('/', basePath, endPath);
   const capMethod = _.upperCase(method);
-  return { path, name, description, method, params, response, models, capMethod };
+  const streaming = _.get(methodSpec, 'produces[0]') === 'text/event-stream';
+  return { path, name, description, method, params, response, models, capMethod, streaming };
 }
 
 function methodsFromPath(path, pathSpec, basePath, refTarget, lang) {
