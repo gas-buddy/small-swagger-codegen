@@ -16,7 +16,7 @@ open class {{{apiClassName}}}Class: SwaggerApi {
         {{{name}}}: {{{type}}}{{#unless required}}? = nil{{/unless}},
     {{/each}}
         timeout: TimeInterval? = nil,
-        completion: @escaping ({{{response.type}}}?, ErrorResponse?) -> Void
+        {{#if streaming}}eventClosure{{else}}completion{{/if}}: @escaping ({{{response.type}}}?, ErrorResponse?) -> Void
     ) {
         self.{{#if streaming}}streamingRequest{{else}}request{{/if}}(method: .{{{method}}}, path: "{{{path}}}", timeout: timeout, params: [
         {{#each params}}
