@@ -22,7 +22,7 @@ open class {{{apiClassName}}}Class: SwaggerApi {
         {{#each params}}
             .init(name: "{{{serverName}}}", in: .{{{in}}}, value: {{{name}}}, format: {{#if format}}"{{format}}"{{else}}nil{{/if}}) {{~#unless @last}},{{/unless}}
         {{/each}}
-        ], completion: completion)
+        ], {{#if streaming}}eventClosure: eventClosure{{else}}completion: completion{{/if}})
     }
 
 {{/each}}
