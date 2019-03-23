@@ -290,7 +290,7 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
 
 function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, lang) {
   const ref = unresolvedSchema.$ref;
-  const name = ref ? classNameFromRef(ref) : defaultName;
+  const name = ref ? classNameFromRef(ref) : classNameFromComponents(defaultName);
   const specName = ref ? lastRefComponent(ref) : defaultName;
 
   const refResolvedSchema = objectByResolvingRef(unresolvedSchema, refTarget);
@@ -389,16 +389,20 @@ function methodsFromPaths(paths, basePath, refTarget, lang) {
   return _.sortBy(rawMethods.filter(m => m), 'path');
 }
 
+function modelsFromDefinitions(definitions, refTarget, lang) {
+  return _.flatMap(definitions, (unresolvedSchema, name) => (
+    typeInfoAndModelsFromSchema(unresolvedSchema, name, refTarget, lang).models
+  ));
+}
 
 // ////////////////////////////////////////////////////////////////////
 // Process Specs
 // ////////////////////////////////////////////////////////////////////
 
 function moveModelsOffMethods(methodsWithModels) {
-  const rawModels = _.flatMap(methodsWithModels, method => method.models);
-  const combinedModels = _.uniqWith(_.filter(rawModels), isEqualIgnoringDescription);
+  const models = _.flatMap(methodsWithModels, method => method.models);
   const methods = _.map(methodsWithModels, method => _.omit(method, 'models'));
-  return { combinedModels, methods };
+  return { models, methods };
 }
 
 function splitModels(combinedModels) {
@@ -422,8 +426,11 @@ function resolveSubclasses(objectModelsWithoutResolvedSubclasses) {
 function templateDataFromSpec(spec, apiName, config, lang) {
   const basePath = urlJoin(config.specs[apiName].basePath, spec.basePath || '');
   const methodsWithModels = methodsFromPaths(spec.paths, basePath, spec, lang);
-  const { combinedModels, methods } = moveModelsOffMethods(methodsWithModels);
-  const { objectModels, enumModels } = splitModels(combinedModels);
+  const { models, methods } = moveModelsOffMethods(methodsWithModels);
+  const definitionModels = modelsFromDefinitions(spec.definitions, spec, lang);
+  const combinedModels = models.concat(definitionModels);
+  const uniqueModels = _.uniqWith(_.filter(combinedModels), isEqualIgnoringDescription);
+  const { objectModels, enumModels } = splitModels(uniqueModels);
   return { methods, objectModels: resolveSubclasses(objectModels), enumModels, apiName };
 }
 
