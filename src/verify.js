@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import assert from 'assert';
 import util from 'util';
 
 export function describe(it) {
@@ -11,22 +10,18 @@ export function log(it) {
 }
 
 function findProblems(array, pred, foundProblem) {
-  const problems = array
+  return array
     .filter(pred)
     .map(item => foundProblem(describe(item)))
     .join('');
-  return problems === '' ? undefined : problems;
 }
 
 function findAllProblems(array, ...problemFinders) {
-  return _.reduce(problemFinders, (acc, problemFinder) => {
-    findProblems(array, problemFinder[0], (problem) => {
-      if (problem) {
-        return `${acc}${problemFinder[1](problem)}\n---------------------------`;
-      }
-      return acc;
-    });
-  }, '');
+  return _.reduce(problemFinders, (acc, problemFinder) => (
+    acc + findProblems(array, problemFinder[0], problem => (
+      problem ? `${problemFinder[1](problem)}\n---------------------------` : ''
+    ))
+  ), '');
 }
 
 function verifyMethods(methods) {
@@ -34,7 +29,7 @@ function verifyMethods(methods) {
     method => (
       _.find([method.response].concat(method.params), param => !_.get(param, 'type'))
     ),
-    problems => `\nFound methods with params or responses without a type: ${problems}`,
+    problem => `\nFound method with param or response without a type: ${problem}`,
   ], [
     method => _.find(method.params, (param) => {
       if (param.in === 'formData' && param.schema && param.schema.type !== 'file') {
@@ -42,7 +37,7 @@ function verifyMethods(methods) {
       }
       return undefined;
     }),
-    problems => `\nFound methods with form data params that are not of type 'file': ${problems}`,
+    problem => `\nFound method with form data param that is not of type 'file': ${problem}`,
   ]);
 }
 
@@ -53,11 +48,13 @@ function verifyModels(models) {
     // If we found any duplicates, add this model to the list.
     return duplicates.length > 0 ? model : undefined;
   }));
-  assert(dupes.length < 1, `Duplicate names!\n${describe(dupes)}`);
 
   return findAllProblems(models, [
+    model => dupes.includes(model),
+    problem => `\nFound model with duplicated name: ${problem}`,
+  ], [
     model => !model.name,
-    problem => `\nFound models without name: ${problem}`,
+    problem => `\nFound model without name: ${problem}`,
   ], [
     model => model.type !== 'object' && model.type !== 'enum',
     problem => `\nFound non-object-or-enum model: ${problem}`,
@@ -78,5 +75,8 @@ export function verify(templateDatas) {
     const apiProblems = verifyTemplateData(templateData);
     return _.isEmpty(apiProblems) ? '' : `Problems with ${apiName}: ${apiProblems}`;
   }).join('');
-  assert(_.isEmpty(problems), problems);
+  if (!_.isEmpty(problems)) {
+    console.error(problems);
+    process.exit(1);
+  }
 }
