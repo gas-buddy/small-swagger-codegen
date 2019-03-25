@@ -85,6 +85,9 @@ function classNameFromComponents(...args) {
   if (name === 'Error') {
     return 'Error_';
   }
+  if (name === 'ErrorResponse') {
+    return 'ErrorResponse_';
+  }
   return name;
 }
 
