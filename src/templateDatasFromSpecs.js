@@ -82,6 +82,9 @@ function classNameFromComponents(...args) {
   if (name === 'Type' && skip) {
     return classNameFromComponents(...components);
   }
+  if (name === 'Error') {
+    return 'Error_';
+  }
   return name;
 }
 
