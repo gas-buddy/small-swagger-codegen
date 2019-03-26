@@ -192,7 +192,7 @@ function mapType(typeName, format, additionalProperties, lang) {
     swift: {
       undefined: 'Void',
       boolean: 'Bool',
-      number: 'Double',
+      number: { int64: 'Int64', int32: 'Int32', default: 'Double' },
       file: 'URL',
       object: `Dictionary<String, ${additionalPropertiesTypeName}>`,
       integer: { int64: 'Int64', default: 'Int32' },
