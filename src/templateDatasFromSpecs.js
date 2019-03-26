@@ -64,6 +64,8 @@ function enumNameFromComponents(...components) {
   return escapeName(name);
 }
 
+const reservedWords = ['Type', 'Error', 'ErrorResponse'];
+
 // Create a class name by combining the given component strings.
 // One of the arguments my be an options object. Currently the only option is 'skip'.
 // If 'skip' is given, skip the first N components when creating the name.
@@ -79,8 +81,13 @@ function classNameFromComponents(...args) {
   const name = _.upperFirst(nameFromComponents(...skippedComponents));
   // If we're about to name this class a reserved word becuase we skipped some components,
   //   then fallback to using all the components.
-  if (name === 'Type' && skip) {
+  if (reservedWords.includes(name) && skip) {
     return classNameFromComponents(...components);
+  }
+  // If we're about to name this class a reserved word and we didn't skip anything, then
+  //   fallback to sticking a _ at the end.
+  if (reservedWords.includes(name)) {
+    return `${name}_`;
   }
   return name;
 }
