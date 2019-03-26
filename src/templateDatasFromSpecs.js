@@ -12,18 +12,18 @@ const HTTP_METHODS = [
 // Helpers
 // ////////////////////////////////////////////////////////////////////
 
-// Given an object and a key name, return a clone of the object where any fields matching the name
+// Given an object and some key names, return a clone of the object where any fields matching the name
 //   are removed deeply.
 // For example:
 //   deepOmit({ a: 1, b: 2, c: [ { a: 42 } ] }, 'a')
 // Results in this (all the 'a' have been omitted):
 //   { b: 2, c: [ { } ] }
-function deepOmit(obj, keyName) {
+function deepOmit(obj, ...keyNames) {
   if (_.isArray(obj)) {
-    return obj.map(value => deepOmit(value, keyName));
+    return obj.map(value => deepOmit(value, ...keyNames));
   } else if (obj instanceof Object) {
-    const picked = _.pickBy(obj, (value, key) => key !== keyName);
-    return _.mapValues(picked, value => deepOmit(value, keyName));
+    const picked = _.pickBy(obj, (value, key) => !keyNames.includes(key));
+    return _.mapValues(picked, value => deepOmit(value, ...keyNames));
   }
   return obj;
 }
@@ -41,11 +41,15 @@ function deepMerge(...objs) {
   ));
 }
 
+function isEqualIgnoring(a, b, ...ignores) {
+  return _.isEqual(deepOmit(a, ...ignores), deepOmit(b, ...ignores));
+}
+
 // Deeply omit any fields named 'description' from the arguments and check if the results are equal.
 // Useful to compare swagger schemas since we generally care whether the 'real stuff' (types, formats, etc.)
 // are equal, and not whether the descriptions (i.e. comments) are equal.
 function isEqualIgnoringDescription(a, b) {
-  return _.isEqual(deepOmit(a, 'description'), deepOmit(b, 'description'));
+  return isEqualIgnoring(a, b, 'description');
 }
 
 function escapeName(name) {
@@ -277,7 +281,7 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
   // If this model has any properties with the same name and type as one of its inherited
   //   properties, then remove the non-inherited property and use the inherited one.
   const nonInheritedProperties = _.filter(properties, prop => (
-    !_.find(inheritedProperties, iProp => isEqualIgnoringDescription(prop, iProp))
+    !_.find(inheritedProperties, iProp => isEqualIgnoring(prop, iProp, 'description', 'isRequired'))
   ));
 
   const myModel = {
