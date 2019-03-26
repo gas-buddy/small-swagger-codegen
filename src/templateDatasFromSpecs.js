@@ -187,7 +187,7 @@ function mapType(typeName, format, additionalProperties, lang) {
     kotlin: {
       undefined: 'Response<Void>',
       boolean: 'Boolean',
-      number: 'Double',
+      number: { int64: 'Int', int32: 'Int', default: 'Double' },
       file: 'MultipartBody.Part',
       object: `Map<String, ${additionalPropertiesTypeName}>`,
       integer: 'Int',
@@ -196,7 +196,7 @@ function mapType(typeName, format, additionalProperties, lang) {
     swift: {
       undefined: 'Void',
       boolean: 'Bool',
-      number: 'Double',
+      number: { int64: 'Int64', int32: 'Int32', default: 'Double' },
       file: 'URL',
       object: `Dictionary<String, ${additionalPropertiesTypeName}>`,
       integer: { int64: 'Int64', default: 'Int32' },
