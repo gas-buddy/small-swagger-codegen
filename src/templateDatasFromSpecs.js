@@ -427,6 +427,7 @@ function resolveSubclasses(objectModelsWithoutResolvedSubclasses) {
   const om = objectModelsWithoutResolvedSubclasses;
   return _.map(om, (model) => {
     const subclasses = _.filter(_.map(om, (subModel) => {
+      // TODO: Bug here? This will reject subclasses if they are two steps down
       if (subModel.superclass !== model.name) { return undefined; }
       return _.pick(subModel, ['specName', 'name']);
     }));
