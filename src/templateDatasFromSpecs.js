@@ -243,6 +243,11 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
   // Get the type info and models for each of this object's properties, and then add on as 'isNested'
   //   flag to mark properties that are inline objects.
   const propertyTypeInfoAndModels = _.mapValues(schema.properties, (property, propertyName) => {
+    // TODO: This handles direct recursion in the spec, but indirect recursion will still cause an infinite loop.
+    // If this property's type is a ref to the schema we're currently processing, then don't recurse.
+    if (property.$ref && name === classNameFromRef(property.$ref)) {
+      return { typeInfo: { name }, models: [] };
+    }
     const isNested = property.type === 'object' && property.properties;
     const defaultTypeName = classNameFromComponents(name, propertyName, { skip: isNested ? 1 : 0 });
     const typeInfoAndModels = typeInfoAndModelsFromSchema(property, defaultTypeName, refTarget, lang);
