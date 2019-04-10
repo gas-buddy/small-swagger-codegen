@@ -23,16 +23,15 @@
   },
   "homepage": "https://github.com/gas-buddy/small-swagger-codegen#readme",
   "dependencies": {
-    "handlebars": "^4.0.11",
-    "lodash": "^4.16.4",
+    "handlebars": "^4.1.1",
+    "lodash": "^4.17.11",
     "minimist": "^1.2.0",
     "url-join": "^4.0.0"
   },
   "devDependencies": {
     "babel-cli": "^6.4.5",
-    "babel-preset-gasbuddy": "^3.3.0",
-    "eslint": "^4.16.0",
-    "eslint-config-gasbuddy": "^4.1.0",
+    "babel-preset-gasbuddy": "^5.4.0",
+    "eslint-config-gasbuddy": "^5.1.0",
     "eslint-plugin-immutable": "^1.0.0"
   }
 }

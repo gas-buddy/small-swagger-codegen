@@ -6,33 +6,13 @@ import _ from 'lodash';
 import minimist from 'minimist';
 import handlebars from 'handlebars';
 import templateDatasFromSpecs from './templateDatasFromSpecs';
-// eslint-disable-next-line no-unused-vars
-import { describe, log, verify } from './verify';
+import { readConfig } from './configReader';
 
 // Process command line args.
 const argv = minimist(process.argv.slice(2));
-const pathArg = argv._ && argv._.length && argv._[0];
-if (!pathArg) {
-  console.error('Missing argument: pass the path to your config file as an argument.');
-  process.exit(1);
-}
-const configPath = path.resolve(pathArg);
-const configDir = path.dirname(configPath);
+const { language, specs } = readConfig(argv);
+const templateDatas = templateDatasFromSpecs(specs, config, language);
 
-// Turn the specs into data we'll use to render our templates.
-const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-const specs = _.mapValues(config.specs, (specConfig) => {
-  const specPath = path.resolve(path.join(configDir, specConfig.spec));
-  return JSON.parse(fs.readFileSync(specPath));
-});
-const lang = config.language;
-if (!lang) {
-  console.error(
-    'Missing language: Please add "language": "swift" or "language": "kotlin" to the top level of your config file.',
-  );
-  process.exit(1);
-}
-const templateDatas = templateDatasFromSpecs(specs, config, lang);
 verify(templateDatas);
 
 // Setup handlebars.
@@ -60,9 +40,9 @@ handlebars.registerHelper('isNotBodyParam', function isNotBodyParam(arg, options
   return options.inverse(this);
 });
 
-const templateFiles = [`${lang}-template.handlebars`, `${lang}-modelClassTemplate.handlebars`];
+const templateFiles = [`${language}-template.handlebars`, `${language}-modelClassTemplate.handlebars`];
 if (lang === 'swift') {
-  templateFiles.push(`${lang}-podtemplate.handlebars`);
+  templateFiles.push(`${language}-podtemplate.handlebars`);
 }
 const [
   template, modelClassTemplate, podtemplate,

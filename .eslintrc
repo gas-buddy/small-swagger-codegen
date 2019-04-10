@@ -4,7 +4,6 @@
     "immutable"
   ],
   "rules": {
-    "max-len": ["error", 120, 2],
     "no-use-before-define": "off",
     "no-console": "off",
     "immutable/no-let": "error",
