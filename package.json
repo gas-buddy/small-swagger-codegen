@@ -6,6 +6,7 @@
   "scripts": {
     "build": "babel src/ -Dd build/",
     "lint": "eslint .",
+    "test": "tap --node-arg=-r --node-arg=@babel/register tests/test_*.js",
     "gen": "npm run build && node ./build/small-swagger-codegen.js"
   },
   "repository": {
@@ -29,9 +30,11 @@
     "url-join": "^4.0.0"
   },
   "devDependencies": {
-    "babel-cli": "^6.4.5",
+    "@babel/cli": "^7.4.3",
+    "@babel/register": "^7.4.0",
     "babel-preset-gasbuddy": "^5.4.0",
     "eslint-config-gasbuddy": "^5.1.0",
-    "eslint-plugin-immutable": "^1.0.0"
+    "eslint-plugin-immutable": "^1.0.0",
+    "tap": "^12.6.1"
   }
 }

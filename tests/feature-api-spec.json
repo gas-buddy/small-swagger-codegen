@@ -1,0 +1,155 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "1.5.2",
+    "title": "feature-api",
+    "description": "A/B testing and remote feature configuration"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/features/{tag}": {
+      "post": {
+        "description": "Get a list of features and settings for a given device, user and app",
+        "operationId": "getFeatures",
+        "parameters": [
+          {
+            "name": "tag",
+            "in": "path",
+            "description": "The tag (and its parents) for which features are being requested",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "client",
+            "in": "body",
+            "description": "Information about the client making the request",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ClientData"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A list of features and settings for the group",
+            "schema": {
+              "$ref": "#/definitions/Features"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "ClientData": {
+      "type": "object",
+      "required": [
+        "dev",
+        "app"
+      ],
+      "properties": {
+        "locale": {
+          "description": "The locale desired for returned resources",
+          "type": "string"
+        },
+        "ver": {
+          "type": "string",
+          "description": "The \"ver\" value returned from a previous call to this API which will cause features\nhaving a return_if_before value generated before ver not to be returned\n"
+        },
+        "dev": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "description": "A unique identifier for the device",
+              "type": "string"
+            },
+            "os": {
+              "type": "string"
+            },
+            "ver": {
+              "type": "string"
+            }
+          }
+        },
+        "app": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "ver": {
+              "type": "string"
+            },
+            "hr": {
+              "description": "Hours since app install",
+              "type": "number"
+            }
+          }
+        },
+        "user": {
+          "type": "object",
+          "properties": {
+            "country": {
+              "description": "The country in which the user is acting or to which they are assigned",
+              "type": "string"
+            },
+            "anon_id": {
+              "type": "string",
+              "description": "If the user is not an authenticated user, an anonymous identifier for them (such as a guid)"
+            }
+          }
+        },
+        "ctx": {
+          "description": "Arbitrary key value pairs",
+          "type": "object"
+        }
+      }
+    },
+    "Features": {
+      "type": "object",
+      "properties": {
+        "ver": {
+          "type": "string",
+          "description": "A version value which should be passed to future calls such that features marked with a\n\"return_if_before\" value that comes before ver will not be returned\n"
+        },
+        "features": {
+          "type": "array",
+          "description": "A list of feature-variant assignments for the user. Note that if the user is assigned\nto the \"control group\" for a feature, no entry will be sent for that feature\n",
+          "items": {
+            "type": "object",
+            "required": [
+              "n"
+            ],
+            "properties": {
+              "n": {
+                "type": "string",
+                "description": "Feature name"
+              },
+              "r": {
+                "type": "boolean",
+                "description": "FALSE if this feature should not be recorded via analytics events (e.g. we don't need to measure anymore)"
+              },
+              "v": {
+                "type": "string",
+                "description": "Variant for feature. If the variant and feature name are the same, only the feature name will be sent"
+              },
+              "p": {
+                "type": "object",
+                "description": "Payload for the feature and the variant, if available"
+              },
+              "l": {
+                "type": "object",
+                "description": "Localized resources associated with the variant"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

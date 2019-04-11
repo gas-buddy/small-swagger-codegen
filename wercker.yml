@@ -6,6 +6,10 @@ build:
 
     - script:
       name: lint
+      code: npm run test
+
+    - script:
+      name: lint
       code: npm run lint
 
     - script:

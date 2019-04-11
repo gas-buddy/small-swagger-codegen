@@ -11,36 +11,43 @@ function readFromPath(pathArg) {
   const configDir = path.dirname(configPath);
   const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
   return {
-    specs: _.mapValues(config.specs, (specConfig) => {
-      const specPath = path.resolve(path.join(configDir, specConfig.spec));
-      return JSON.parse(fs.readFileSync(specPath));
-    }),
+    apis: _.mapValues(config.specs, specConfig => ({
+      ...specConfig,
+      spec: path.resolve(path.join(configDir, specConfig.spec)),
+    })),
     language: config.language,
+    output: config.output,
   };
 }
 
 export function readConfig(argv) {
-  const { language, specs } = readFromPath(argv._?.[0]);
+  const { language, apis, output } = readFromPath(argv._?.[0]);
 
-  if (!specs && !argv.specs && !argv.className) {
-    console.error('Missing configuration file or spec/className arguments');
-    process.exit(-1);
+  if (!language && !argv.language) {
+    throw new Error('Missing language: Please add "language": "swift", "language": "js" or "language": "kotlin" to the top level of your config file.');
   }
+
+  if (!apis && (!argv.spec || !argv.name)) {
+    throw new Error('Missing configuration file or spec/className arguments');
+  }
+
+  const rawSpecs = apis || {
+    [argv.name]: {
+      spec: argv.spec,
+      className: argv.className || argv.name,
+      basePath: argv.basePath || undefined,
+    },
+  };
 
   const finalConfig = {
     language: language || argv.language,
-    specs: specs || [{
-      spec: argv.spec,
-      className: argv.className,
-      basePath: argv.basePath || undefined,
-    }],
+    apis: _.mapValues(rawSpecs, api => ({
+      ...api,
+      // Load the specs from the file system
+      spec: JSON.parse(fs.readFileSync(api.spec, 'utf8')),
+    })),
+    output: output || argv.output || 'client',
   };
-
-  // Turn the specs into data we'll use to render our templates.
-  if (!finalConfig.language) {
-    console.error('Missing language: Please add "language": "swift", "language": "js" or "language": "kotlin" to the top level of your config file.');
-    process.exit(1);
-  }
 
   return finalConfig;
 }
