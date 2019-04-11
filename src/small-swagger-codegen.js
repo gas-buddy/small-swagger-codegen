@@ -14,12 +14,13 @@ function safeConfigRead() {
   try {
     return readConfig(argv);
   } catch (error) {
+    console.error(error.message);
     process.exit(-1);
   }
 }
 
-const { language, apis, output } = safeConfigRead();
-const parts = render(language, apis);
+const { language, apis, output, opts } = safeConfigRead();
+const parts = render(language, apis, opts);
 
 Object.entries(parts).forEach(([filename, content]) => {
   fs.writeFileSync(path.join(output, filename), content);

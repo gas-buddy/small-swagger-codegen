@@ -10,7 +10,7 @@ import js from './js';
 
 const languages = { swift, kotlin, js };
 
-export default function render(languageName, apis) {
+export default function render(languageName, apis, options) {
   const language = languages[languageName];
   const templateDatas = templateDatasFromSpecs(apis, language);
   verify(templateDatas);
@@ -36,9 +36,11 @@ export default function render(languageName, apis) {
         if (partial) {
           return null;
         }
+
         const templateArgs = {
           ...templateData,
-          apiClassName: specConfig.className,
+          options,
+          apiClassName: apis[apiName].className || apis[apiName].name,
           apiName,
           apiVersion,
         };

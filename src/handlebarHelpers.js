@@ -29,4 +29,11 @@ export default function setupHandlebars(handlebars) {
     }
     return options.inverse(this);
   });
+
+  handlebars.registerHelper('jsIdentifier', (ident) => {
+    const safeIdent = handlebars.escapeExpression(ident);
+    return safeIdent.replace(/[.]/g, '_');
+  });
+
+  handlebars.registerHelper('concat', (delim, ...args) => args.slice(0, args.length - 1).join(delim));
 }

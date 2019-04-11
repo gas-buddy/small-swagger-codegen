@@ -165,7 +165,7 @@ function objectByResolvingRefAndAllOf(obj, refTarget, opts) {
 // ////////////////////////////////////////////////////////////////////
 
 function typeNameFromAdditionalProperties(additionalProperties, languageSpec) {
-  if (!additionalProperties) { return 'Any'; }
+  if (!additionalProperties) { return languageSpec.typeMap.any || 'Any'; }
   const ref = additionalProperties.$ref;
   if (ref) {
     return classNameFromRef(ref);
@@ -186,7 +186,7 @@ function mapType(typeName, format, additionalProperties, languageSpec) {
   const { typeMap } = languageSpec;
   const additionalPropertiesTypeName = typeNameFromAdditionalProperties(additionalProperties, languageSpec);
   const mapped = typeof typeMap[typeName] === 'function' ? typeMap[typeName](additionalPropertiesTypeName) : typeMap[typeName];
-  return mapped[format] || mapped.default || mapped;
+  return mapped?.[format] || mapped?.default || mapped;
 }
 
 function arrayify(typeName, languageSpec) {

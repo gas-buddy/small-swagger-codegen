@@ -1,0 +1,22 @@
+{
+  "name": "{{{options.packageName}}}",
+  "version": "{{{apiVersion}}}",
+  "description": "Swagger client for {{{apiName}}}",
+  "keywords": [
+    "fetch",
+    "typescript",
+    "swagger-client",
+    "small-swagger-codegen"
+  ],
+  "license": "UNLICENSED",
+  "main": "./index.ts",
+  "typings": "./index.d.ts",
+  "scripts" : {
+    "build": "tsc --target ES6 --outDir build/ index.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^8.0.9",
+    "typescript": "^2.4"
+  }
+}
