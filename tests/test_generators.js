@@ -20,6 +20,7 @@ tap.test('test_generators', (test) => {
     name: 'FeatureApi',
     language: 'swift',
     basePath: '/feature',
+    className: 'FeatureAPI',
   });
 
   const items = render(cliSwiftSpec.language, cliSwiftSpec.apis);
@@ -28,7 +29,7 @@ tap.test('test_generators', (test) => {
 
   const cliKtSpec = readConfig({
     spec: 'tests/feature-api-spec.json',
-    name: 'FeatureApi',
+    name: 'FeatureAPI',
     language: 'kotlin',
     basePath: '/feature',
   });

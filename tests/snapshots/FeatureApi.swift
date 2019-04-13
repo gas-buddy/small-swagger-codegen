@@ -1,25 +1,28 @@
 import Foundation
 import SwaggerClientSupport
 
-open class Class: SwaggerApi {
+open class FeatureAPIClass: SwaggerApi {
     /// Get a list of features and settings for a given device, user and app
     /// - parameter tag: The tag (and its parents) for which features are being requested
+    /// - parameter sampleQuery: A query parameter
     /// - parameter client: Information about the client making the request
     open func getFeatures(
         tag: String,
+        sampleQuery: String? = nil,
         client: ClientData,
         timeout: TimeInterval? = nil,
         completion: @escaping (Features?, ErrorResponse?) -> Void
     ) {
         self.request(method: .post, path: "/feature/features/{tag}", timeout: timeout, params: [
             .init(name: "tag", in: .path, value: tag, format: nil),
+            .init(name: "sample_query", in: .query, value: sampleQuery, format: nil),
             .init(name: "client", in: .body, value: client, format: nil)
         ], completion: completion)
     }
 
 }
 
-public let  = Class()
+public let FeatureAPI = FeatureAPIClass()
 
 
 open class ClientData: SwaggerModel {
