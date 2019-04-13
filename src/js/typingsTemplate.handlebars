@@ -13,6 +13,8 @@ interface {{{apiClassName}}}ErrorResponse {
 }
 
 export interface {{{apiClassName}}}Configuration {
+  baseUrl?: string,
+
   fetch: (url: string, init?: any) => Promise<Response>;
 
   requestInterceptor: () => void;
@@ -36,7 +38,7 @@ export default interface {{{apiClassName}}} {
    */
   {{{name}}}({
   {{#each params}}
-      {{{name}}}: {{{type}}}{{#unless required}}? = nil{{/unless}},
+      {{{name}}}: {{{type}}}{{#unless required}}?{{/unless}},
   {{/each}}
   }) : {{{../apiClassName}}}Promise<{{{response.type}}} | {{{../apiClassName}}}ErrorResponse | null>;
 {{/each}}

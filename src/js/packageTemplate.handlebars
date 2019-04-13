@@ -9,14 +9,18 @@
     "small-swagger-codegen"
   ],
   "license": "UNLICENSED",
-  "main": "./index.ts",
+  "main": "./build/index.js",
   "typings": "./index.d.ts",
   "scripts" : {
-    "build": "tsc --target ES6 --outDir build/ index.ts",
+    "build": "babel ./index.js --out-dir build",
     "prepublishOnly": "npm run build"
   },
+  "dependencies": {
+    "rest-api-support": "^0.1.0"
+  },
   "devDependencies": {
+    "@babel/cli": "^7.4.3",
     "@types/node": "^8.0.9",
-    "typescript": "^2.4"
+    "babel-preset-gasbuddy": "^5.3.2"
   }
 }

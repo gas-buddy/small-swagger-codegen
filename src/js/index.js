@@ -5,8 +5,11 @@ export default {
     source: path.resolve(__dirname, 'packageTemplate.handlebars'),
     filename: () => 'package.json',
   }, {
+    source: path.resolve(__dirname, 'babelTemplate.handlebars'),
+    filename: () => 'babel.config.js',
+  }, {
     source: path.resolve(__dirname, 'indexTemplate.handlebars'),
-    filename: () => 'index.ts',
+    filename: () => 'index.js',
   }, {
     source: path.resolve(__dirname, 'typingsTemplate.handlebars'),
     filename: () => 'index.d.ts',

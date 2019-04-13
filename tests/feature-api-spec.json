@@ -25,6 +25,13 @@
             "type": "string"
           },
           {
+            "name": "sample_query",
+            "in": "query",
+            "description": "A query parameter",
+            "required": false,
+            "type": "string"
+          },
+          {
             "name": "client",
             "in": "body",
             "description": "Information about the client making the request",

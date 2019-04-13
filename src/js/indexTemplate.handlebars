@@ -1,43 +1,36 @@
-// tslint:disable
-interface {{{apiClassName}}}Promise<T> extends Promise<T>{
-  abort();
-  /**
-   * Expect certain status codes and accept the promise rather than
-   * throwing
-   */
-  expect(...statusCodes) : {{{apiClassName}}}Promise<T>;
-}
+import { parameterBuilder, fetchHelper } from 'rest-api-support';
 
-interface {{{apiClassName}}}ErrorResponse {
+export default class {{{apiClassName}}} {
+  constructor({
+    baseUrl = '',
+    fetch,
+    requestInterceptor,
+    responseInterceptor,
+  } = {}) {
+    Object.assign(this, { baseUrl, fetch, requestInterceptor, responseInterceptor });
+  }
 
-}
-
-export interface {{{apiClassName}}}Configuration {
-  fetch: (url: string, init?: any) => Promise<Response>;
-
-  requestInterceptor: () => void;
-
-  responseInterceptor: () => void;
-}
-
-{{#each objectModels}}
-{{> modelClassTemplate}}
-
-{{/each}}
-
-export default interface {{{apiClassName}}} {
 {{#each methods}}
   /*
    * {{{description}}}
    *
   {{#each params}}
-   * @parameter ${ {{{type}}} } {{{name}}}: {{{description}}}
+   * @parameter { {{{type}}} } {{{name}}}: {{{description}}}
   {{/each}}
    */
-  {{{name}}}({
-  {{#each params}}
-      {{{name}}}: {{{type}}}{{#unless required}}? = nil{{/unless}},
-  {{/each}}
-  }) : {{{../apiClassName}}}Promise<{{{response.type}}} | {{{../apiClassName}}}ErrorResponse | null>;
+  async {{{name}}}({
+{{#each params}}
+    {{{name}}},
+{{/each}}
+  }, fetchOptions) {
+    // Build parameters, run request interceptors, fetch, and then run response interceptors
+    const fetchArgs = parameterBuilder('{{{capMethod}}}', '{{{path}}}')
+{{#each params}}      .{{{in}}}('{{{serverName}}}', {{{name}}}{{#if format}}, { {{#if format}}
+        format: '{{format}}',
+      {{/if}} }{{#if @last}}){{/if}}{{/if}}){{#if @last}}
+      .build();{{/if}}
+{{/each}}
+    return fetchHelper(this, fetchArgs, fetchOptions);
+  }
 {{/each}}
 }
