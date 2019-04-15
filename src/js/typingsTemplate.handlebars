@@ -8,18 +8,56 @@ interface {{{apiClassName}}}Promise<T> extends Promise<T>{
   expect(...statusCodes) : {{{apiClassName}}}Promise<T>;
 }
 
-interface {{{apiClassName}}}ErrorResponse {
-
+interface EventSource {
+  constructor(url: string, init?: any);
+  removeAllListeners();
+  addEventListener(name: string, handler: (data: any) => void);
+  close();
 }
 
-export interface {{{apiClassName}}}Configuration {
+interface {{{apiClassName}}}ErrorResponse {
+  code: string;
+  message: string;
+  domain: string;
+  display_message?: string;
+}
+
+interface {{{apiClassName}}}RequestOptions {
+  /**
+   * Run before the request goes out with the parameters that will be used
+   */
+  requestInterceptor: (parameters: any) => void;
+  /**
+   * Run after the request comes back
+   */
+  responseInterceptor: (response: any, parameters: any) => void;
+}
+
+export class {{{apiClassName}}}Configuration {
+  /**
+   * Will be prepended to the path defined in the Swagger spec
+   */
   baseUrl?: string,
 
+  /**
+   * For streaming requests
+   */
+  EventSource: (url: string, init?: any) => EventSource;
+
+  /**
+   * For non-streaming requests
+   */
   fetch: (url: string, init?: any) => Promise<Response>;
 
-  requestInterceptor: () => void;
+  /**
+   * Run before the request goes out with the parameters that will be used
+   */
+  requestInterceptor: (parameters: any) => void;
 
-  responseInterceptor: () => void;
+  /**
+   * Run after the request comes back
+   */
+  responseInterceptor: (response: any, parameters: any) => void;
 }
 
 {{#each objectModels}}
@@ -27,19 +65,23 @@ export interface {{{apiClassName}}}Configuration {
 
 {{/each}}
 
-export default interface {{{apiClassName}}} {
 {{#each methods}}
-  /*
+export interface {{name}}Arguments {
+  {{#each params}}
+  {{{name}}}{{#unless required}}?{{/unless}}: {{{type}}},
+  {{/each}}
+}
+{{/each}}
+
+export default class {{{apiClassName}}} {
+{{#each methods}}
+  /**
    * {{{description}}}
    *
   {{#each params}}
-   * @parameter ${ {{{type}}} } {{{name}}}: {{{description}}}
+   * @parameter { {{{type}}} } {{{name}}}: {{{description}}}
   {{/each}}
    */
-  {{{name}}}({
-  {{#each params}}
-      {{{name}}}: {{{type}}}{{#unless required}}?{{/unless}},
-  {{/each}}
-  }) : {{{../apiClassName}}}Promise<{{{response.type}}} | {{{../apiClassName}}}ErrorResponse | null>;
+  {{{name}}}(request: {{{apiClassName}}}Arguments, {{{apiClassName}}RequestOptions}) : {{#if streaming}}EventSource{{else}}{{{../apiClassName}}}Promise<{{{response.type}}} | {{{../apiClassName}}}ErrorResponse | null>{{/if}};
 {{/each}}
 }

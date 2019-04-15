@@ -1,8 +1,11 @@
-{{#if description.length}}
 /**
+{{#if description.length}}
  * {{{ description }}}
- */
+ *
  {{/if}}
+ * @export
+ * @class {{{jsIdentifier name}}}
+ */
 export interface {{{jsIdentifier name}}} {
 	{{#each properties}}
   {{{name}}}{{~#unless isRequired}}?{{/unless}}: {{{jsIdentifier type}}};

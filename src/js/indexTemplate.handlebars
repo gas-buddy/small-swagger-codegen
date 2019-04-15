@@ -1,5 +1,10 @@
-import { parameterBuilder, fetchHelper } from 'rest-api-support';
+import { parameterBuilder, fetchHelper, eventSourceHelper } from 'rest-api-support';
 
+/**
+ *
+ * @export
+ * @class {{{jsIdentifier apiClassName}}}
+ */
 export default class {{{apiClassName}}} {
   constructor({
     baseUrl = '',
@@ -11,8 +16,8 @@ export default class {{{apiClassName}}} {
   }
 
 {{#each methods}}
-  /*
-   * {{{description}}}
+  /**
+   * {{#if description.length}}{{{description}}}{{else}}{{name}}{{/if}}
    *
   {{#each params}}
    * @parameter { {{{type}}} } {{{name}}}: {{{description}}}
@@ -24,13 +29,17 @@ export default class {{{apiClassName}}} {
 {{/each}}
   }, fetchOptions) {
     // Build parameters, run request interceptors, fetch, and then run response interceptors
-    const fetchArgs = parameterBuilder('{{{capMethod}}}', '{{{path}}}')
+    const fetchArgs = parameterBuilder('{{{capMethod}}}', this.baseUrl, '{{{path}}}')
 {{#each params}}      .{{{in}}}('{{{serverName}}}', {{{name}}}{{#if format}}, { {{#if format}}
         format: '{{format}}',
       {{/if}} }{{#if @last}}){{/if}}{{/if}}){{#if @last}}
       .build();{{/if}}
-{{/each}}
+{{/each}}{{#if streaming}}
     return fetchHelper(this, fetchArgs, fetchOptions);
+{{else}}
+    return eventSourceHelper(this, fetchArgs, fetchOptions);
+{{/if}}
   }
+
 {{/each}}
 }
