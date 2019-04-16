@@ -37,7 +37,7 @@ export class {{{apiClassName}}}Configuration {
   /**
    * Will be prepended to the path defined in the Swagger spec
    */
-  baseUrl?: string,
+  baseUrl?: string;
 
   /**
    * For streaming requests
@@ -66,7 +66,7 @@ export class {{{apiClassName}}}Configuration {
 {{/each}}
 
 {{#each methods}}
-export interface {{name}}Arguments {
+export interface {{{name}}}Arguments {
   {{#each params}}
   {{{name}}}{{#unless required}}?{{/unless}}: {{{type}}},
   {{/each}}
@@ -82,6 +82,6 @@ export default class {{{apiClassName}}} {
    * @parameter { {{{type}}} } {{{name}}}: {{{description}}}
   {{/each}}
    */
-  {{{name}}}(request: {{{apiClassName}}}Arguments, {{{apiClassName}}RequestOptions}) : {{#if streaming}}EventSource{{else}}{{{../apiClassName}}}Promise<{{{response.type}}} | {{{../apiClassName}}}ErrorResponse | null>{{/if}};
+  {{{name}}}(request: {{{name}}}Arguments, {{{../apiClassName}}}RequestOptions) : {{#if streaming}}EventSource{{else}}{{{../apiClassName}}}Promise<{{{response.type}}} | {{{../apiClassName}}}ErrorResponse | null>{{/if}};
 {{/each}}
 }

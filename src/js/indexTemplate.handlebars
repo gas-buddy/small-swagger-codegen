@@ -9,10 +9,11 @@ export default class {{{apiClassName}}} {
   constructor({
     baseUrl = '',
     fetch,
+    EventSource,
     requestInterceptor,
     responseInterceptor,
   } = {}) {
-    Object.assign(this, { baseUrl, fetch, requestInterceptor, responseInterceptor });
+    Object.assign(this, { baseUrl, fetch, requestInterceptor, responseInterceptor, EventSource });
   }
 
 {{#each methods}}
@@ -35,9 +36,9 @@ export default class {{{apiClassName}}} {
       {{/if}} }{{#if @last}}){{/if}}{{/if}}){{#if @last}}
       .build();{{/if}}
 {{/each}}{{#if streaming}}
-    return fetchHelper(this, fetchArgs, fetchOptions);
-{{else}}
     return eventSourceHelper(this, fetchArgs, fetchOptions);
+{{else}}
+    return fetchHelper(this, fetchArgs, fetchOptions);
 {{/if}}
   }
 
