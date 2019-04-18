@@ -354,10 +354,17 @@ function paramAndModelsFromSpec(unresolvedParamSpec, name, refTarget, lang) {
   return { param, models: responseModels };
 }
 
-function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTarget, lang) {
+function getMethodName(method, methodSpec, endPath, opts) {
+  if (opts?.snake) {
+    return methodSpec.operationId ? methodSpec.operationId : _.snakeCase(urlJoin(method, endPath));
+  }
+  return _.camelCase(methodSpec.operationId || urlJoin(endPath, method));
+}
+
+function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTarget, lang, opts) {
   if (!methodSpec) { return undefined; }
 
-  const name = _.camelCase(methodSpec.operationId || urlJoin(endPath, method));
+  const name = getMethodName(method, methodSpec, endPath, opts);
   const { description } = methodSpec;
 
   const paramSpecs = _.concat(pathParams || [], methodSpec.parameters || []);
@@ -378,14 +385,14 @@ function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTa
   return { path, name, description, method, params, response, models, capMethod, streaming };
 }
 
-function methodsFromPath(path, pathSpec, basePath, refTarget, lang) {
+function methodsFromPath(path, pathSpec, basePath, refTarget, lang, opts) {
   return _.map(HTTP_METHODS, method => methodFromSpec(
-    path, pathSpec.parameters, basePath, method, pathSpec[method], refTarget, lang,
+    path, pathSpec.parameters, basePath, method, pathSpec[method], refTarget, lang, opts,
   ));
 }
 
-function methodsFromPaths(paths, basePath, refTarget, lang) {
-  const rawMethods = _.flatMap(paths, (pathSpec, path) => methodsFromPath(path, pathSpec, basePath, refTarget, lang));
+function methodsFromPaths(paths, basePath, refTarget, lang, opts) {
+  const rawMethods = _.flatMap(paths, (pathSpec, path) => methodsFromPath(path, pathSpec, basePath, refTarget, lang, opts));
   return _.sortBy(rawMethods.filter(m => m), 'path');
 }
 
@@ -423,10 +430,10 @@ function resolveSubclasses(objectModelsWithoutResolvedSubclasses) {
   });
 }
 
-function templateDataFromSpec(apiDetail, apiName, languageSpec) {
+function templateDataFromSpec(apiDetail, apiName, languageSpec, options) {
   const { spec } = apiDetail;
   const basePath = urlJoin(apiDetail.basePath || '', spec.basePath || '');
-  const methodsWithModels = methodsFromPaths(spec.paths, basePath, spec, languageSpec);
+  const methodsWithModels = methodsFromPaths(spec.paths, basePath, spec, languageSpec, options);
   const { models, methods } = moveModelsOffMethods(methodsWithModels);
   const definitionModels = modelsFromDefinitions(spec.definitions, spec, languageSpec);
   const combinedModels = models.concat(definitionModels);
@@ -435,6 +442,6 @@ function templateDataFromSpec(apiDetail, apiName, languageSpec) {
   return { methods, objectModels: resolveSubclasses(objectModels), enumModels, apiName };
 }
 
-export default function templateDatasFromSpecs(apis, languageSpec) {
-  return _.mapValues(apis, (apiDetail, apiName) => templateDataFromSpec(apiDetail, apiName, languageSpec));
+export default function templateDatasFromSpecs(apis, languageSpec, options) {
+  return _.mapValues(apis, (apiDetail, apiName) => templateDataFromSpec(apiDetail, apiName, languageSpec, options));
 }

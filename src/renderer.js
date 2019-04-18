@@ -12,7 +12,7 @@ const languages = { swift, kotlin, js };
 
 export default function render(languageName, apis, options) {
   const language = languages[languageName];
-  const templateDatas = templateDatasFromSpecs(apis, language);
+  const templateDatas = templateDatasFromSpecs(apis, language, options);
   verify(templateDatas);
 
   setupHandlebars(handlebars);
