@@ -39,7 +39,7 @@ open class {{{name}}}: {{#if superclass}}{{{superclass}}}{{else}}SwaggerModel{{/
         return retVal.filter { (_: String, val: Any?) -> Bool in return val != nil }
     }
 
-    {{#if superclass}}override {{/if}}public class func deserialize(json: Any?, format: String? = nil) throws -> Self {
+    {{#if superclass}}override {{/if}}public class func deserialize(json: Any?, format: String? = nil, debugDescriptor: String = "{{{name}}}") throws -> Self {
         guard let dictionary = json as? [String: Any] else {
             throw deserializationError("Trying to deserialize a {{{name}}} but got \(String(describing: json))")
         }
@@ -48,7 +48,7 @@ open class {{{name}}}: {{#if superclass}}{{{superclass}}}{{else}}SwaggerModel{{/
             switch discriminator {
             {{#each subclasses}}
             case "{{{specName}}}":
-                return try cast(try {{{name}}}.deserialize(json: json, format: format))
+                return try cast(try {{{name}}}.deserialize(json: json, format: format, debugDescriptor: combineDebugDescriptors(debugDescriptor, "<{{{discriminator}}}>.{{{specName}}}")))
             {{/each}}
             default:
                 break
@@ -57,7 +57,7 @@ open class {{{name}}}: {{#if superclass}}{{{superclass}}}{{else}}SwaggerModel{{/
         {{/if}}
         let object = {{{name}}}(
         {{#each initializerProperties}}
-            {{{name}}}: try {{#unless isRequired}}Optional<{{/unless}}{{{type}}}{{#unless isRequired}}>{{/unless}}.deserialize(json: dictionary["{{{specName}}}"], format: {{#if format}}"{{format}}"{{else}}nil{{/if}}){{#unless @last}},{{/unless}}
+            {{{name}}}: try {{#unless isRequired}}Optional<{{/unless}}{{{type}}}{{#unless isRequired}}>{{/unless}}.deserialize(json: dictionary["{{{specName}}}"], format: {{#if format}}"{{format}}"{{else}}nil{{/if}}, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".{{{specName}}}")){{#unless @last}},{{/unless}}
         {{/each}}
         )
         return try cast(object)
