@@ -51,11 +51,11 @@ public enum {{{name}}}: {{{enumType}}}, SwaggerEnum {
     public func serializeToString(format: String? = nil) -> String? {
         return rawValue.serializeToString(format: format);
     }
-    public static func deserialize(json: Any?, format: String? = nil) throws -> {{{name}}} {
+    public static func deserialize(json: Any?, format: String? = nil, debugDescriptor: String = "{{{name}}}") throws -> {{{name}}} {
         guard let asType = json as? {{{enumType}}},
             let asEnum = {{{name}}}(rawValue: asType) else {
             if SwaggerApi.debugMode {
-                fatalError("Attempting to deserialize {{{name}}}._unknown! (This error will not happen in release mode.)")
+                fatalError("Attempting to deserialize {{{name}}}._unknown for \(debugDescriptor)! (This error will not happen in release mode.)")
             }
             return ._unknown;
         }
