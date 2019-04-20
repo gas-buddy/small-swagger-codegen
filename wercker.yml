@@ -5,6 +5,10 @@ build:
     - gasbuddy/npm-install@1.0.0
 
     - script:
+      name: test
+      code: npm run test
+
+    - script:
       name: lint
       code: npm run lint
 

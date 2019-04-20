@@ -1,3 +1,4 @@
 build/
 .wercker
 coverage
+client

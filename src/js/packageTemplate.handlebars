@@ -1,0 +1,26 @@
+{
+  "name": "{{{options.packageName}}}",
+  "version": "{{{apiVersion}}}",
+  "description": "Swagger client for {{{apiName}}}",
+  "keywords": [
+    "fetch",
+    "typescript",
+    "swagger-client",
+    "small-swagger-codegen"
+  ],
+  "license": "UNLICENSED",
+  "main": "./build/index.js",
+  "typings": "./index.d.ts",
+  "scripts" : {
+    "build": "babel ./index.js --out-dir build",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "rest-api-support": "^0.1.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.4.3",
+    "@types/node": "^8.0.9",
+    "babel-preset-gasbuddy": "^5.3.2"
+  }
+}

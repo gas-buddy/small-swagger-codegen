@@ -1,0 +1,87 @@
+// tslint:disable
+interface {{{apiClassName}}}Promise<T> extends Promise<T>{
+  abort();
+  /**
+   * Expect certain status codes and accept the promise rather than
+   * throwing
+   */
+  expect(...statusCodes) : {{{apiClassName}}}Promise<T>;
+}
+
+interface EventSource {
+  constructor(url: string, init?: any);
+  removeAllListeners();
+  addEventListener(name: string, handler: (data: any) => void);
+  close();
+}
+
+interface {{{apiClassName}}}ErrorResponse {
+  code: string;
+  message: string;
+  domain: string;
+  display_message?: string;
+}
+
+interface {{{apiClassName}}}RequestOptions {
+  /**
+   * Run before the request goes out with the parameters that will be used
+   */
+  requestInterceptor: (parameters: any) => void;
+  /**
+   * Run after the request comes back
+   */
+  responseInterceptor: (response: any, parameters: any) => void;
+}
+
+export class {{{apiClassName}}}Configuration {
+  /**
+   * Will be prepended to the path defined in the Swagger spec
+   */
+  baseUrl?: string;
+
+  /**
+   * For streaming requests
+   */
+  EventSource: (url: string, init?: any) => EventSource;
+
+  /**
+   * For non-streaming requests
+   */
+  fetch: (url: string, init?: any) => Promise<Response>;
+
+  /**
+   * Run before the request goes out with the parameters that will be used
+   */
+  requestInterceptor: (parameters: any) => void;
+
+  /**
+   * Run after the request comes back
+   */
+  responseInterceptor: (response: any, parameters: any) => void;
+}
+
+{{#each objectModels}}
+{{> modelClassTemplate}}
+
+{{/each}}
+
+{{#each methods}}
+export interface {{{name}}}Arguments {
+  {{#each params}}
+  {{{name}}}{{#unless required}}?{{/unless}}: {{{type}}},
+  {{/each}}
+}
+{{/each}}
+
+export default class {{{apiClassName}}} {
+{{#each methods}}
+  /**
+   * {{{description}}}
+   *
+  {{#each params}}
+   * @parameter { {{{type}}} } {{{name}}}: {{{description}}}
+  {{/each}}
+   */
+  {{{name}}}(request: {{{name}}}Arguments, {{{../apiClassName}}}RequestOptions) : {{#if streaming}}EventSource{{else}}{{{../apiClassName}}}Promise<{{{response.type}}} | {{{../apiClassName}}}ErrorResponse | null>{{/if}};
+{{/each}}
+}

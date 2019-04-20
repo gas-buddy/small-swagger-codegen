@@ -21,7 +21,8 @@ const HTTP_METHODS = [
 function deepOmit(obj, ...keyNames) {
   if (_.isArray(obj)) {
     return obj.map(value => deepOmit(value, ...keyNames));
-  } else if (obj instanceof Object) {
+  }
+  if (obj instanceof Object) {
     const picked = _.pickBy(obj, (value, key) => !keyNames.includes(key));
     return _.mapValues(picked, value => deepOmit(value, ...keyNames));
   }
@@ -163,8 +164,8 @@ function objectByResolvingRefAndAllOf(obj, refTarget, opts) {
 // Language-specific type mappings
 // ////////////////////////////////////////////////////////////////////
 
-function typeNameFromAdditionalProperties(additionalProperties, lang) {
-  if (!additionalProperties) { return 'Any'; }
+function typeNameFromAdditionalProperties(additionalProperties, languageSpec) {
+  if (!additionalProperties) { return languageSpec.typeMap.any || 'Any'; }
   const ref = additionalProperties.$ref;
   if (ref) {
     return classNameFromRef(ref);
@@ -177,38 +178,19 @@ function typeNameFromAdditionalProperties(additionalProperties, lang) {
     additionalProperties.type,
     additionalProperties.format,
     additionalProperties.additionalProperties,
-    lang,
+    languageSpec,
   );
 }
 
-function mapType(typeName, format, additionalProperties, lang) {
-  const additionalPropertiesTypeName = typeNameFromAdditionalProperties(additionalProperties, lang);
-  const languageTypeMap = {
-    kotlin: {
-      undefined: 'Response<Void>',
-      boolean: 'Boolean',
-      number: { int64: 'Int', int32: 'Int', default: 'Double' },
-      file: 'MultipartBody.Part',
-      object: `Map<String, ${additionalPropertiesTypeName}>`,
-      integer: 'Int',
-      string: { date: 'OffsetDateTime', 'date-time': 'OffsetDateTime', default: 'String' },
-    },
-    swift: {
-      undefined: 'Void',
-      boolean: 'Bool',
-      number: { int64: 'Int64', int32: 'Int32', default: 'Double' },
-      file: 'URL',
-      object: `Dictionary<String, ${additionalPropertiesTypeName}>`,
-      integer: { int64: 'Int64', default: 'Int32' },
-      string: { date: 'Date', 'date-time': 'Date', default: 'String' },
-    },
-  };
-  const mapped = _.get(languageTypeMap, [lang, typeName]);
-  return mapped[format] || mapped.default || mapped;
+function mapType(typeName, format, additionalProperties, languageSpec) {
+  const { typeMap } = languageSpec;
+  const additionalPropertiesTypeName = typeNameFromAdditionalProperties(additionalProperties, languageSpec);
+  const mapped = typeof typeMap[typeName] === 'function' ? typeMap[typeName](additionalPropertiesTypeName) : typeMap[typeName];
+  return mapped?.[format] || mapped?.default || mapped;
 }
 
-function arrayify(typeName, lang) {
-  return { kotlin: `List<${typeName}>`, swift: `Array<${typeName}>` }[lang];
+function arrayify(typeName, languageSpec) {
+  return languageSpec.typeMap.array(typeName);
 }
 
 
@@ -218,7 +200,7 @@ function arrayify(typeName, lang) {
 function typeInfoAndModelsFromPrimitiveSchema(schema, refTarget, lang) {
   if (!schema) { return { typeInfo: { name: 'Void' }, models: [] }; }
 
-  const additionalProperties = schema.additionalProperties;
+  const { additionalProperties } = schema;
   const additionalPropertiesModels = (additionalProperties && typeInfoAndModelsFromSchema(
     additionalProperties, '', refTarget, lang,
   ).models) || [];
@@ -326,7 +308,8 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, l
       })),
     };
     return { typeInfo: { name }, models: [model] };
-  } else if (schema.type === 'array') {
+  }
+  if (schema.type === 'array') {
     assert(schema.items, `Found an array schema with no items: ${describe(schema)}`);
     const { typeInfo: itemTypeInfo, models: itemModels } = typeInfoAndModelsFromSchema(
       schema.items, name, refTarget, lang,
@@ -335,7 +318,8 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, l
       typeInfo: { name: arrayify(itemTypeInfo.name, lang), format: itemTypeInfo.format },
       models: itemModels,
     };
-  } else if (schema.type === 'object' && schema.properties) {
+  }
+  if (schema.type === 'object' && schema.properties) {
     return typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget, lang);
   }
   return typeInfoAndModelsFromPrimitiveSchema(schema, refTarget, lang);
@@ -370,10 +354,17 @@ function paramAndModelsFromSpec(unresolvedParamSpec, name, refTarget, lang) {
   return { param, models: responseModels };
 }
 
-function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTarget, lang) {
+function getMethodName(method, methodSpec, endPath, opts) {
+  if (opts?.snake) {
+    return methodSpec.operationId ? methodSpec.operationId : _.snakeCase(urlJoin(method, endPath));
+  }
+  return _.camelCase(methodSpec.operationId || urlJoin(endPath, method));
+}
+
+function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTarget, lang, opts) {
   if (!methodSpec) { return undefined; }
 
-  const name = _.camelCase(methodSpec.operationId || urlJoin(endPath, method));
+  const name = getMethodName(method, methodSpec, endPath, opts);
   const { description } = methodSpec;
 
   const paramSpecs = _.concat(pathParams || [], methodSpec.parameters || []);
@@ -381,9 +372,9 @@ function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTa
   const paramModels = _.flatMap(mappedParams, paramAndModels => paramAndModels.models);
   const params = _.map(mappedParams, paramAndModels => paramAndModels.param);
 
-  const goodResponseKey = _.find(Object.keys(methodSpec.responses), k => k[0] === '2') ||
-    _.find(Object.keys(methodSpec.responses), k => k[0] === '3') ||
-    'default';
+  const goodResponseKey = _.find(Object.keys(methodSpec.responses), k => k[0] === '2')
+    || _.find(Object.keys(methodSpec.responses), k => k[0] === '3')
+    || 'default';
   const responseSpec = methodSpec.responses[goodResponseKey];
   const { param: response, models: responseModels } = paramAndModelsFromSpec(responseSpec, name, refTarget, lang);
 
@@ -394,14 +385,14 @@ function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTa
   return { path, name, description, method, params, response, models, capMethod, streaming };
 }
 
-function methodsFromPath(path, pathSpec, basePath, refTarget, lang) {
+function methodsFromPath(path, pathSpec, basePath, refTarget, lang, opts) {
   return _.map(HTTP_METHODS, method => methodFromSpec(
-    path, pathSpec.parameters, basePath, method, pathSpec[method], refTarget, lang,
+    path, pathSpec.parameters, basePath, method, pathSpec[method], refTarget, lang, opts,
   ));
 }
 
-function methodsFromPaths(paths, basePath, refTarget, lang) {
-  const rawMethods = _.flatMap(paths, (pathSpec, path) => methodsFromPath(path, pathSpec, basePath, refTarget, lang));
+function methodsFromPaths(paths, basePath, refTarget, lang, opts) {
+  const rawMethods = _.flatMap(paths, (pathSpec, path) => methodsFromPath(path, pathSpec, basePath, refTarget, lang, opts));
   return _.sortBy(rawMethods.filter(m => m), 'path');
 }
 
@@ -439,17 +430,18 @@ function resolveSubclasses(objectModelsWithoutResolvedSubclasses) {
   });
 }
 
-function templateDataFromSpec(spec, apiName, config, lang) {
-  const basePath = urlJoin(config.specs[apiName].basePath, spec.basePath || '');
-  const methodsWithModels = methodsFromPaths(spec.paths, basePath, spec, lang);
+function templateDataFromSpec(apiDetail, apiName, languageSpec, options) {
+  const { spec } = apiDetail;
+  const basePath = urlJoin(apiDetail.basePath || '', spec.basePath || '');
+  const methodsWithModels = methodsFromPaths(spec.paths, basePath, spec, languageSpec, options);
   const { models, methods } = moveModelsOffMethods(methodsWithModels);
-  const definitionModels = modelsFromDefinitions(spec.definitions, spec, lang);
+  const definitionModels = modelsFromDefinitions(spec.definitions, spec, languageSpec);
   const combinedModels = models.concat(definitionModels);
   const uniqueModels = _.uniqWith(_.filter(combinedModels), isEqualIgnoringDescription);
   const { objectModels, enumModels } = splitModels(uniqueModels);
   return { methods, objectModels: resolveSubclasses(objectModels), enumModels, apiName };
 }
 
-export default function templateDatasFromSpecs(specs, config, lang) {
-  return _.mapValues(specs, (spec, apiName) => templateDataFromSpec(spec, apiName, config, lang));
+export default function templateDatasFromSpecs(apis, languageSpec, options) {
+  return _.mapValues(apis, (apiDetail, apiName) => templateDataFromSpec(apiDetail, apiName, languageSpec, options));
 }
