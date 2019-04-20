@@ -64,17 +64,17 @@ open class ClientData: SwaggerModel {
         return retVal.filter { (_: String, val: Any?) -> Bool in return val != nil }
     }
 
-    public class func deserialize(json: Any?, format: String? = nil) throws -> Self {
+    public class func deserialize(json: Any?, format: String? = nil, debugDescriptor: String = "ClientData") throws -> Self {
         guard let dictionary = json as? [String: Any] else {
             throw deserializationError("Trying to deserialize a ClientData but got \(String(describing: json))")
         }
         let object = ClientData(
-            locale: try Optional<String>.deserialize(json: dictionary["locale"], format: nil),
-            ver: try Optional<String>.deserialize(json: dictionary["ver"], format: nil),
-            dev: try ClientData.Dev.deserialize(json: dictionary["dev"], format: nil),
-            app: try ClientData.App.deserialize(json: dictionary["app"], format: nil),
-            user: try Optional<ClientData.User>.deserialize(json: dictionary["user"], format: nil),
-            ctx: try Optional<Dictionary<String, Any>>.deserialize(json: dictionary["ctx"], format: nil)
+            locale: try Optional<String>.deserialize(json: dictionary["locale"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".locale")),
+            ver: try Optional<String>.deserialize(json: dictionary["ver"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".ver")),
+            dev: try ClientData.Dev.deserialize(json: dictionary["dev"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".dev")),
+            app: try ClientData.App.deserialize(json: dictionary["app"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".app")),
+            user: try Optional<ClientData.User>.deserialize(json: dictionary["user"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".user")),
+            ctx: try Optional<Dictionary<String, Any>>.deserialize(json: dictionary["ctx"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".ctx"))
         )
         return try cast(object)
     }
@@ -104,14 +104,14 @@ open class ClientData: SwaggerModel {
             return retVal.filter { (_: String, val: Any?) -> Bool in return val != nil }
         }
     
-        public class func deserialize(json: Any?, format: String? = nil) throws -> Self {
+        public class func deserialize(json: Any?, format: String? = nil, debugDescriptor: String = "Dev") throws -> Self {
             guard let dictionary = json as? [String: Any] else {
                 throw deserializationError("Trying to deserialize a Dev but got \(String(describing: json))")
             }
             let object = Dev(
-                id: try Optional<String>.deserialize(json: dictionary["id"], format: nil),
-                os: try Optional<String>.deserialize(json: dictionary["os"], format: nil),
-                ver: try Optional<String>.deserialize(json: dictionary["ver"], format: nil)
+                id: try Optional<String>.deserialize(json: dictionary["id"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".id")),
+                os: try Optional<String>.deserialize(json: dictionary["os"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".os")),
+                ver: try Optional<String>.deserialize(json: dictionary["ver"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".ver"))
             )
             return try cast(object)
         }
@@ -142,14 +142,14 @@ open class ClientData: SwaggerModel {
             return retVal.filter { (_: String, val: Any?) -> Bool in return val != nil }
         }
     
-        public class func deserialize(json: Any?, format: String? = nil) throws -> Self {
+        public class func deserialize(json: Any?, format: String? = nil, debugDescriptor: String = "App") throws -> Self {
             guard let dictionary = json as? [String: Any] else {
                 throw deserializationError("Trying to deserialize a App but got \(String(describing: json))")
             }
             let object = App(
-                id: try Optional<String>.deserialize(json: dictionary["id"], format: nil),
-                ver: try Optional<String>.deserialize(json: dictionary["ver"], format: nil),
-                hr: try Optional<Double>.deserialize(json: dictionary["hr"], format: nil)
+                id: try Optional<String>.deserialize(json: dictionary["id"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".id")),
+                ver: try Optional<String>.deserialize(json: dictionary["ver"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".ver")),
+                hr: try Optional<Double>.deserialize(json: dictionary["hr"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".hr"))
             )
             return try cast(object)
         }
@@ -177,13 +177,13 @@ open class ClientData: SwaggerModel {
             return retVal.filter { (_: String, val: Any?) -> Bool in return val != nil }
         }
     
-        public class func deserialize(json: Any?, format: String? = nil) throws -> Self {
+        public class func deserialize(json: Any?, format: String? = nil, debugDescriptor: String = "User") throws -> Self {
             guard let dictionary = json as? [String: Any] else {
                 throw deserializationError("Trying to deserialize a User but got \(String(describing: json))")
             }
             let object = User(
-                country: try Optional<String>.deserialize(json: dictionary["country"], format: nil),
-                anonId: try Optional<String>.deserialize(json: dictionary["anon_id"], format: nil)
+                country: try Optional<String>.deserialize(json: dictionary["country"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".country")),
+                anonId: try Optional<String>.deserialize(json: dictionary["anon_id"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".anon_id"))
             )
             return try cast(object)
         }
@@ -212,13 +212,13 @@ open class Features: SwaggerModel {
         return retVal.filter { (_: String, val: Any?) -> Bool in return val != nil }
     }
 
-    public class func deserialize(json: Any?, format: String? = nil) throws -> Self {
+    public class func deserialize(json: Any?, format: String? = nil, debugDescriptor: String = "Features") throws -> Self {
         guard let dictionary = json as? [String: Any] else {
             throw deserializationError("Trying to deserialize a Features but got \(String(describing: json))")
         }
         let object = Features(
-            ver: try Optional<String>.deserialize(json: dictionary["ver"], format: nil),
-            features: try Optional<Array<FeaturesFeatures>>.deserialize(json: dictionary["features"], format: nil)
+            ver: try Optional<String>.deserialize(json: dictionary["ver"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".ver")),
+            features: try Optional<Array<FeaturesFeatures>>.deserialize(json: dictionary["features"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".features"))
         )
         return try cast(object)
     }
@@ -261,16 +261,16 @@ open class FeaturesFeatures: SwaggerModel {
         return retVal.filter { (_: String, val: Any?) -> Bool in return val != nil }
     }
 
-    public class func deserialize(json: Any?, format: String? = nil) throws -> Self {
+    public class func deserialize(json: Any?, format: String? = nil, debugDescriptor: String = "FeaturesFeatures") throws -> Self {
         guard let dictionary = json as? [String: Any] else {
             throw deserializationError("Trying to deserialize a FeaturesFeatures but got \(String(describing: json))")
         }
         let object = FeaturesFeatures(
-            n: try String.deserialize(json: dictionary["n"], format: nil),
-            r: try Optional<Bool>.deserialize(json: dictionary["r"], format: nil),
-            v: try Optional<String>.deserialize(json: dictionary["v"], format: nil),
-            p: try Optional<Dictionary<String, Any>>.deserialize(json: dictionary["p"], format: nil),
-            l: try Optional<Dictionary<String, Any>>.deserialize(json: dictionary["l"], format: nil)
+            n: try String.deserialize(json: dictionary["n"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".n")),
+            r: try Optional<Bool>.deserialize(json: dictionary["r"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".r")),
+            v: try Optional<String>.deserialize(json: dictionary["v"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".v")),
+            p: try Optional<Dictionary<String, Any>>.deserialize(json: dictionary["p"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".p")),
+            l: try Optional<Dictionary<String, Any>>.deserialize(json: dictionary["l"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".l"))
         )
         return try cast(object)
     }

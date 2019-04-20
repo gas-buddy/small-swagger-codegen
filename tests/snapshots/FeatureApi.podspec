@@ -14,7 +14,7 @@ Swagger client for FeatureApi version 1.5.2
   s.author = { 'GasBuddy' => 'info@gasbuddy.com' }
   s.source = { :git => 'https://github.com/gas-buddy/gasbuddy-ios', :tag => s.version.to_s }
 
-  s.ios.deployment_target = '10.0'
+  s.ios.deployment_target = '11.0'
   s.osx.deployment_target = '10.10'
   s.watchos.deployment_target = '5.0'
 
