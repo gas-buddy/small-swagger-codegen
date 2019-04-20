@@ -6,8 +6,8 @@ export default {
     partial: 'modelClassTemplate',
   }, {
     source: path.resolve(__dirname, 'template.handlebars'),
-    filename({ apiName }) {
-      return `${apiName}.kt`;
+    filename({ apiClassName }) {
+      return `${apiClassName}.kt`;
     },
   }],
   typeMap: {
