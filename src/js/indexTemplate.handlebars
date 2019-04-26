@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-unused-vars
 import { parameterBuilder, fetchHelper, eventSourceHelper } from 'rest-api-support';
 
 /**
@@ -20,8 +21,8 @@ export default class {{{apiClassName}}} {
     } = config || {}
     Object.assign(this, { baseUrl, fetch, requestInterceptor, responseInterceptor, EventSource });
   }
-
 {{#each methods}}
+
   /**
    * {{#if description.length}}{{{description}}}{{else}}{{name}}{{/if}}
    *
@@ -29,13 +30,14 @@ export default class {{{apiClassName}}} {
    * @parameter { {{{type}}} } {{{name}}}: {{{description}}}
   {{/each}}
    */
-  async {{{name}}}({
+  {{{name}}}({
 {{#each params}}
     {{{name}}},
 {{/each}}
   }, fetchOptions) {
     // Build parameters, run request interceptors, fetch, and then run response interceptors
-    const source = { method: '{{{name}}}', client: '{{{apiClassName}}}', args: arguments[0] };
+    // eslint-disable-next-line prefer-rest-params
+    const source = { method: '{{{name}}}', client: '{{{apiClassName}}}', arguments: arguments[0] };
     const fetchArgs = parameterBuilder('{{{capMethod}}}', this.baseUrl, '{{{path}}}')
 {{#each params}}      .{{{in}}}('{{{serverName}}}', {{{name}}}{{#if format}}, { {{#if format}}
         format: '{{format}}',
@@ -47,6 +49,5 @@ export default class {{{apiClassName}}} {
     return fetchHelper(this, fetchArgs, fetchOptions, source);
 {{/if}}
   }
-
 {{/each}}
 }

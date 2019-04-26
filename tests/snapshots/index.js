@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-unused-vars
 import { parameterBuilder, fetchHelper, eventSourceHelper } from 'rest-api-support';
 
 /**
@@ -28,13 +29,14 @@ export default class FeatureAPI {
    * @parameter { string } sampleQuery: A query parameter
    * @parameter { ClientData } client: Information about the client making the request
    */
-  async getFeatures({
+  getFeatures({
     tag,
     sampleQuery,
     client,
   }, fetchOptions) {
     // Build parameters, run request interceptors, fetch, and then run response interceptors
-    const source = { method: 'getFeatures', client: '', args: arguments[0] };
+    // eslint-disable-next-line prefer-rest-params
+    const source = { method: 'getFeatures', client: '', arguments: arguments[0] };
     const fetchArgs = parameterBuilder('POST', this.baseUrl, '/feature/features/{tag}')
       .path('tag', tag)
       .query('sample_query', sampleQuery)
@@ -42,5 +44,4 @@ export default class FeatureAPI {
       .build();
     return fetchHelper(this, fetchArgs, fetchOptions, source);
   }
-
 }
