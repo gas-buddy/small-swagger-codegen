@@ -1,0 +1,26 @@
+{
+  "name": "",
+  "version": "1.5.2",
+  "description": "Swagger client for FeatureAPI",
+  "keywords": [
+    "fetch",
+    "typescript",
+    "swagger-client",
+    "small-swagger-codegen"
+  ],
+  "license": "UNLICENSED",
+  "main": "./build/index.js",
+  "typings": "./index.d.ts",
+  "scripts" : {
+    "build": "babel ./index.js --out-dir build",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "rest-api-support": "^0.2.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.4.3",
+    "@types/node": "^8.0.9",
+    "babel-preset-gasbuddy": "^5.3.2"
+  }
+}

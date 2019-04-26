@@ -43,5 +43,19 @@ tap.test('test_generators', (test) => {
   test.strictEquals(Object.values(ktItem).length, 1, 'Should return 1 item to be rendered');
   compareFiles(test, ktItem);
 
+  const cliJsSpec = readConfig({
+    spec: 'tests/feature-api-spec.json',
+    name: 'FeatureAPI',
+    language: 'js',
+    packageName: '@gasbuddy/feature-api-spec',
+    basePath: '/feature',
+    snake: true,
+  });
+
+  const jsItems = render(cliJsSpec.language, cliJsSpec.apis);
+  test.strictEquals(Object.values(jsItems).length, 4, 'Should return 4 items to be rendered');
+  // Object.keys(jsItems).forEach((k) => { console.error(k); console.error(jsItems[k]); });
+  compareFiles(test, jsItems);
+
   test.end();
 });

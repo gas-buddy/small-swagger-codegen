@@ -6,13 +6,18 @@ import { parameterBuilder, fetchHelper, eventSourceHelper } from 'rest-api-suppo
  * @class {{{jsIdentifier apiClassName}}}
  */
 export default class {{{apiClassName}}} {
-  constructor({
-    baseUrl = '',
-    fetch,
-    EventSource,
-    requestInterceptor,
-    responseInterceptor,
-  } = {}) {
+  constructor(configOrGenerator) {
+    let config = configOrGenerator;
+    if (typeof configOrGenerator === 'function') {
+      config = configOrGenerator({{{apiClassName}}});
+    }
+    const {
+      baseUrl = '',
+      fetch,
+      EventSource,
+      requestInterceptor,
+      responseInterceptor,
+    } = config || {}
     Object.assign(this, { baseUrl, fetch, requestInterceptor, responseInterceptor, EventSource });
   }
 

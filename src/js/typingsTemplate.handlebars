@@ -74,6 +74,8 @@ export interface {{{name}}}Arguments {
 {{/each}}
 
 export default class {{{apiClassName}}} {
+  constructor(configOrFunctionGeneratingConfig: {{{apiClassName}}}Configuration);
+
 {{#each methods}}
   /**
    * {{{description}}}
