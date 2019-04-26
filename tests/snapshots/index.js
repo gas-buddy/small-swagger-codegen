@@ -54,6 +54,7 @@ export default class FeatureAPI {
     // eslint-disable-next-line prefer-rest-params
     const source = { method: 'noargsGet', client: '', arguments: arguments[0] };
     const fetchArgs = parameterBuilder('GET', this.baseUrl, '/feature/noargs')
+      .build();
     return fetchHelper(this, fetchArgs, fetchOptions, source);
   }
 }

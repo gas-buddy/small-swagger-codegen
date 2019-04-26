@@ -43,6 +43,7 @@ export default class {{{apiClassName}}} {
         format: '{{format}}',
       {{/if}} }{{#if @last}}){{/if}}{{/if}}){{#if @last}}
       .build();{{/if}}
+{{else}}      .build();
 {{/each}}{{#if streaming}}
     return eventSourceHelper(this, fetchArgs, fetchOptions, source);
 {{else}}
