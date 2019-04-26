@@ -34,12 +34,13 @@ export default class FeatureAPI {
     client,
   }, fetchOptions) {
     // Build parameters, run request interceptors, fetch, and then run response interceptors
+    const source = { method: 'getFeatures', client: '', args: arguments[0] };
     const fetchArgs = parameterBuilder('POST', this.baseUrl, '/feature/features/{tag}')
       .path('tag', tag)
       .query('sample_query', sampleQuery)
       .body('client', client)
       .build();
-    return fetchHelper(this, fetchArgs, fetchOptions);
+    return fetchHelper(this, fetchArgs, fetchOptions, source);
   }
 
 }

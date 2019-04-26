@@ -35,15 +35,16 @@ export default class {{{apiClassName}}} {
 {{/each}}
   }, fetchOptions) {
     // Build parameters, run request interceptors, fetch, and then run response interceptors
+    const source = { method: '{{{name}}}', client: '{{{apiClassName}}}', args: arguments[0] };
     const fetchArgs = parameterBuilder('{{{capMethod}}}', this.baseUrl, '{{{path}}}')
 {{#each params}}      .{{{in}}}('{{{serverName}}}', {{{name}}}{{#if format}}, { {{#if format}}
         format: '{{format}}',
       {{/if}} }{{#if @last}}){{/if}}{{/if}}){{#if @last}}
       .build();{{/if}}
 {{/each}}{{#if streaming}}
-    return eventSourceHelper(this, fetchArgs, fetchOptions);
+    return eventSourceHelper(this, fetchArgs, fetchOptions, source);
 {{else}}
-    return fetchHelper(this, fetchArgs, fetchOptions);
+    return fetchHelper(this, fetchArgs, fetchOptions, source);
 {{/if}}
   }
 
