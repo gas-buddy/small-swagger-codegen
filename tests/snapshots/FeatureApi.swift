@@ -20,6 +20,15 @@ open class FeatureAPIClass: SwaggerApi {
         ], completion: completion)
     }
 
+    /// A method with no parameters
+    open func noargsGet(
+        timeout: TimeInterval? = nil,
+        completion: @escaping (Features?, ErrorResponse?) -> Void
+    ) {
+        self.request(method: .get, path: "/feature/noargs", timeout: timeout, params: [
+        ], completion: completion)
+    }
+
 }
 
 public let FeatureAPI = FeatureAPIClass()

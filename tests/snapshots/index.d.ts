@@ -140,5 +140,11 @@ export default class FeatureAPI {
    * @parameter { string } sampleQuery: A query parameter
    * @parameter { ClientData } client: Information about the client making the request
    */
-  getFeatures(request: getFeaturesArguments, FeatureAPIRequestOptions) : FeatureAPIPromise<Features | FeatureAPIErrorResponse | null>;
+  getFeatures(request: getFeaturesArguments, options?: FeatureAPIRequestOptions) : FeatureAPIPromise<Features | FeatureAPIErrorResponse | null>;
+
+  /**
+   * A method with no parameters
+   *
+   */
+  noargsGet(request?: null | undefined, options?: FeatureAPIRequestOptions) : FeatureAPIPromise<Features | FeatureAPIErrorResponse | null>;
 }

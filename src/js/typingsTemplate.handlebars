@@ -64,19 +64,17 @@ export class {{{apiClassName}}}Configuration {
 {{> modelClassTemplate}}
 
 {{/each}}
-
-{{#each methods}}
+{{#each methods}}{{#if params.length}}
 export interface {{{name}}}Arguments {
   {{#each params}}
   {{{name}}}{{#unless required}}?{{/unless}}: {{{type}}},
   {{/each}}
 }
-{{/each}}
-
+{{/if}}{{/each}}
 export default class {{{apiClassName}}} {
   constructor(configOrFunctionGeneratingConfig: {{{apiClassName}}}Configuration);
-
 {{#each methods}}
+
   /**
    * {{{description}}}
    *
@@ -84,6 +82,6 @@ export default class {{{apiClassName}}} {
    * @parameter { {{{type}}} } {{{name}}}: {{{description}}}
   {{/each}}
    */
-  {{{name}}}(request: {{{name}}}Arguments, {{{../apiClassName}}}RequestOptions) : {{#if streaming}}EventSource{{else}}{{{../apiClassName}}}Promise<{{{response.type}}} | {{{../apiClassName}}}ErrorResponse | null>{{/if}};
+  {{{name}}}(request{{#unless params.length}}?{{/unless}}: {{#if params.length}}{{{name}}}Arguments{{else}}null | undefined{{/if}}, options?: {{{../apiClassName}}}RequestOptions) : {{#if streaming}}EventSource{{else}}{{{../apiClassName}}}Promise<{{{response.type}}} | {{{../apiClassName}}}ErrorResponse | null>{{/if}};
 {{/each}}
 }

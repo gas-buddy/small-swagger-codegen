@@ -44,4 +44,16 @@ export default class FeatureAPI {
       .build();
     return fetchHelper(this, fetchArgs, fetchOptions, source);
   }
+
+  /**
+   * A method with no parameters
+   *
+   */
+  noargsGet(hasNoArguments, fetchOptions) {
+    // Build parameters, run request interceptors, fetch, and then run response interceptors
+    // eslint-disable-next-line prefer-rest-params
+    const source = { method: 'noargsGet', client: '', arguments: arguments[0] };
+    const fetchArgs = parameterBuilder('GET', this.baseUrl, '/feature/noargs')
+    return fetchHelper(this, fetchArgs, fetchOptions, source);
+  }
 }

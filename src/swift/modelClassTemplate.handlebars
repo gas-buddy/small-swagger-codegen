@@ -7,7 +7,7 @@ open class {{{name}}}: {{#if superclass}}{{{superclass}}}{{else}}SwaggerModel{{/
     {{{description}}}
     {{/maybeComment}}
     public var {{{name}}}: {{{type}}}{{#unless isRequired}}?{{/unless}}
-    {{/each}}
+{{/each}}
 
     public init(
     {{#each initializerProperties}}
@@ -16,12 +16,12 @@ open class {{{name}}}: {{#if superclass}}{{{superclass}}}{{else}}SwaggerModel{{/
     ) {
     {{#each properties}}
         self.{{{name}}} = {{{name}}}
-    {{/each}}
+{{/each}}
     {{~#if superclass}}
         super.init(
         {{#each inheritedProperties}}
             {{{name}}}: {{{name}}} {{~#unless @last}},{{/unless}}
-        {{/each}}
+{{/each}}
         )
     {{/if}}
     }

@@ -50,6 +50,16 @@ class FeatureAPIWebServices : GBIORxWebServices() {
             @Query("sample_query") sampleQuery: String? = null,
             @Body client: ClientData
         ) : Single<Features>
+        
+        /**
+         * A method with no parameters
+         * @return Single<Features>
+         */
+        @Headers("Content-Type:application/json")
+        @GET("/feature/noargs")
+        fun noargsGet(
+            @HeaderMap headerMap: Map<String, String>
+        ) : Single<Features>
     }
     //endregion
 

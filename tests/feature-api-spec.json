@@ -12,6 +12,19 @@
     "application/json"
   ],
   "paths": {
+    "/noargs": {
+      "get": {
+        "description": "A method with no parameters",
+        "responses": {
+          "200": {
+            "description": "A list of features and settings for the group",
+            "schema": {
+              "$ref": "#/definitions/Features"
+            }
+          }
+        }
+      }
+    },
     "/features/{tag}": {
       "post": {
         "description": "Get a list of features and settings for a given device, user and app",

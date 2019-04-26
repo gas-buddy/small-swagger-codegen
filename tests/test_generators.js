@@ -7,6 +7,9 @@ import render from '../src/renderer';
 function compareFiles(test, items) {
   Object.entries(items).forEach(([fname, content]) => {
     const snapshot = fs.readFileSync(path.resolve(__dirname, 'snapshots', fname), 'utf8');
+    if (snapshot !== content) {
+      fs.writeFileSync(path.resolve(__dirname, 'snapshots', `${fname}.new`), content, 'utf8');
+    }
     test.strictEquals(snapshot, content, 'Content should match');
   });
 }
