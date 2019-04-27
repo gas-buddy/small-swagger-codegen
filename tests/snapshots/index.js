@@ -12,8 +12,8 @@ const CONFIG_FUNCTION = Symbol.for('small-swagger-codegen::configurationGenerato
 export default class FeatureAPI {
   constructor(configOrGenerator) {
     let config = (configOrGenerator && configOrGenerator[CONFIG_FUNCTION]) || configOrGenerator;
-    if (typeof configOrGenerator === 'function') {
-      config = configOrGenerator(FeatureAPI);
+    if (typeof config === 'function') {
+      config = config(FeatureAPI);
     }
     const {
       baseUrl = '',

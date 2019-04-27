@@ -12,8 +12,8 @@ const CONFIG_FUNCTION = Symbol.for('small-swagger-codegen::configurationGenerato
 export default class {{{apiClassName}}} {
   constructor(configOrGenerator) {
     let config = (configOrGenerator && configOrGenerator[CONFIG_FUNCTION]) || configOrGenerator;
-    if (typeof configOrGenerator === 'function') {
-      config = configOrGenerator({{{apiClassName}}});
+    if (typeof config === 'function') {
+      config = config({{{apiClassName}}});
     }
     const {
       baseUrl = '',
