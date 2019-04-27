@@ -59,8 +59,8 @@ function escapeName(name) {
   return ['default', 'internal', 'as'].includes(escaped) ? `\`${escaped}\`` : escaped;
 }
 
-function nameFromComponents(...components) {
-  const name = _.camelCase(components.join('/'));
+function nameFromComponents(opts, ...components) {
+  const name = opts?.snake ? _.snakeCase(components.join('/')) : _.camelCase(components.join('/'));
   return escapeName(name);
 }
 
@@ -83,7 +83,7 @@ function classNameFromComponents(...args) {
   const [components, [options]] = _.partition(args, _.isString);
   const { skip } = options || { skip: 0 };
   const skippedComponents = _.drop(components, skip);
-  const name = _.upperFirst(nameFromComponents(...skippedComponents));
+  const name = _.upperFirst(nameFromComponents(null, ...skippedComponents));
   // If we're about to name this class a reserved word becuase we skipped some components,
   //   then fallback to using all the components.
   if (reservedWords.includes(name) && skip) {
@@ -197,12 +197,12 @@ function arrayify(typeName, languageSpec) {
 // ////////////////////////////////////////////////////////////////////
 // Models
 // ////////////////////////////////////////////////////////////////////
-function typeInfoAndModelsFromPrimitiveSchema(schema, refTarget, lang) {
+function typeInfoAndModelsFromPrimitiveSchema(schema, refTarget, lang, opts) {
   if (!schema) { return { typeInfo: { name: 'Void' }, models: [] }; }
 
   const { additionalProperties } = schema;
   const additionalPropertiesModels = (additionalProperties && typeInfoAndModelsFromSchema(
-    additionalProperties, '', refTarget, lang,
+    additionalProperties, '', refTarget, lang, opts,
   ).models) || [];
 
   const name = mapType(schema.type, schema.format, additionalProperties, lang);
@@ -213,7 +213,7 @@ function typeInfoAndModelsFromPrimitiveSchema(schema, refTarget, lang) {
   return { typeInfo, models: additionalPropertiesModels };
 }
 
-function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget, lang) {
+function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget, lang, opts) {
   const superclassRef = _.get(unresolvedSuperclassSchema, '$ref');
   const superclass = classNameFromRef(superclassRef);
 
@@ -232,7 +232,7 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
     }
     const isNested = property.type === 'object' && property.properties;
     const defaultTypeName = classNameFromComponents(name, propertyName, { skip: isNested ? 1 : 0 });
-    const typeInfoAndModels = typeInfoAndModelsFromSchema(property, defaultTypeName, refTarget, lang);
+    const typeInfoAndModels = typeInfoAndModelsFromSchema(property, defaultTypeName, refTarget, lang, opts);
     return { ...typeInfoAndModels, isNested };
   });
 
@@ -248,7 +248,7 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
   ));
 
   const properties = _.map(propertyTypeInfoAndModels, ({ typeInfo, isNested }, propertyName) => ({
-    name: nameFromComponents(propertyName),
+    name: nameFromComponents(opts, propertyName),
     description: schema.properties[propertyName].description,
     type: isNested ? `${name}.${typeInfo.name}` : typeInfo.name,
     format: typeInfo.format,
@@ -257,7 +257,7 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
   }));
 
   const superclassModels = superclass && typeInfoAndModelsFromSchema(
-    unresolvedSuperclassSchema, '', refTarget, lang,
+    unresolvedSuperclassSchema, '', refTarget, lang, opts,
   ).models;
   const superModel = _.first(superclassModels);
 
@@ -286,7 +286,7 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
 }
 
 
-function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, lang) {
+function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, lang, opts) {
   const ref = unresolvedSchema.$ref;
   const name = ref ? classNameFromRef(ref) : classNameFromComponents(defaultName);
   const specName = ref ? lastRefComponent(ref) : defaultName;
@@ -300,7 +300,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, l
     const model = {
       name,
       type: 'enum',
-      enumType: typeInfoAndModelsFromPrimitiveSchema(schema, refTarget, lang).typeInfo.name,
+      enumType: typeInfoAndModelsFromPrimitiveSchema(schema, refTarget, lang, opts).typeInfo.name,
       values: _.map(schema.enum, e => ({
         name: nameFromComponents(e),
         uName: enumNameFromComponents(e),
@@ -312,7 +312,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, l
   if (schema.type === 'array') {
     assert(schema.items, `Found an array schema with no items: ${describe(schema)}`);
     const { typeInfo: itemTypeInfo, models: itemModels } = typeInfoAndModelsFromSchema(
-      schema.items, name, refTarget, lang,
+      schema.items, name, refTarget, lang, opts,
     );
     return {
       typeInfo: { name: arrayify(itemTypeInfo.name, lang), format: itemTypeInfo.format },
@@ -320,35 +320,35 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, l
     };
   }
   if (schema.type === 'object' && schema.properties) {
-    return typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget, lang);
+    return typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSuperclassSchema, refTarget, lang, opts);
   }
-  return typeInfoAndModelsFromPrimitiveSchema(schema, refTarget, lang);
+  return typeInfoAndModelsFromPrimitiveSchema(schema, refTarget, lang, opts);
 }
 
-function typeInfoAndModelsFromParam(param, methodName, refTarget, lang) {
+function typeInfoAndModelsFromParam(param, methodName, refTarget, lang, opts) {
   const defaultName = classNameFromComponents(methodName, param.name || 'response');
   assert(param.schema, `Found a param with no schema: ${describe(param)}`);
-  return typeInfoAndModelsFromSchema(param.schema, defaultName, refTarget, lang);
+  return typeInfoAndModelsFromSchema(param.schema, defaultName, refTarget, lang, opts);
 }
 
 
 // ////////////////////////////////////////////////////////////////////
 // Methods
 // ////////////////////////////////////////////////////////////////////
-function paramAndModelsFromSpec(unresolvedParamSpec, name, refTarget, lang) {
+function paramAndModelsFromSpec(unresolvedParamSpec, name, refTarget, lang, opts) {
   const resolved = objectByResolvingRefAndAllOf(unresolvedParamSpec, refTarget);
   // Sometimes params have a schema, sometimes they just have the properties that a schema would normally have.
   // This normalizes all params to be objects that have a schema.
   const paramSpec = resolved.schema ? resolved : { ...resolved, schema: resolved };
   const { typeInfo: responseTypeInfo, models: responseModels } = typeInfoAndModelsFromParam(
-    paramSpec, name, refTarget, lang,
+    paramSpec, name, refTarget, lang, opts,
   );
   const param = {
     ...paramSpec,
     type: responseTypeInfo.name || paramSpec.type || 'Void',
     format: responseTypeInfo.format,
     serverName: paramSpec.name,
-    name: _.camelCase(paramSpec.name),
+    name: opts?.snake ? _.snakeCase(paramSpec.name) : _.camelCase(paramSpec.name),
     inCap: (paramSpec.in === 'formData') ? 'Part' : _.capitalize(paramSpec.in),
   };
   return { param, models: responseModels };
@@ -368,7 +368,7 @@ function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTa
   const { description } = methodSpec;
 
   const paramSpecs = _.concat(pathParams || [], methodSpec.parameters || []);
-  const mappedParams = _.map(paramSpecs, paramSpec => paramAndModelsFromSpec(paramSpec, name, refTarget, lang));
+  const mappedParams = _.map(paramSpecs, paramSpec => paramAndModelsFromSpec(paramSpec, name, refTarget, lang, opts));
   const paramModels = _.flatMap(mappedParams, paramAndModels => paramAndModels.models);
   const params = _.map(mappedParams, paramAndModels => paramAndModels.param);
 
@@ -376,7 +376,7 @@ function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTa
     || _.find(Object.keys(methodSpec.responses), k => k[0] === '3')
     || 'default';
   const responseSpec = methodSpec.responses[goodResponseKey];
-  const { param: response, models: responseModels } = paramAndModelsFromSpec(responseSpec, name, refTarget, lang);
+  const { param: response, models: responseModels } = paramAndModelsFromSpec(responseSpec, name, refTarget, lang, opts);
 
   const models = paramModels.concat(responseModels);
   const path = urlJoin('/', basePath, endPath);
@@ -396,9 +396,9 @@ function methodsFromPaths(paths, basePath, refTarget, lang, opts) {
   return _.sortBy(rawMethods.filter(m => m), 'path');
 }
 
-function modelsFromDefinitions(definitions, refTarget, lang) {
+function modelsFromDefinitions(definitions, refTarget, lang, opts) {
   return _.flatMap(definitions, (unresolvedSchema, name) => (
-    typeInfoAndModelsFromSchema(unresolvedSchema, name, refTarget, lang).models
+    typeInfoAndModelsFromSchema(unresolvedSchema, name, refTarget, lang, opts).models
   ));
 }
 
@@ -435,7 +435,7 @@ function templateDataFromSpec(apiDetail, apiName, languageSpec, options) {
   const basePath = urlJoin(apiDetail.basePath || '', spec.basePath || '');
   const methodsWithModels = methodsFromPaths(spec.paths, basePath, spec, languageSpec, options);
   const { models, methods } = moveModelsOffMethods(methodsWithModels);
-  const definitionModels = modelsFromDefinitions(spec.definitions, spec, languageSpec);
+  const definitionModels = modelsFromDefinitions(spec.definitions, spec, languageSpec, options);
   const combinedModels = models.concat(definitionModels);
   const uniqueModels = _.uniqWith(_.filter(combinedModels), isEqualIgnoringDescription);
   const { objectModels, enumModels } = splitModels(uniqueModels);

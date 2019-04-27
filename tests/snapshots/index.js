@@ -1,3 +1,4 @@
+// eslint-disable camelcase
 // eslint-disable-next-line no-unused-vars
 import { parameterBuilder, fetchHelper, eventSourceHelper } from 'rest-api-support';
 
@@ -25,21 +26,21 @@ export default class FeatureAPI {
   /**
    * Get a list of features and settings for a given device, user and app
    *
-   * @parameter { string } tag: The tag (and its parents) for which features are being requested
-   * @parameter { string } sampleQuery: A query parameter
+   * @parameter { string } tag_name: The tag (and its parents) for which features are being requested
+   * @parameter { string } sample_query: A query parameter
    * @parameter { ClientData } client: Information about the client making the request
    */
   getFeatures({
-    tag,
-    sampleQuery,
+    tag_name,
+    sample_query,
     client,
   }, fetchOptions) {
     // Build parameters, run request interceptors, fetch, and then run response interceptors
     // eslint-disable-next-line prefer-rest-params
     const source = { method: 'getFeatures', client: '', arguments: arguments[0] };
-    const fetchArgs = parameterBuilder('POST', this.baseUrl, '/feature/features/{tag}')
-      .path('tag', tag)
-      .query('sample_query', sampleQuery)
+    const fetchArgs = parameterBuilder('POST', this.baseUrl, '/feature/features/{tag_name}')
+      .path('tag_name', tag_name)
+      .query('sample_query', sample_query)
       .body('client', client)
       .build();
     return fetchHelper(this, fetchArgs, fetchOptions, source);
@@ -49,10 +50,10 @@ export default class FeatureAPI {
    * A method with no parameters
    *
    */
-  noargsGet(hasNoArguments, fetchOptions) {
+  get_noargs(hasNoArguments, fetchOptions) {
     // Build parameters, run request interceptors, fetch, and then run response interceptors
     // eslint-disable-next-line prefer-rest-params
-    const source = { method: 'noargsGet', client: '', arguments: arguments[0] };
+    const source = { method: 'get_noargs', client: '', arguments: arguments[0] };
     const fetchArgs = parameterBuilder('GET', this.baseUrl, '/feature/noargs')
       .build();
     return fetchHelper(this, fetchArgs, fetchOptions, source);

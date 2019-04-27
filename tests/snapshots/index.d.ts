@@ -98,7 +98,7 @@ export interface ClientData_App {
  */
 export interface ClientData_User {
   country?: string;
-  anonId?: string;
+  anon_id?: string;
 }
 
 
@@ -125,8 +125,8 @@ export interface FeaturesFeatures {
 
 
 export interface getFeaturesArguments {
-  tag: string,
-  sampleQuery?: string,
+  tag_name: string,
+  sample_query?: string,
   client: ClientData,
 }
 
@@ -136,8 +136,8 @@ export default class FeatureAPI {
   /**
    * Get a list of features and settings for a given device, user and app
    *
-   * @parameter { string } tag: The tag (and its parents) for which features are being requested
-   * @parameter { string } sampleQuery: A query parameter
+   * @parameter { string } tag_name: The tag (and its parents) for which features are being requested
+   * @parameter { string } sample_query: A query parameter
    * @parameter { ClientData } client: Information about the client making the request
    */
   getFeatures(request: getFeaturesArguments, options?: FeatureAPIRequestOptions) : FeatureAPIPromise<Features | FeatureAPIErrorResponse | null>;
@@ -146,5 +146,5 @@ export default class FeatureAPI {
    * A method with no parameters
    *
    */
-  noargsGet(request?: null | undefined, options?: FeatureAPIRequestOptions) : FeatureAPIPromise<Features | FeatureAPIErrorResponse | null>;
+  get_noargs(request?: null | undefined, options?: FeatureAPIRequestOptions) : FeatureAPIPromise<Features | FeatureAPIErrorResponse | null>;
 }

@@ -37,16 +37,16 @@ class FeatureAPIWebServices : GBIORxWebServices() {
         
         /**
          * Get a list of features and settings for a given device, user and app
-         * @param tag The tag (and its parents) for which features are being requested
+         * @param tagName The tag (and its parents) for which features are being requested
          * @param sampleQuery A query parameter
          * @param client Information about the client making the request
          * @return Single<Features>
          */
         @Headers("Content-Type:application/json")
-        @POST("/feature/features/{tag}")
+        @POST("/feature/features/{tag_name}")
         fun getFeatures(
             @HeaderMap headerMap: Map<String, String>,
-            @Path("tag") tag: String,
+            @Path("tag_name") tagName: String,
             @Query("sample_query") sampleQuery: String? = null,
             @Body client: ClientData
         ) : Single<Features>

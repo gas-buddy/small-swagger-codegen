@@ -4,13 +4,13 @@ import tap from 'tap';
 import { readConfig } from '../src/configReader';
 import render from '../src/renderer';
 
-function compareFiles(test, items) {
+function compareFiles(lang, test, items) {
   Object.entries(items).forEach(([fname, content]) => {
     const snapshot = fs.readFileSync(path.resolve(__dirname, 'snapshots', fname), 'utf8');
     if (snapshot !== content) {
       fs.writeFileSync(path.resolve(__dirname, 'snapshots', `${fname}.new`), content, 'utf8');
     }
-    test.strictEquals(snapshot, content, 'Content should match');
+    test.strictEquals(snapshot, content, `${lang} content should match`);
   });
 }
 
@@ -28,7 +28,7 @@ tap.test('test_generators', (test) => {
 
   const items = render(cliSwiftSpec.language, cliSwiftSpec.apis);
   test.strictEquals(Object.values(items).length, 2, 'Should return 2 items to be rendered');
-  compareFiles(test, items);
+  compareFiles('Swift', test, items);
 
   const cliKtSpec = readConfig({
     spec: 'tests/feature-api-spec.json',
@@ -39,12 +39,12 @@ tap.test('test_generators', (test) => {
 
   const ktCliItem = render(cliKtSpec.language, cliKtSpec.apis);
   test.strictEquals(Object.values(ktCliItem).length, 1, 'Should return 1 item to be rendered');
-  compareFiles(test, ktCliItem);
+  compareFiles('Kotlin', test, ktCliItem);
 
   const fsConfig = readConfig({ _: ['tests/config.json'] });
   const ktItem = render(fsConfig.language, fsConfig.apis);
   test.strictEquals(Object.values(ktItem).length, 1, 'Should return 1 item to be rendered');
-  compareFiles(test, ktItem);
+  compareFiles('Kotlin', test, ktItem);
 
   const cliJsSpec = readConfig({
     spec: 'tests/feature-api-spec.json',
@@ -52,13 +52,12 @@ tap.test('test_generators', (test) => {
     language: 'js',
     packageName: '@gasbuddy/feature-api-spec',
     basePath: '/feature',
-    snake: true,
   });
 
-  const jsItems = render(cliJsSpec.language, cliJsSpec.apis);
+  const jsItems = render(cliJsSpec.language, cliJsSpec.apis, { snake: true });
   test.strictEquals(Object.values(jsItems).length, 4, 'Should return 4 items to be rendered');
   // Object.keys(jsItems).forEach((k) => { console.error(k); console.error(jsItems[k]); });
-  compareFiles(test, jsItems);
+  compareFiles('Javascript', test, jsItems);
 
   test.end();
 });

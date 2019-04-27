@@ -25,13 +25,13 @@
         }
       }
     },
-    "/features/{tag}": {
+    "/features/{tag_name}": {
       "post": {
         "description": "Get a list of features and settings for a given device, user and app",
         "operationId": "getFeatures",
         "parameters": [
           {
-            "name": "tag",
+            "name": "tag_name",
             "in": "path",
             "description": "The tag (and its parents) for which features are being requested",
             "required": true,
