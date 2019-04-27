@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import fs from 'fs';
 import path from 'path';
+import yaml from 'js-yaml';
 
 function readFromPath(pathArg) {
   if (!pathArg) {
@@ -19,6 +20,15 @@ function readFromPath(pathArg) {
     output: config.output,
     opts: config.opts,
   };
+}
+
+function resolveSpec(fullPath) {
+  const ext = (path.extname(fullPath) || '').toLowerCase();
+  const data = fs.readFileSync(fullPath, 'utf8');
+  if (['.yml', '.yaml'].includes(ext)) {
+    return yaml.safeLoad(data);
+  }
+  return JSON.parse(data);
 }
 
 export function readConfig(argv) {
@@ -45,7 +55,7 @@ export function readConfig(argv) {
     apis: _.mapValues(rawSpecs, api => ({
       ...api,
       // Load the specs from the file system
-      spec: JSON.parse(fs.readFileSync(api.spec, 'utf8')),
+      spec: resolveSpec(api.spec),
     })),
     output: output || argv.output || 'client',
     opts: opts || argv,

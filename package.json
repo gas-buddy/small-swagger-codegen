@@ -1,6 +1,6 @@
 {
   "name": "small-swagger-codegen",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "A small version of swagger-codegen. Does fewer things with less code.",
   "main": "./build/small-swagger-codegen.js",
   "scripts": {
@@ -25,6 +25,7 @@
   "homepage": "https://github.com/gas-buddy/small-swagger-codegen#readme",
   "dependencies": {
     "handlebars": "^4.1.1",
+    "js-yaml": "^3.13.1",
     "lodash": "^4.17.11",
     "minimist": "^1.2.0",
     "rest-api-support": "^1.0.0",
