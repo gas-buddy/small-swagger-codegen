@@ -29,7 +29,7 @@ export default function render(languageName, apis, options) {
   // Render everything and write output files.
   const outputs = _.map(templateDatas, (templateData, apiName) => {
     const specConfig = apis[apiName].spec;
-    const apiVersion = specConfig.info.version;
+    const apiVersion = options?.version || specConfig.info.version;
 
     return templateSpecs
       .map(({ filename, partial }, index) => {
