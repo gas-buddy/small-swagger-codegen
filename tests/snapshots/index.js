@@ -36,28 +36,28 @@ export default class FeatureAPI {
     tag_name,
     sample_query,
     client,
-  }, fetchOptions) {
+  }, $$fetchOptions) {
     // Build parameters, run request interceptors, fetch, and then run response interceptors
     // eslint-disable-next-line prefer-rest-params
-    const source = { method: 'getFeatures', client: '', arguments: arguments[0] };
-    const fetchArgs = parameterBuilder('POST', this.baseUrl, '/feature/features/{tag_name}')
+    const $$source = { method: 'getFeatures', client: '', arguments: arguments[0] };
+    const $$fetchArgs = parameterBuilder('POST', this.baseUrl, '/feature/features/{tag_name}')
       .path('tag_name', tag_name)
       .query('sample_query', sample_query)
       .body('client', client)
       .build();
-    return fetchHelper(this, fetchArgs, fetchOptions, source);
+    return fetchHelper(this, $$fetchArgs, $$fetchOptions, $$source);
   }
 
   /**
    * A method with no parameters
    *
    */
-  get_noargs(hasNoArguments, fetchOptions) {
+  get_noargs(hasNoArguments, $$fetchOptions) {
     // Build parameters, run request interceptors, fetch, and then run response interceptors
     // eslint-disable-next-line prefer-rest-params
-    const source = { method: 'get_noargs', client: '', arguments: arguments[0] };
-    const fetchArgs = parameterBuilder('GET', this.baseUrl, '/feature/noargs')
+    const $$source = { method: 'get_noargs', client: '', arguments: arguments[0] };
+    const $$fetchArgs = parameterBuilder('GET', this.baseUrl, '/feature/noargs')
       .build();
-    return fetchHelper(this, fetchArgs, fetchOptions, source);
+    return fetchHelper(this, $$fetchArgs, $$fetchOptions, $$source);
   }
 }

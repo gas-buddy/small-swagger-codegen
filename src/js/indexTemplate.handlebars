@@ -37,20 +37,20 @@ export default class {{{apiClassName}}} {
 {{#each params}}
     {{{name}}},
 {{/each}}
-  }{{else}}hasNoArguments{{/if}}, fetchOptions) {
+  }{{else}}hasNoArguments{{/if}}, $$fetchOptions) {
     // Build parameters, run request interceptors, fetch, and then run response interceptors
     // eslint-disable-next-line prefer-rest-params
-    const source = { method: '{{{name}}}', client: '{{{apiClassName}}}', arguments: arguments[0] };
-    const fetchArgs = parameterBuilder('{{{capMethod}}}', this.baseUrl, '{{{path}}}')
+    const $$source = { method: '{{{name}}}', client: '{{{apiClassName}}}', arguments: arguments[0] };
+    const $$fetchArgs = parameterBuilder('{{{capMethod}}}', this.baseUrl, '{{{path}}}')
 {{#each params}}      .{{{in}}}('{{{serverName}}}', {{{name}}}{{#if format}}, { {{#if format}}
         format: '{{format}}',
       {{/if}} }{{#if @last}}){{/if}}{{/if}}){{#if @last}}
       .build();{{/if}}
 {{else}}      .build();
 {{/each}}{{#if streaming}}
-    return eventSourceHelper(this, fetchArgs, fetchOptions, source);
+    return eventSourceHelper(this, $$fetchArgs, $$fetchOptions, $$source);
 {{else}}
-    return fetchHelper(this, fetchArgs, fetchOptions, source);
+    return fetchHelper(this, $$fetchArgs, $$fetchOptions, $$source);
 {{/if}}
   }
 {{/each}}
