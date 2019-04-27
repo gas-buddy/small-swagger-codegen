@@ -2,6 +2,8 @@
 // eslint-disable-next-line no-unused-vars
 import { parameterBuilder, fetchHelper, eventSourceHelper } from 'rest-api-support';
 
+const CONFIG_FUNCTION = Symbol.for('small-swagger-codegen::configurationGenerator');
+
 /**
  *
  * @export
@@ -9,7 +11,7 @@ import { parameterBuilder, fetchHelper, eventSourceHelper } from 'rest-api-suppo
  */
 export default class FeatureAPI {
   constructor(configOrGenerator) {
-    let config = configOrGenerator;
+    let config = (configOrGenerator && configOrGenerator[CONFIG_FUNCTION]) || configOrGenerator;
     if (typeof configOrGenerator === 'function') {
       config = configOrGenerator(FeatureAPI);
     }
