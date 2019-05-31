@@ -15,6 +15,16 @@ interface EventSource {
   close();
 }
 
+interface {{{apiClassName}}}ResponseHeaders {
+  get(header: string) : any;
+}
+
+interface {{{apiClassName}}}Response<T> {
+  body: T;
+  status: number;
+  headers: {{{apiClassName}}}ResponseHeaders,
+}
+
 interface {{{apiClassName}}}ErrorResponse {
   code: string;
   message: string;
@@ -82,6 +92,6 @@ export default class {{{apiClassName}}} {
    * @parameter { {{{type}}} } {{{name}}}: {{{description}}}
   {{/each}}
    */
-  {{{name}}}(request{{#unless params.length}}?{{/unless}}: {{#if params.length}}{{{name}}}Arguments{{else}}null | undefined{{/if}}, options?: {{{../apiClassName}}}RequestOptions) : {{#if streaming}}EventSource{{else}}{{{../apiClassName}}}Promise<{{{response.type}}} | {{{../apiClassName}}}ErrorResponse | null>{{/if}};
+  {{{name}}}(request{{#unless params.length}}?{{/unless}}: {{#if params.length}}{{{name}}}Arguments{{else}}null | undefined{{/if}}, options?: {{{../apiClassName}}}RequestOptions) : {{#if streaming}}EventSource{{else}}{{{../apiClassName}}}Promise<{{{../apiClassName}}}Response<{{{response.type}}}> | {{{../apiClassName}}}ErrorResponse | null>{{/if}};
 {{/each}}
 }

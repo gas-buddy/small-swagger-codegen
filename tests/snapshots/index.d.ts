@@ -15,6 +15,16 @@ interface EventSource {
   close();
 }
 
+interface FeatureAPIResponseHeaders {
+  get(header: string) : any;
+}
+
+interface FeatureAPIResponse<T> {
+  body: T;
+  status: number;
+  headers: FeatureAPIResponseHeaders,
+}
+
 interface FeatureAPIErrorResponse {
   code: string;
   message: string;
@@ -140,11 +150,11 @@ export default class FeatureAPI {
    * @parameter { string } sample_query: A query parameter
    * @parameter { ClientData } client: Information about the client making the request
    */
-  getFeatures(request: getFeaturesArguments, options?: FeatureAPIRequestOptions) : FeatureAPIPromise<Features | FeatureAPIErrorResponse | null>;
+  getFeatures(request: getFeaturesArguments, options?: FeatureAPIRequestOptions) : FeatureAPIPromise<FeatureAPIResponse<Features> | FeatureAPIErrorResponse | null>;
 
   /**
    * A method with no parameters
    *
    */
-  get_noargs(request?: null | undefined, options?: FeatureAPIRequestOptions) : FeatureAPIPromise<Features | FeatureAPIErrorResponse | null>;
+  get_noargs(request?: null | undefined, options?: FeatureAPIRequestOptions) : FeatureAPIPromise<FeatureAPIResponse<Features> | FeatureAPIErrorResponse | null>;
 }
