@@ -4,6 +4,7 @@ package com.gasbuddy.mobile.webservices.rx.webservices
 
 import com.gasbuddy.mobile.webservices.GBIORxWebServices
 import com.gasbuddy.mobile.webservices.RxWebServices
+import com.gasbuddy.mobile.webservices.sse.RxJavaSseCallAdapterFactory
 import com.google.gson.annotations.SerializedName
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
@@ -24,6 +25,7 @@ class FeatureAPIWebServices : GBIORxWebServices() {
         val api: API = Retrofit.Builder()
                 .baseUrl(GBIORxWebServices.getHost())
                 .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(RxJavaSseCallAdapterFactory(scheduler = Schedulers.io()))
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.createWithScheduler(Schedulers.io()))
                 .client(RxWebServices.httpClient().newBuilder().build())
                 .build()
