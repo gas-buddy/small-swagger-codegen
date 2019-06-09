@@ -140,7 +140,7 @@ export interface getFeaturesArguments {
   client: ClientData,
 }
 
-export default class FeatureAPI {
+export class FeatureAPI {
   constructor(configOrFunctionGeneratingConfig: FeatureAPIConfiguration);
 
   /**
@@ -158,3 +158,5 @@ export default class FeatureAPI {
    */
   get_noargs(request?: null | undefined, options?: FeatureAPIRequestOptions) : FeatureAPIPromise<FeatureAPIResponse<Features> | FeatureAPIErrorResponse | null>;
 }
+
+export default FeatureAPI;

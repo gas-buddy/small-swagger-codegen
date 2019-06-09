@@ -16,6 +16,9 @@ export default {
   }, {
     source: path.resolve(__dirname, 'modelClassTemplate.handlebars'),
     partial: 'modelClassTemplate',
+  }, {
+    source: ({ spec }) => JSON.stringify(spec, null, '  '),
+    filename: () => 'spec.json',
   }],
   typeMap: {
     any: 'any',

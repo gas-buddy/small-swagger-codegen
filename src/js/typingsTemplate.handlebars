@@ -81,7 +81,7 @@ export interface {{{name}}}Arguments {
   {{/each}}
 }
 {{/if}}{{/each}}
-export default class {{{apiClassName}}} {
+export class {{{apiClassName}}} {
   constructor(configOrFunctionGeneratingConfig: {{{apiClassName}}}Configuration);
 {{#each methods}}
 
@@ -95,3 +95,5 @@ export default class {{{apiClassName}}} {
   {{{name}}}(request{{#unless params.length}}?{{/unless}}: {{#if params.length}}{{{name}}}Arguments{{else}}null | undefined{{/if}}, options?: {{{../apiClassName}}}RequestOptions) : {{#if streaming}}EventSource{{else}}{{{../apiClassName}}}Promise<{{{../apiClassName}}}Response<{{{response.type}}}> | {{{../apiClassName}}}ErrorResponse | null>{{/if}};
 {{/each}}
 }
+
+export default {{{apiClassName}}};

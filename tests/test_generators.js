@@ -10,7 +10,7 @@ function compareFiles(lang, test, items) {
     if (snapshot !== content) {
       fs.writeFileSync(path.resolve(__dirname, 'snapshots', `${fname}.new`), content, 'utf8');
     }
-    test.strictEquals(snapshot, content, `${lang} content should match`);
+    test.strictEquals(content, snapshot, `${lang} content should match`);
   });
 }
 
@@ -55,7 +55,7 @@ tap.test('test_generators', (test) => {
   });
 
   const jsItems = render(cliJsSpec.language, cliJsSpec.apis, { snake: true });
-  test.strictEquals(Object.values(jsItems).length, 4, 'Should return 4 items to be rendered');
+  test.strictEquals(Object.values(jsItems).length, 5, 'Should return 5 items to be rendered');
   // Object.keys(jsItems).forEach((k) => { console.error(k); console.error(jsItems[k]); });
   compareFiles('Javascript', test, jsItems);
 

@@ -18,7 +18,12 @@ export default function render(languageName, apis, options) {
   setupHandlebars(handlebars);
 
   const templateSpecs = language.templates;
-  const compiledTemplates = templateSpecs.map(({ source }) => handlebars.compile(fs.readFileSync(source, 'utf8')));
+  const compiledTemplates = templateSpecs.map(({ source }) => {
+    if (typeof source === 'function') {
+      return source;
+    }
+    return handlebars.compile(fs.readFileSync(source, 'utf8'));
+  });
 
   templateSpecs.forEach(({ partial }, index) => {
     if (partial) {
@@ -43,6 +48,7 @@ export default function render(languageName, apis, options) {
           apiClassName: apis[apiName].className || apis[apiName].name,
           apiName,
           apiVersion,
+          spec: specConfig,
         };
         const rendered = compiledTemplates[index](templateArgs);
         return [filename(templateArgs), rendered];

@@ -9,7 +9,7 @@ const CONFIG_FUNCTION = Symbol.for('small-swagger-codegen::configurationGenerato
  * @export
  * @class FeatureAPI
  */
-export default class FeatureAPI {
+export class FeatureAPI {
   constructor(configOrGenerator) {
     let config = (configOrGenerator && configOrGenerator[CONFIG_FUNCTION]) || configOrGenerator;
     if (typeof config === 'function') {
@@ -61,3 +61,5 @@ export default class FeatureAPI {
     return fetchHelper(this, $$fetchArgs, $$fetchOptions, $$source);
   }
 }
+
+export default FeatureAPI;
