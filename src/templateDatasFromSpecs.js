@@ -355,10 +355,11 @@ function paramAndModelsFromSpec(unresolvedParamSpec, name, refTarget, lang, opts
 }
 
 function getMethodName(method, methodSpec, endPath, opts) {
+  const operationId = !(opts?.noOperationIds) && methodSpec.operationId;
   if (opts?.snake) {
-    return methodSpec.operationId ? methodSpec.operationId : _.snakeCase(urlJoin(method, endPath));
+    return operationId || _.snakeCase(urlJoin(method, endPath));
   }
-  return _.camelCase(methodSpec.operationId || urlJoin(endPath, method));
+  return _.camelCase(operationId || urlJoin(endPath, method));
 }
 
 function methodFromSpec(endPath, pathParams, basePath, method, methodSpec, refTarget, lang, opts) {
