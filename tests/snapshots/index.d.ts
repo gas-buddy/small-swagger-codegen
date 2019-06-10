@@ -150,13 +150,13 @@ export class FeatureAPI {
    * @parameter { string } sample_query: A query parameter
    * @parameter { ClientData } client: Information about the client making the request
    */
-  getFeatures(request: getFeaturesArguments, options?: FeatureAPIRequestOptions) : FeatureAPIPromise<FeatureAPIResponse<Features> | FeatureAPIErrorResponse | null>;
+  getFeatures(request: getFeaturesArguments, options?: FeatureAPIRequestOptions) : FeatureAPIPromise<FeatureAPIResponse<Features> | FeatureAPIErrorResponse>;
 
   /**
    * A method with no parameters
    *
    */
-  get_noargs(request?: null | undefined, options?: FeatureAPIRequestOptions) : FeatureAPIPromise<FeatureAPIResponse<Features> | FeatureAPIErrorResponse | null>;
+  get_noargs(request?: null | undefined, options?: FeatureAPIRequestOptions) : FeatureAPIPromise<FeatureAPIResponse<Features> | FeatureAPIErrorResponse>;
 }
 
 export default FeatureAPI;
