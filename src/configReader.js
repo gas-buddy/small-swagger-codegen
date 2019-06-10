@@ -19,6 +19,7 @@ function readFromPath(pathArg) {
     language: config.language,
     output: config.output,
     opts: config.opts,
+    configDir,
   };
 }
 
@@ -32,7 +33,7 @@ function resolveSpec(fullPath) {
 }
 
 export function readConfig(argv) {
-  const { language, apis, output, opts } = readFromPath(argv._?.[0]);
+  const { language, apis, output, opts, configDir } = readFromPath(argv._?.[0]);
 
   if (!language && !argv.language) {
     throw new Error('Missing language: Please add "language": "swift", "language": "js" or "language": "kotlin" to the top level of your config file.');
@@ -50,6 +51,9 @@ export function readConfig(argv) {
     },
   };
 
+  // If there's an output path in a config file, resolve the path relative to that config file.
+  const resolvedOutput = configDir && output && path.resolve(configDir, output);
+
   const finalConfig = {
     language: language || argv.language,
     apis: _.mapValues(rawSpecs, api => ({
@@ -57,7 +61,7 @@ export function readConfig(argv) {
       // Load the specs from the file system
       spec: resolveSpec(api.spec),
     })),
-    output: output || argv.output || 'client',
+    output: argv.output || resolvedOutput || 'client',
     opts: opts || argv,
   };
 

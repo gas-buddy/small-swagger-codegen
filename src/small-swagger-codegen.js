@@ -23,5 +23,7 @@ const { language, apis, output, opts } = safeConfigRead();
 const parts = render(language, apis, opts);
 
 Object.entries(parts).forEach(([filename, content]) => {
-  fs.writeFileSync(path.join(output, filename), content);
+  const fullPath = path.join(output, filename);
+  fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+  fs.writeFileSync(fullPath, content);
 });
