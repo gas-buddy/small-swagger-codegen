@@ -1,6 +1,6 @@
 {
   "name": "{{{options.packageName}}}",
-  "version": "{{{apiVersion}}}",
+  "version": "{{#if apiVersion}}{{{apiVersion}}}{{else}}1.0.0{{/if}}",
   "description": "Swagger client for {{{apiName}}}",
   "keywords": [
     "fetch",
