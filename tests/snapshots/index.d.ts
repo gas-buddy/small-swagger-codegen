@@ -36,11 +36,11 @@ interface FeatureAPIRequestOptions {
   /**
    * Run before the request goes out with the parameters that will be used
    */
-  requestInterceptor: (parameters: any) => void;
+  requestInterceptor?: (parameters: any) => void;
   /**
    * Run after the request comes back
    */
-  responseInterceptor: (response: any, parameters: any) => void;
+  responseInterceptor?: (response: any, parameters: any) => void;
 }
 
 export class FeatureAPIConfiguration {
@@ -62,12 +62,12 @@ export class FeatureAPIConfiguration {
   /**
    * Run before the request goes out with the parameters that will be used
    */
-  requestInterceptor: (parameters: any) => void;
+  requestInterceptor?: (parameters: any) => void;
 
   /**
    * Run after the request comes back
    */
-  responseInterceptor: (response: any, parameters: any) => void;
+  responseInterceptor?: (response: any, parameters: any) => void;
 }
 
 /**
