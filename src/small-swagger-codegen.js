@@ -2,6 +2,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import mkdirp from 'mkdirp';
 import minimist from 'minimist';
 import { readConfig } from './configReader';
 import render from './renderer';
@@ -24,6 +25,6 @@ const parts = render(language, apis, opts);
 
 Object.entries(parts).forEach(([filename, content]) => {
   const fullPath = path.join(output, filename);
-  fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+  mkdirp.sync(path.dirname(fullPath));
   fs.writeFileSync(fullPath, content);
 });
