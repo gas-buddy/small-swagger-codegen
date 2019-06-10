@@ -22,7 +22,8 @@ interface {{{apiClassName}}}ResponseHeaders {
 interface {{{apiClassName}}}Response<T> {
   body: T;
   status: number;
-  headers: {{{apiClassName}}}ResponseHeaders,
+  headers: {{{apiClassName}}}ResponseHeaders;
+  type: 'response';
 }
 
 interface {{{apiClassName}}}ErrorResponse {
@@ -30,6 +31,7 @@ interface {{{apiClassName}}}ErrorResponse {
   message: string;
   domain: string;
   display_message?: string;
+  type: 'error';
 }
 
 interface {{{apiClassName}}}RequestOptions {

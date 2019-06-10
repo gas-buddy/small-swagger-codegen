@@ -22,7 +22,8 @@ interface FeatureAPIResponseHeaders {
 interface FeatureAPIResponse<T> {
   body: T;
   status: number;
-  headers: FeatureAPIResponseHeaders,
+  headers: FeatureAPIResponseHeaders;
+  type: 'response';
 }
 
 interface FeatureAPIErrorResponse {
@@ -30,6 +31,7 @@ interface FeatureAPIErrorResponse {
   message: string;
   domain: string;
   display_message?: string;
+  type: 'error';
 }
 
 interface FeatureAPIRequestOptions {
