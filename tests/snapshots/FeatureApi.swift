@@ -61,14 +61,14 @@ open class ClientData: SwaggerModel {
         self.ctx = ctx
     }
 
-    public func serialize(format: String? = nil) -> Any? {
+    public func serialize(format: String? = nil) throws -> Any? {
         let retVal: [String: Any?] = [
-            "locale": locale?.serialize(format: nil),
-            "ver": ver?.serialize(format: nil),
-            "dev": dev.serialize(format: nil),
-            "app": app.serialize(format: nil),
-            "user": user?.serialize(format: nil),
-            "ctx": ctx?.serialize(format: nil),
+            "locale": try locale?.serialize(format: nil),
+            "ver": try ver?.serialize(format: nil),
+            "dev": try dev.serialize(format: nil),
+            "app": try app.serialize(format: nil),
+            "user": try user?.serialize(format: nil),
+            "ctx": try ctx?.serialize(format: nil),
         ]
         return retVal.filter { (_: String, val: Any?) -> Bool in return val != nil }
     }
@@ -93,7 +93,7 @@ open class ClientData: SwaggerModel {
         public var id: String?
         public var os: String?
         public var ver: String?
-    
+
         public init(
             id: String?=nil,
             os: String?=nil,
@@ -103,16 +103,16 @@ open class ClientData: SwaggerModel {
             self.os = os
             self.ver = ver
         }
-    
-        public func serialize(format: String? = nil) -> Any? {
+
+        public func serialize(format: String? = nil) throws -> Any? {
             let retVal: [String: Any?] = [
-                "id": id?.serialize(format: nil),
-                "os": os?.serialize(format: nil),
-                "ver": ver?.serialize(format: nil),
+                "id": try id?.serialize(format: nil),
+                "os": try os?.serialize(format: nil),
+                "ver": try ver?.serialize(format: nil),
             ]
             return retVal.filter { (_: String, val: Any?) -> Bool in return val != nil }
         }
-    
+
         public class func deserialize(json: Any?, format: String? = nil, debugDescriptor: String = "Dev") throws -> Self {
             guard let dictionary = json as? [String: Any] else {
                 throw deserializationError("Trying to deserialize a Dev but got \(String(describing: json))")
@@ -131,7 +131,7 @@ open class ClientData: SwaggerModel {
         public var ver: String?
         /// Hours since app install
         public var hr: Double?
-    
+
         public init(
             id: String?=nil,
             ver: String?=nil,
@@ -141,16 +141,16 @@ open class ClientData: SwaggerModel {
             self.ver = ver
             self.hr = hr
         }
-    
-        public func serialize(format: String? = nil) -> Any? {
+
+        public func serialize(format: String? = nil) throws -> Any? {
             let retVal: [String: Any?] = [
-                "id": id?.serialize(format: nil),
-                "ver": ver?.serialize(format: nil),
-                "hr": hr?.serialize(format: nil),
+                "id": try id?.serialize(format: nil),
+                "ver": try ver?.serialize(format: nil),
+                "hr": try hr?.serialize(format: nil),
             ]
             return retVal.filter { (_: String, val: Any?) -> Bool in return val != nil }
         }
-    
+
         public class func deserialize(json: Any?, format: String? = nil, debugDescriptor: String = "App") throws -> Self {
             guard let dictionary = json as? [String: Any] else {
                 throw deserializationError("Trying to deserialize a App but got \(String(describing: json))")
@@ -169,7 +169,7 @@ open class ClientData: SwaggerModel {
         public var country: String?
         /// If the user is not an authenticated user, an anonymous identifier for them (such as a guid)
         public var anonId: String?
-    
+
         public init(
             country: String?=nil,
             anonId: String?=nil
@@ -177,15 +177,15 @@ open class ClientData: SwaggerModel {
             self.country = country
             self.anonId = anonId
         }
-    
-        public func serialize(format: String? = nil) -> Any? {
+
+        public func serialize(format: String? = nil) throws -> Any? {
             let retVal: [String: Any?] = [
-                "country": country?.serialize(format: nil),
-                "anon_id": anonId?.serialize(format: nil),
+                "country": try country?.serialize(format: nil),
+                "anon_id": try anonId?.serialize(format: nil),
             ]
             return retVal.filter { (_: String, val: Any?) -> Bool in return val != nil }
         }
-    
+
         public class func deserialize(json: Any?, format: String? = nil, debugDescriptor: String = "User") throws -> Self {
             guard let dictionary = json as? [String: Any] else {
                 throw deserializationError("Trying to deserialize a User but got \(String(describing: json))")
@@ -213,10 +213,10 @@ open class Features: SwaggerModel {
         self.features = features
     }
 
-    public func serialize(format: String? = nil) -> Any? {
+    public func serialize(format: String? = nil) throws -> Any? {
         let retVal: [String: Any?] = [
-            "ver": ver?.serialize(format: nil),
-            "features": features?.serialize(format: nil),
+            "ver": try ver?.serialize(format: nil),
+            "features": try features?.serialize(format: nil),
         ]
         return retVal.filter { (_: String, val: Any?) -> Bool in return val != nil }
     }
@@ -259,13 +259,13 @@ open class FeaturesFeatures: SwaggerModel {
         self.l = l
     }
 
-    public func serialize(format: String? = nil) -> Any? {
+    public func serialize(format: String? = nil) throws -> Any? {
         let retVal: [String: Any?] = [
-            "n": n.serialize(format: nil),
-            "r": r?.serialize(format: nil),
-            "v": v?.serialize(format: nil),
-            "p": p?.serialize(format: nil),
-            "l": l?.serialize(format: nil),
+            "n": try n.serialize(format: nil),
+            "r": try r?.serialize(format: nil),
+            "v": try v?.serialize(format: nil),
+            "p": try p?.serialize(format: nil),
+            "l": try l?.serialize(format: nil),
         ]
         return retVal.filter { (_: String, val: Any?) -> Bool in return val != nil }
     }
@@ -284,5 +284,3 @@ open class FeaturesFeatures: SwaggerModel {
         return try cast(object)
     }
 }
-
-

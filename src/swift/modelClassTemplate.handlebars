@@ -26,14 +26,14 @@ open class {{{name}}}: {{#if superclass}}{{{superclass}}}{{else}}SwaggerModel{{/
     {{/if}}
     }
 
-    {{#if superclass}}override {{/if}}public func serialize(format: String? = nil) -> Any? {
+    {{#if superclass}}override {{/if}}public func serialize(format: String? = nil) throws -> Any? {
         {{#if superclass}}var{{else}}let{{/if}} retVal: [String: Any?] = [
         {{#each properties}}
-            "{{{specName}}}": {{{name}}}{{#unless isRequired}}?{{/unless}}.serialize(format: {{#if format}}"{{format}}"{{else}}nil{{/if}}),
+            "{{{specName}}}": try {{{name}}}{{#unless isRequired}}?{{/unless}}.serialize(format: {{#if format}}"{{format}}"{{else}}nil{{/if}}),
         {{/each}}
         ]
         {{#if superclass}}
-        let serializedSuper = (super.serialize(format: format) as? [String: Any?]) ?? [:]
+        let serializedSuper = try (super.serialize(format: format) as? [String: Any?]) ?? [:]
         retVal = retVal.merging(serializedSuper, uniquingKeysWith: { (mine, _) in mine })
         {{/if}}
         return retVal.filter { (_: String, val: Any?) -> Bool in return val != nil }
