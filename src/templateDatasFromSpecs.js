@@ -59,35 +59,32 @@ function escapeName(name) {
   return ['default', 'internal', 'as'].includes(escaped) ? `\`${escaped}\`` : escaped;
 }
 
-function nameFromComponents(opts, ...components) {
-  const name = opts?.snake ? _.snakeCase(components.join('/')) : _.camelCase(components.join('/'));
+function nameFromComponents(components, { snake } = {}) {
+  const joined = _.castArray(components).join('/');
+  const name = snake ? _.snakeCase(joined) : _.camelCase(joined);
   return escapeName(name);
 }
 
-function enumNameFromComponents(...components) {
-  const name = _.upperCase(components.join('/')).replace(/[\W]+/g, '_');
+function enumNameFromComponents(components) {
+  const joined = _.castArray(components).join('/');
+  const name = _.upperCase(joined).replace(/[\W]+/g, '_');
   return escapeName(name);
 }
 
 const reservedWords = ['Type', 'Error', 'ErrorResponse'];
 
 // Create a class name by combining the given component strings.
-// One of the arguments my be an options object. Currently the only option is 'skip'.
 // If 'skip' is given, skip the first N components when creating the name.
 // For example:
 //   classNameFromComponents('aa', 'bb', 'cc', 'dd', { skip: 2 })
 // The result would be 'CcDd'.
-function classNameFromComponents(...args) {
-  // The options are the first argument that isn't a string.
-  // The components are all arguments that are strings.
-  const [components, [options]] = _.partition(args, _.isString);
-  const { skip } = options || { skip: 0 };
-  const skippedComponents = _.drop(components, skip);
-  const name = _.upperFirst(nameFromComponents(null, ...skippedComponents));
+function classNameFromComponents(components, { skip = 0 } = {}) {
+  const skippedComponents = _.drop(_.castArray(components), skip);
+  const name = _.upperFirst(nameFromComponents(skippedComponents));
   // If we're about to name this class a reserved word becuase we skipped some components,
   //   then fallback to using all the components.
   if (reservedWords.includes(name) && skip) {
-    return classNameFromComponents(...components);
+    return classNameFromComponents(components);
   }
   // If we're about to name this class a reserved word and we didn't skip anything, then
   //   fallback to sticking a _ at the end.
@@ -231,7 +228,7 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
       return { typeInfo: { name }, models: [] };
     }
     const isNested = property.type === 'object' && property.properties;
-    const defaultTypeName = classNameFromComponents(name, propertyName, { skip: isNested ? 1 : 0 });
+    const defaultTypeName = classNameFromComponents([name, propertyName], { skip: isNested ? 1 : 0 });
     const typeInfoAndModels = typeInfoAndModelsFromSchema(property, defaultTypeName, refTarget, lang, opts);
     return { ...typeInfoAndModels, isNested };
   });
@@ -248,7 +245,7 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
   ));
 
   const properties = _.map(propertyTypeInfoAndModels, ({ typeInfo, isNested }, propertyName) => ({
-    name: nameFromComponents(opts, propertyName),
+    name: nameFromComponents(propertyName, opts),
     description: schema.properties[propertyName].description,
     type: isNested ? `${name}.${typeInfo.name}` : typeInfo.name,
     format: typeInfo.format,
@@ -302,7 +299,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, l
       type: 'enum',
       enumType: typeInfoAndModelsFromPrimitiveSchema(schema, refTarget, lang, opts).typeInfo.name,
       values: _.map(schema.enum, e => ({
-        name: nameFromComponents(opts, e),
+        name: nameFromComponents(e, opts),
         uName: enumNameFromComponents(e),
         value: mapPrimitiveValue(e, schema.type),
       })),
@@ -326,7 +323,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, l
 }
 
 function typeInfoAndModelsFromParam(param, methodName, refTarget, lang, opts) {
-  const defaultName = classNameFromComponents(methodName, param.name || 'response');
+  const defaultName = classNameFromComponents([methodName, param.name || 'response']);
   assert(param.schema, `Found a param with no schema: ${describe(param)}`);
   return typeInfoAndModelsFromSchema(param.schema, defaultName, refTarget, lang, opts);
 }
