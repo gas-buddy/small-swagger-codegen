@@ -302,7 +302,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, l
       type: 'enum',
       enumType: typeInfoAndModelsFromPrimitiveSchema(schema, refTarget, lang, opts).typeInfo.name,
       values: _.map(schema.enum, e => ({
-        name: nameFromComponents(e),
+        name: nameFromComponents(opts, e),
         uName: enumNameFromComponents(e),
         value: mapPrimitiveValue(e, schema.type),
       })),
