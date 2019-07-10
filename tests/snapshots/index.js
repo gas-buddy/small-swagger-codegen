@@ -40,7 +40,7 @@ export class FeatureAPI {
     // Build parameters, run request interceptors, fetch, and then run response interceptors
     // eslint-disable-next-line prefer-rest-params
     const $$source = { method: 'getFeatures', client: '', arguments: arguments[0] };
-    const $$fetchArgs = parameterBuilder('POST', this.baseUrl, '/feature/features/{tag_name}')
+    const $$fetchArgs = parameterBuilder('POST', this.baseUrl, '/feature/features/{tag_name}', $$fetchOptions)
       .path('tag_name', tag_name)
       .query('sample_query', sample_query)
       .body('client', client)
@@ -56,7 +56,7 @@ export class FeatureAPI {
     // Build parameters, run request interceptors, fetch, and then run response interceptors
     // eslint-disable-next-line prefer-rest-params
     const $$source = { method: 'get_noargs', client: '', arguments: arguments[0] };
-    const $$fetchArgs = parameterBuilder('GET', this.baseUrl, '/feature/noargs')
+    const $$fetchArgs = parameterBuilder('GET', this.baseUrl, '/feature/noargs', $$fetchOptions)
       .build();
     return fetchHelper(this, $$fetchArgs, $$fetchOptions, $$source);
   }
