@@ -18,11 +18,12 @@ export class {{{apiClassName}}} {
     const {
       baseUrl = '',
       fetch,
+      FormData,
       EventSource,
       requestInterceptor,
       responseInterceptor,
     } = config || {}
-    Object.assign(this, { baseUrl, fetch, requestInterceptor, responseInterceptor, EventSource });
+    Object.assign(this, { baseUrl, fetch, requestInterceptor, responseInterceptor, EventSource, FormData });
   }
 {{#each methods}}
 
@@ -41,7 +42,7 @@ export class {{{apiClassName}}} {
     // Build parameters, run request interceptors, fetch, and then run response interceptors
     // eslint-disable-next-line prefer-rest-params
     const $$source = { method: '{{{name}}}', client: '{{{apiClassName}}}', arguments: arguments[0] };
-    const $$fetchArgs = parameterBuilder('{{{capMethod}}}', this.baseUrl, '{{{path}}}', $$fetchOptions)
+    const $$fetchArgs = parameterBuilder('{{{capMethod}}}', this.baseUrl, '{{{path}}}', this, $$fetchOptions)
 {{#each params}}      .{{{in}}}('{{{serverName}}}', {{{name}}}{{#if format}}, { {{#if format}}
         format: '{{format}}',
       {{/if}} }{{/if}}){{#if @last}}

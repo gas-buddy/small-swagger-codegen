@@ -18,11 +18,12 @@ export class FeatureAPI {
     const {
       baseUrl = '',
       fetch,
+      FormData,
       EventSource,
       requestInterceptor,
       responseInterceptor,
     } = config || {}
-    Object.assign(this, { baseUrl, fetch, requestInterceptor, responseInterceptor, EventSource });
+    Object.assign(this, { baseUrl, fetch, requestInterceptor, responseInterceptor, EventSource, FormData });
   }
 
   /**
@@ -40,7 +41,7 @@ export class FeatureAPI {
     // Build parameters, run request interceptors, fetch, and then run response interceptors
     // eslint-disable-next-line prefer-rest-params
     const $$source = { method: 'getFeatures', client: '', arguments: arguments[0] };
-    const $$fetchArgs = parameterBuilder('POST', this.baseUrl, '/feature/features/{tag_name}', $$fetchOptions)
+    const $$fetchArgs = parameterBuilder('POST', this.baseUrl, '/feature/features/{tag_name}', this, $$fetchOptions)
       .path('tag_name', tag_name)
       .query('sample_query', sample_query)
       .body('client', client)
@@ -56,7 +57,7 @@ export class FeatureAPI {
     // Build parameters, run request interceptors, fetch, and then run response interceptors
     // eslint-disable-next-line prefer-rest-params
     const $$source = { method: 'get_noargs', client: '', arguments: arguments[0] };
-    const $$fetchArgs = parameterBuilder('GET', this.baseUrl, '/feature/noargs', $$fetchOptions)
+    const $$fetchArgs = parameterBuilder('GET', this.baseUrl, '/feature/noargs', this, $$fetchOptions)
       .build();
     return fetchHelper(this, $$fetchArgs, $$fetchOptions, $$source);
   }
