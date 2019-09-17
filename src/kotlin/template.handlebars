@@ -1,11 +1,11 @@
-@file:Suppress("unused", "UnusedImport", "EnumEntryName")
+@file:Suppress("unused", "UnusedImport", "EnumEntryName", "RemoveRedundantQualifierName")
 
-package com.gasbuddy.mobile.webservices.rx.webservices
+package com.gasbuddy.mobile.common.webservices.apis
 
-import com.gasbuddy.mobile.webservices.GBIORxWebServices
-import com.gasbuddy.mobile.webservices.RxWebServices
-import com.gasbuddy.mobile.webservices.sse.RxJavaSseCallAdapterFactory
+import com.gasbuddy.mobile.common.interfaces.Jsonable
+import com.gasbuddy.mobile.common.webservices.GBIORxWebServices
 import com.google.gson.annotations.SerializedName
+import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
 import retrofit2.Response
@@ -13,23 +13,16 @@ import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
-import java.time.OffsetDateTime
+import org.threeten.bp.OffsetDateTime
 import okhttp3.MultipartBody
 
 
-class {{{apiClassName}}}WebServices : GBIORxWebServices() {
+class {{{apiClassName}}} : GBIORxWebServices() {
 
     //region Companion
     companion object {
         @JvmStatic
-        val api: API = Retrofit.Builder()
-                .baseUrl(GBIORxWebServices.getHost())
-                .addConverterFactory(GsonConverterFactory.create())
-                .addCallAdapterFactory(RxJavaSseCallAdapterFactory(scheduler = Schedulers.io()))
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.createWithScheduler(Schedulers.io()))
-                .client(RxWebServices.httpClient().newBuilder().build())
-                .build()
-                .create(API::class.java)
+        val api: API = createAPI(baseUrl = host, clazz = API::class.java)
     }
     //endregion
 
