@@ -8,10 +8,10 @@ data class {{{name}}} (
     @SerializedName("{{{specName}}}") val {{{name}}}: {{{type}}} {{~#unless isRequired}}? = null{{/unless}} {{~#unless @last}},{{/unless}} {{#if description.length }} // {{#oneline}}{{{description}}}{{/oneline}} {{/if}}
     {{/each}}
 ) : Jsonable {{#if nestedModels.length}} {
-	{{#each nestedModels}}
-	{{> modelClassTemplate}}
+    {{#each nestedModels}}
+    {{> modelClassTemplate}}
 
-	{{/each}}
+    {{/each}}
 }
 {{/if}}
 
