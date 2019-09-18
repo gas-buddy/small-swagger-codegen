@@ -1,0 +1,11 @@
+{
+  "language": "kotlin",
+  "output": "./generated/",
+  "specs": {
+    "FeatureApi": {
+      "spec": "./tests/feature-api-spec.json",
+      "className": "FeatureAPI",
+      "basePath": "feature"
+    }
+  }
+}

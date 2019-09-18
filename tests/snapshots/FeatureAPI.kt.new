@@ -68,22 +68,22 @@ class FeatureAPI : GBIORxWebServices() {
         @SerializedName("user") val user: ClientData.User? = null, 
         @SerializedName("ctx") val ctx: Map<String, Any>? = null  // Arbitrary key value pairs 
     ) : Jsonable  {
-        data class Dev (
-            @SerializedName("id") val id: String? = null,  // A unique identifier for the device 
-            @SerializedName("os") val os: String? = null, 
-            @SerializedName("ver") val ver: String? = null 
-        ) : Jsonable 
+    	data class Dev (
+    	    @SerializedName("id") val id: String? = null,  // A unique identifier for the device 
+    	    @SerializedName("os") val os: String? = null, 
+    	    @SerializedName("ver") val ver: String? = null 
+    	) : Jsonable 
     
-        data class App (
-            @SerializedName("id") val id: String? = null, 
-            @SerializedName("ver") val ver: String? = null, 
-            @SerializedName("hr") val hr: Double? = null  // Hours since app install 
-        ) : Jsonable 
+    	data class App (
+    	    @SerializedName("id") val id: String? = null, 
+    	    @SerializedName("ver") val ver: String? = null, 
+    	    @SerializedName("hr") val hr: Double? = null  // Hours since app install 
+    	) : Jsonable 
     
-        data class User (
-            @SerializedName("country") val country: String? = null,  // The country in which the user is acting or to which they are assigned 
-            @SerializedName("anon_id") val anonId: String? = null  // If the user is not an authenticated user, an anonymous identifier for them (such as a guid) 
-        ) : Jsonable 
+    	data class User (
+    	    @SerializedName("country") val country: String? = null,  // The country in which the user is acting or to which they are assigned 
+    	    @SerializedName("anon_id") val anonId: String? = null  // If the user is not an authenticated user, an anonymous identifier for them (such as a guid) 
+    	) : Jsonable 
     
     }
     

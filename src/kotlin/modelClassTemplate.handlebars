@@ -7,11 +7,11 @@ data class {{{name}}} (
 	{{#each properties}}
     @SerializedName("{{{specName}}}") val {{{name}}}: {{{type}}} {{~#unless isRequired}}? = null{{/unless}} {{~#unless @last}},{{/unless}} {{#if description.length }} // {{#oneline}}{{{description}}}{{/oneline}} {{/if}}
     {{/each}}
-) {{#if nestedModels.length}} {
-	{{#each nestedModels}}
-	{{> modelClassTemplate}}
+) : Jsonable {{#if nestedModels.length}} {
+    {{#each nestedModels}}
+    {{> modelClassTemplate}}
 
-	{{/each}}
+    {{/each}}
 }
 {{/if}}
 
