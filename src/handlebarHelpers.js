@@ -24,7 +24,7 @@ export default function setupHandlebars(handlebars) {
     if (!arg) {
       return arg;
     }
-    if (arg.inCap == 'Body' || arg.inCap == 'Part') {
+    if (arg.inCap === 'Body' || arg.inCap === 'Part') {
       return options.inverse(this);
     }
     return options.fn(this);
