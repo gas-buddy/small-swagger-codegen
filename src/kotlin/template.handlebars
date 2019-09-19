@@ -2,6 +2,8 @@
 
 package com.gasbuddy.mobile.common.webservices.apis
 
+// @formatter:off
+
 import com.gasbuddy.mobile.common.interfaces.Jsonable
 import com.gasbuddy.mobile.common.webservices.GBIORxWebServices
 import com.google.gson.annotations.SerializedName
@@ -43,6 +45,7 @@ class {{{apiClassName}}} : GBIORxWebServices() {
         {{#if streaming}}
         @Streaming
         {{/if}}
+        @JvmSuppressWildcards
         fun {{{name}}}(
             @HeaderMap headerMap: Map<String, String>{{#if params.length}},{{/if}}
         {{#each params}}
