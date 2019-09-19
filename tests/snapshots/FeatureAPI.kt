@@ -2,6 +2,8 @@
 
 package com.gasbuddy.mobile.common.webservices.apis
 
+// @formatter:off
+
 import com.gasbuddy.mobile.common.interfaces.Jsonable
 import com.gasbuddy.mobile.common.webservices.GBIORxWebServices
 import com.google.gson.annotations.SerializedName
@@ -39,6 +41,7 @@ class FeatureAPI : GBIORxWebServices() {
          */
         @Headers("Content-Type:application/json")
         @POST("/feature/features/{tag_name}")
+        @JvmSuppressWildcards
         fun getFeatures(
             @HeaderMap headerMap: Map<String, String>,
             @Path("tag_name") tagName: String,
@@ -52,6 +55,7 @@ class FeatureAPI : GBIORxWebServices() {
          */
         @Headers("Content-Type:application/json")
         @GET("/feature/noargs")
+        @JvmSuppressWildcards
         fun noargsGet(
             @HeaderMap headerMap: Map<String, String>
         ) : Single<Features>
