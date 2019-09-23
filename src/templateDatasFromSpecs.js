@@ -250,7 +250,7 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
     type: isNested ? `${name}.${typeInfo.name}` : typeInfo.name,
     format: typeInfo.format,
     isRequired: !!_.find(schema.required, r => r === propertyName),
-    specName: propertyName
+    specName: propertyName,
   }));
 
   const superclassModels = superclass && typeInfoAndModelsFromSchema(
