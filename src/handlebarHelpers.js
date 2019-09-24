@@ -20,14 +20,14 @@ export default function setupHandlebars(handlebars) {
     return options.fn(this).trim().replace(/\n/g, ' ').trim();
   });
 
-  handlebars.registerHelper('isNotBodyParam', function isNotBodyParam(arg, options) {
+  handlebars.registerHelper('isNotBodyOrPartParam', function isNotBodyOrPartParam(arg, options) {
     if (!arg) {
       return arg;
     }
-    if (arg.inCap !== 'Body') {
-      return options.fn(this);
+    if (arg.inCap === 'Body' || arg.inCap === 'Part') {
+      return options.inverse(this);
     }
-    return options.inverse(this);
+    return options.fn(this);
   });
 
   handlebars.registerHelper('jsIdentifier', ident => new handlebars.SafeString(ident.replace(/[.]/g, '_')));

@@ -16,7 +16,7 @@ import retrofit2.http.*
 import org.threeten.bp.OffsetDateTime
 import okhttp3.MultipartBody
 
-
+// @formatter:off
 class {{{apiClassName}}} : GBIORxWebServices() {
 
     //region Companion
@@ -38,15 +38,20 @@ class {{{apiClassName}}} : GBIORxWebServices() {
          {{/each}}
          * @return Single<{{{response.type}}}>
          */
+        {{#if multipart}}
+        @Multipart
+        {{else}}
         @Headers("Content-Type:application/json"{{#if streaming}}, "Accept:text/event-stream", "Cache-Control:no-cache"{{/if}})
+        {{/if}}
         @{{{capMethod}}}("{{{path}}}")
         {{#if streaming}}
         @Streaming
         {{/if}}
+        @JvmSuppressWildcards
         fun {{{name}}}(
             @HeaderMap headerMap: Map<String, String>{{#if params.length}},{{/if}}
         {{#each params}}
-            @{{{inCap}}}{{#isNotBodyParam this}}("{{{serverName}}}"){{/isNotBodyParam}} {{{name}}}: {{{type}}}{{#unless required}}? = null{{/unless}}{{~#unless @last}},{{/unless}}
+            @{{{inCap}}}{{#isNotBodyOrPartParam this}}("{{{serverName}}}"){{/isNotBodyOrPartParam}} {{{name}}}: {{{type}}}{{#unless required}}? = null{{/unless}}{{~#unless @last}},{{/unless}}
         {{/each}}
         ) : {{#if streaming}}Observable{{else}}Single{{/if}}<{{{response.type}}}>
         {{/each}}

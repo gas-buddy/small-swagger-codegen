@@ -2,12 +2,20 @@
 /**
  * {{{ description }}}
  */
- {{/if}}
-data class {{{name}}} (
-	{{#each properties}}
-    @SerializedName("{{{specName}}}") val {{{name}}}: {{{type}}} {{~#unless isRequired}}? = null{{/unless}} {{~#unless @last}},{{/unless}} {{#if description.length }} // {{#oneline}}{{{description}}}{{/oneline}} {{/if}}
+{{/if}}
+open class {{{name}}} (
+    {{#each properties}}
+    @SerializedName("{{{specName}}}") open val {{{name}}}: {{{type}}} {{~#unless isRequired}}? = null{{/unless}}{{#unless @last}},{{else}}{{#if ../inheritedProperties.length}},{{/if}}{{/unless}} {{#if description.length }} // {{#oneline}}{{{description}}}{{/oneline}} {{/if}}
     {{/each}}
-) : Jsonable {{#if nestedModels.length}} {
+    {{#each inheritedProperties}}
+    @SerializedName("{{{specName}}}") override val {{{name}}}: {{{type}}} {{~#unless isRequired}}? = null{{/unless}} {{~#unless @last}},{{/unless}}
+    {{/each}}
+) : {{#if superclass}}{{{superclass}}}(
+        {{#each inheritedProperties}}
+        {{{name}}} = {{{name}}}{{~#unless @last}}, {{/unless}}
+        {{/each}}
+    ){{else}}Jsonable{{/if}} {{#if nestedModels.length}} {
+
     {{#each nestedModels}}
     {{> modelClassTemplate}}
 
