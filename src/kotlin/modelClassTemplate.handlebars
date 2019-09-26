@@ -14,12 +14,39 @@ open class {{{name}}} (
         {{#each inheritedProperties}}
         {{{name}}} = {{{name}}}{{~#unless @last}}, {{/unless}}
         {{/each}}
-    ){{else}}Jsonable{{/if}} {{#if nestedModels.length}} {
+    ){{else}}Jsonable{{/if}} {
 
-    {{#each nestedModels}}
-    {{> modelClassTemplate}}
+    override fun toString() = "{{{name}}}({{#each initializerProperties}}{{{name}}}=${{{name}}}{{#unless @last}}, {{/unless}}{{/each}})"
+    
+    override fun hashCode(): Int {
+        {{#each initializerProperties}}
+        {{#if @first}}
+        var result:Int = {{{name}}}.hashCode()
+        {{else}}
+        result = 31 * result + {{{name}}}.hashCode()       
+        {{/if}}
+        {{/each}}
+        return result
+    }
 
-    {{/each}}
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as {{{name}}}
+
+        {{#each initializerProperties}}
+        if ({{{name}}} != other.{{{name}}}) return false
+        {{/each}}
+
+        return true
+    }
+
+    {{#if nestedModels.length}} 
+        {{#each nestedModels}}
+        {{> modelClassTemplate}}
+
+        {{/each}}
+    {{/if}}
+
 }
-{{/if}}
-
