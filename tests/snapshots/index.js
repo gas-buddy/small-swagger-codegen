@@ -22,8 +22,9 @@ export class FeatureAPI {
       EventSource,
       requestInterceptor,
       responseInterceptor,
+      onRetry,
     } = config || {}
-    Object.assign(this, { baseUrl, fetch, requestInterceptor, responseInterceptor, EventSource, FormData });
+    Object.assign(this, { baseUrl, fetch, requestInterceptor, responseInterceptor, onRetry, EventSource, FormData });
   }
 
   /**
