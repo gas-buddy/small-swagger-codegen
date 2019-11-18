@@ -46,6 +46,23 @@ class FeatureAPI : GBIORxWebServices() {
             @Query("sample_query") sampleQuery: String? = null,
             @Body client: ClientData
         ) : Single<Features>
+
+        /**
+         * Get a list of features and settings for a given device, user and app
+         * @param tagName The tag (and its parents) for which features are being requested
+         * @param sampleQuery A query parameter
+         * @param client Information about the client making the request
+         * @return Features
+         */
+        @Headers("Content-Type:application/json")
+        @POST("/feature/features/{tag_name}")
+        @JvmSuppressWildcards
+        suspend fun getFeaturesSus(
+            @HeaderMap headerMap: Map<String, String>,
+            @Path("tag_name") tagName: String,
+            @Query("sample_query") sampleQuery: String? = null,
+            @Body client: ClientData
+        ) : Features
         
         /**
          * A method with no parameters
@@ -57,6 +74,18 @@ class FeatureAPI : GBIORxWebServices() {
         fun noargsGet(
             @HeaderMap headerMap: Map<String, String>
         ) : Single<Features>
+
+        /**
+         * A method with no parameters
+         * @return Features
+         */
+        @Headers("Content-Type:application/json")
+        @GET("/feature/noargs")
+        @JvmSuppressWildcards
+        suspend fun noargsGetSus(
+            @HeaderMap headerMap: Map<String, String>
+        ) : Features
+
     }
     //endregion
 
