@@ -54,7 +54,32 @@ class {{{apiClassName}}} : GBIORxWebServices() {
             @{{{inCap}}}{{#isNotBodyOrPartParam this}}("{{{serverName}}}"){{/isNotBodyOrPartParam}} {{{name}}}: {{{type}}}{{#unless required}}? = null{{/unless}}{{~#unless @last}},{{/unless}}
         {{/each}}
         ) : {{#if streaming}}Observable{{else}}Single{{/if}}<{{{response.type}}}>
+
+        /**
+         * {{{description}}}
+         {{#each params}}
+         * @param {{{name}}} {{{description}}}
+         {{/each}}
+         * @return {{{response.type}}}
+         */
+        {{#if multipart}}
+        @Multipart
+        {{else}}
+        @Headers("Content-Type:application/json"{{#if streaming}}, "Accept:text/event-stream", "Cache-Control:no-cache"{{/if}})
+        {{/if}}
+        @{{{capMethod}}}("{{{path}}}")
+        {{#if streaming}}
+        @Streaming
+        {{/if}}
+        @JvmSuppressWildcards
+        suspend fun {{{name}}}Sus(
+            @HeaderMap headerMap: Map<String, String>{{#if params.length}},{{/if}}
+        {{#each params}}
+            @{{{inCap}}}{{#isNotBodyOrPartParam this}}("{{{serverName}}}"){{/isNotBodyOrPartParam}} {{{name}}}: {{{type}}}{{#unless required}}? = null{{/unless}}{{~#unless @last}},{{/unless}}
         {{/each}}
+        ) : {{{response.type}}}
+        {{/each}}
+
     }
     //endregion
 
