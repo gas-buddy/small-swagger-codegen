@@ -8,13 +8,13 @@ import com.google.gson.annotations.SerializedName
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
+import retrofit2.Call
 import retrofit2.Response
 import retrofit2.Retrofit
-import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
-import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
 import org.threeten.bp.OffsetDateTime
 import okhttp3.MultipartBody
+import okhttp3.ResponseBody
 
 // @formatter:off
 class {{{apiClassName}}} : GBIORxWebServices() {
@@ -30,30 +30,6 @@ class {{{apiClassName}}} : GBIORxWebServices() {
     //region Web Services
     interface API {
         {{#each methods}}
-        
-        /**
-         * {{{description}}}
-         {{#each params}}
-         * @param {{{name}}} {{{description}}}
-         {{/each}}
-         * @return Single<{{{response.type}}}>
-         */
-        {{#if multipart}}
-        @Multipart
-        {{else}}
-        @Headers("Content-Type:application/json"{{#if streaming}}, "Accept:text/event-stream", "Cache-Control:no-cache"{{/if}})
-        {{/if}}
-        @{{{capMethod}}}("{{{path}}}")
-        {{#if streaming}}
-        @Streaming
-        {{/if}}
-        @JvmSuppressWildcards
-        fun {{{name}}}(
-            @HeaderMap headerMap: Map<String, String>{{#if params.length}},{{/if}}
-        {{#each params}}
-            @{{{inCap}}}{{#isNotBodyOrPartParam this}}("{{{serverName}}}"){{/isNotBodyOrPartParam}} {{{name}}}: {{{type}}}{{#unless required}}? = null{{/unless}}{{~#unless @last}},{{/unless}}
-        {{/each}}
-        ) : {{#if streaming}}Observable{{else}}Single{{/if}}<{{{response.type}}}>
 
         /**
          * {{{description}}}
@@ -72,12 +48,12 @@ class {{{apiClassName}}} : GBIORxWebServices() {
         @Streaming
         {{/if}}
         @JvmSuppressWildcards
-        suspend fun {{{name}}}Sus(
-            @HeaderMap headerMap: Map<String, String>{{#if params.length}},{{/if}}
+        {{#if streaming}}{{else}}suspend {{/if}}fun {{{name}}}(
         {{#each params}}
             @{{{inCap}}}{{#isNotBodyOrPartParam this}}("{{{serverName}}}"){{/isNotBodyOrPartParam}} {{{name}}}: {{{type}}}{{#unless required}}? = null{{/unless}}{{~#unless @last}},{{/unless}}
         {{/each}}
-        ) : {{{response.type}}}
+        ) : {{#if streaming}}Call<ResponseBody>{{else}}{{{response.type}}}{{/if}}
+
         {{/each}}
 
     }
