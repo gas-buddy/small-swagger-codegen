@@ -8,13 +8,13 @@ import com.google.gson.annotations.SerializedName
 import io.reactivex.Observable
 import io.reactivex.Single
 import io.reactivex.schedulers.Schedulers
+import retrofit2.Call
 import retrofit2.Response
 import retrofit2.Retrofit
-import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
-import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
 import org.threeten.bp.OffsetDateTime
 import okhttp3.MultipartBody
+import okhttp3.ResponseBody
 
 // @formatter:off
 class FeatureAPI : GBIORxWebServices() {
@@ -29,23 +29,6 @@ class FeatureAPI : GBIORxWebServices() {
 
     //region Web Services
     interface API {
-        
-        /**
-         * Get a list of features and settings for a given device, user and app
-         * @param tagName The tag (and its parents) for which features are being requested
-         * @param sampleQuery A query parameter
-         * @param client Information about the client making the request
-         * @return Single<Features>
-         */
-        @Headers("Content-Type:application/json")
-        @POST("/feature/features/{tag_name}")
-        @JvmSuppressWildcards
-        fun getFeatures(
-            @HeaderMap headerMap: Map<String, String>,
-            @Path("tag_name") tagName: String,
-            @Query("sample_query") sampleQuery: String? = null,
-            @Body client: ClientData
-        ) : Single<Features>
 
         /**
          * Get a list of features and settings for a given device, user and app
@@ -57,23 +40,12 @@ class FeatureAPI : GBIORxWebServices() {
         @Headers("Content-Type:application/json")
         @POST("/feature/features/{tag_name}")
         @JvmSuppressWildcards
-        suspend fun getFeaturesSus(
-            @HeaderMap headerMap: Map<String, String>,
+        suspend fun getFeatures(
             @Path("tag_name") tagName: String,
             @Query("sample_query") sampleQuery: String? = null,
             @Body client: ClientData
         ) : Features
-        
-        /**
-         * A method with no parameters
-         * @return Single<Features>
-         */
-        @Headers("Content-Type:application/json")
-        @GET("/feature/noargs")
-        @JvmSuppressWildcards
-        fun noargsGet(
-            @HeaderMap headerMap: Map<String, String>
-        ) : Single<Features>
+
 
         /**
          * A method with no parameters
@@ -82,9 +54,9 @@ class FeatureAPI : GBIORxWebServices() {
         @Headers("Content-Type:application/json")
         @GET("/feature/noargs")
         @JvmSuppressWildcards
-        suspend fun noargsGetSus(
-            @HeaderMap headerMap: Map<String, String>
+        suspend fun noargsGet(
         ) : Features
+
 
     }
     //endregion
