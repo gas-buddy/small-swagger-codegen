@@ -3,7 +3,7 @@
 package com.gasbuddy.mobile.common.webservices.apis
 
 import com.gasbuddy.mobile.common.interfaces.Jsonable
-import com.gasbuddy.mobile.common.webservices.GBIORxWebServices
+import com.gasbuddy.mobile.common.webservices.GBIOWebServices
 import com.google.gson.annotations.SerializedName
 import io.reactivex.Observable
 import io.reactivex.Single
@@ -17,7 +17,7 @@ import okhttp3.MultipartBody
 import okhttp3.ResponseBody
 
 // @formatter:off
-class FeatureAPI : GBIORxWebServices() {
+class FeatureAPI : GBIOWebServices() {
 
     //region Companion
     companion object {
