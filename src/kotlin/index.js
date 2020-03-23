@@ -16,7 +16,7 @@ export default {
     number: { int64: 'Long', int32: 'Int', default: 'Double' },
     file: 'MultipartBody.Part',
     object: additionalType => `Map<String, ${additionalType}>`,
-    integer: { int64: 'Long', default: 'Int'},
+    integer: { int64: 'Long', default: 'Int' },
     string: { date: 'OffsetDateTime', 'date-time': 'OffsetDateTime', default: 'String' },
     array: typeName => `List<${typeName}>`,
   },
