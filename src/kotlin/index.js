@@ -13,7 +13,7 @@ export default {
   typeMap: {
     undefined: 'Response<Void>',
     boolean: 'Boolean',
-    number: { int64: 'Int', int32: 'Int', default: 'Double' },
+    number: { int64: 'Long', int32: 'Int', default: 'Double' },
     file: 'MultipartBody.Part',
     object: additionalType => `Map<String, ${additionalType}>`,
     integer: 'Int',
