@@ -5,12 +5,12 @@ package com.gasbuddy.mobile.common.webservices.apis
 import com.gasbuddy.mobile.common.interfaces.Jsonable
 import com.gasbuddy.mobile.common.webservices.GBIORxWebServices
 import com.google.gson.annotations.SerializedName
-import io.reactivex.Observable
-import io.reactivex.Single
-import io.reactivex.schedulers.Schedulers
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Single
+import io.reactivex.rxjava3.schedulers.Schedulers
 import retrofit2.Response
 import retrofit2.Retrofit
-import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
+import hu.akarnokd.rxjava3.retrofit.RxJava3CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
 import org.threeten.bp.OffsetDateTime
@@ -29,7 +29,7 @@ class FeatureAPI : GBIORxWebServices() {
 
     //region Web Services
     interface API {
-        
+
         /**
          * Get a list of features and settings for a given device, user and app
          * @param tagName The tag (and its parents) for which features are being requested
@@ -46,7 +46,7 @@ class FeatureAPI : GBIORxWebServices() {
             @Query("sample_query") sampleQuery: String? = null,
             @Body client: ClientData
         ) : Single<Features>
-        
+
         /**
          * A method with no parameters
          * @return Single<Features>
@@ -261,5 +261,5 @@ class FeatureAPI : GBIORxWebServices() {
 
     //region Enums
     //endregion
-    
+
 }
