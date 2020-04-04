@@ -49,7 +49,6 @@ class {{{apiClassName}}} : GBIORxWebServices() {
         {{/if}}
         @JvmSuppressWildcards
         fun {{{name}}}(
-            @HeaderMap headerMap: Map<String, String>{{#if params.length}},{{/if}}
         {{#each params}}
             @{{{inCap}}}{{#isNotBodyOrPartParam this}}("{{{serverName}}}"){{/isNotBodyOrPartParam}} {{{name}}}: {{{type}}}{{#unless required}}? = null{{/unless}}{{~#unless @last}},{{/unless}}
         {{/each}}

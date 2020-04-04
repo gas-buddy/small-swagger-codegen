@@ -41,7 +41,6 @@ class FeatureAPI : GBIORxWebServices() {
         @POST("/feature/features/{tag_name}")
         @JvmSuppressWildcards
         fun getFeatures(
-            @HeaderMap headerMap: Map<String, String>,
             @Path("tag_name") tagName: String,
             @Query("sample_query") sampleQuery: String? = null,
             @Body client: ClientData
@@ -55,7 +54,6 @@ class FeatureAPI : GBIORxWebServices() {
         @GET("/feature/noargs")
         @JvmSuppressWildcards
         fun noargsGet(
-            @HeaderMap headerMap: Map<String, String>
         ) : Single<Features>
     }
     //endregion
