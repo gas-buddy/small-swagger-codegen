@@ -5,12 +5,12 @@ package com.gasbuddy.mobile.common.webservices.apis
 import com.gasbuddy.mobile.common.interfaces.Jsonable
 import com.gasbuddy.mobile.common.webservices.GBIORxWebServices
 import com.google.gson.annotations.SerializedName
-import io.reactivex.Observable
-import io.reactivex.Single
-import io.reactivex.schedulers.Schedulers
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Single
+import io.reactivex.rxjava3.schedulers.Schedulers
 import retrofit2.Response
 import retrofit2.Retrofit
-import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
+import hu.akarnokd.rxjava3.retrofit.RxJava3CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.*
 import org.threeten.bp.OffsetDateTime
@@ -30,7 +30,7 @@ class {{{apiClassName}}} : GBIORxWebServices() {
     //region Web Services
     interface API {
         {{#each methods}}
-        
+
         /**
          * {{{description}}}
          {{#each params}}
@@ -67,7 +67,7 @@ class {{{apiClassName}}} : GBIORxWebServices() {
 
     //region Enums
     {{#each enumModels}}
-    enum class {{{name}}} { 
+    enum class {{{name}}} {
         {{#each values}}
         @SerializedName({{{value}}}) {{{uName}}}{{~#unless @last}},{{/unless}}
         {{/each}}
@@ -75,5 +75,5 @@ class {{{apiClassName}}} : GBIORxWebServices() {
 
     {{/each}}
     //endregion
-    
+
 }

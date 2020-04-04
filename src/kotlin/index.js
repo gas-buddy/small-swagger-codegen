@@ -13,10 +13,10 @@ export default {
   typeMap: {
     undefined: 'Response<Void>',
     boolean: 'Boolean',
-    number: { int64: 'Int', int32: 'Int', default: 'Double' },
+    number: { int64: 'Long', int32: 'Int', default: 'Double' },
     file: 'MultipartBody.Part',
     object: additionalType => `Map<String, ${additionalType}>`,
-    integer: 'Int',
+    integer: { int64: 'Long', default: 'Int' },
     string: { date: 'OffsetDateTime', 'date-time': 'OffsetDateTime', default: 'String' },
     array: typeName => `List<${typeName}>`,
   },
