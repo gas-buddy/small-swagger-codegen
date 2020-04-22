@@ -15,6 +15,12 @@ interface EventSource {
   close();
 }
 
+interface AbortController {
+  constructor();
+  abort();
+  signal: any;
+}
+
 interface FeatureAPIResponseHeaders {
   get(header: string) : any;
 }
@@ -50,6 +56,11 @@ export class FeatureAPIConfiguration {
    * Will be prepended to the path defined in the Swagger spec
    */
   baseUrl?: string;
+
+  /**
+   * For timeout support
+   */
+  AbortController: () => AbortController,
 
   /**
    * For streaming requests

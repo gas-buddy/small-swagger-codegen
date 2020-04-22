@@ -19,12 +19,13 @@ export class {{{apiClassName}}} {
       baseUrl = '',
       fetch,
       FormData,
+      AbortController,
       EventSource,
       requestInterceptor,
       responseInterceptor,
       onRetry,
     } = config || {}
-    Object.assign(this, { baseUrl, fetch, requestInterceptor, responseInterceptor, onRetry, EventSource, FormData });
+    Object.assign(this, { baseUrl, fetch, requestInterceptor, responseInterceptor, onRetry, AbortController, EventSource, FormData });
   }
 {{#each methods}}
 
