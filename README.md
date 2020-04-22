@@ -1,6 +1,6 @@
 # small-swagger-codegen
 
-[![wercker status](https://app.wercker.com/status/3da8a3d8992ce63c2db82c29f02a584b/s/master "wercker status")](https://app.wercker.com/project/byKey/3da8a3d8992ce63c2db82c29f02a584b)
+![Node CI](https://github.com/gas-buddy/small-swagger-codegen/workflows/Node%20CI/badge.svg)
 
 A small version of swagger-codegen. Does fewer things with less code. Supports Swift, Kotlin, and Javascript (using fetch/EventSource).
 
