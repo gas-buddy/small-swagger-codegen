@@ -54,14 +54,16 @@ function isEqualIgnoringDescription(a, b) {
 }
 
 function escapeName(name) {
-  // Don't create names that start with a number.
-  const escaped = Number.isNaN(Number(name[0])) ? name : `_${name}`;
+  // Don't create names that start with a number or $.
+  const notNum = Number.isNaN(Number(name[0])) ? name : `_${name}`;
+  const escaped = notNum[0] === '$' ? `_${notNum}` : notNum;
   return ['default', 'internal', 'as'].includes(escaped) ? `\`${escaped}\`` : escaped;
 }
 
 function nameFromComponents(components, { snake } = {}) {
   const joined = _.castArray(components).join('/');
-  const name = snake ? _.snakeCase(joined) : _.camelCase(joined);
+  // Dollar sign is allowed in all languages, so leave it alone
+  const name = joined.split('$').map(snake ? _.snakeCase : _.camelCase).join('$');
   return escapeName(name);
 }
 
