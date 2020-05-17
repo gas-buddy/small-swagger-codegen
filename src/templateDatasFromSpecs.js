@@ -49,8 +49,8 @@ function isEqualIgnoring(a, b, ...ignores) {
 // Deeply omit any fields named 'description' from the arguments and check if the results are equal.
 // Useful to compare swagger schemas since we generally care whether the 'real stuff' (types, formats, etc.)
 // are equal, and not whether the descriptions (i.e. comments) are equal.
-function isEqualIgnoringDescription(a, b) {
-  return isEqualIgnoring(a, b, 'description');
+function isEqualIgnoringDescriptionAndSource(a, b) {
+  return isEqualIgnoring(a, b, 'description', 'source');
 }
 
 function escapeName(name) {
@@ -491,7 +491,7 @@ function templateDataFromSpec(apiDetail, apiName, languageSpec, options) {
   const { models, methods } = moveModelsOffMethods(methodsWithModels);
   const definitionModels = modelsFromDefinitions(spec.definitions, spec, languageSpec, options);
   const combinedModels = models.concat(definitionModels);
-  const uniqueModels = _.uniqWith(_.filter(combinedModels), isEqualIgnoringDescription);
+  const uniqueModels = _.uniqWith(_.filter(combinedModels), isEqualIgnoringDescriptionAndSource);
   const { objectModels, enumModels } = splitModels(uniqueModels);
   if (options?.combineEnums) {
     console.error('COMBINE ENUMS');
