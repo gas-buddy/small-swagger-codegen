@@ -49,8 +49,8 @@ function isEqualIgnoring(a, b, ...ignores) {
 // Deeply omit any fields named 'description' from the arguments and check if the results are equal.
 // Useful to compare swagger schemas since we generally care whether the 'real stuff' (types, formats, etc.)
 // are equal, and not whether the descriptions (i.e. comments) are equal.
-function isEqualIgnoringDescription(a, b) {
-  return isEqualIgnoring(a, b, 'description');
+function isEqualIgnoringDescriptionAndSource(a, b) {
+  return isEqualIgnoring(a, b, 'description', 'source');
 }
 
 function escapeName(name) {
@@ -231,7 +231,7 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
     }
     const isNested = property.type === 'object' && property.properties;
     const defaultTypeName = classNameFromComponents([name, propertyName], { skip: isNested ? 1 : 0 });
-    const typeInfoAndModels = typeInfoAndModelsFromSchema(property, defaultTypeName, refTarget, lang, opts);
+    const typeInfoAndModels = typeInfoAndModelsFromSchema(property, defaultTypeName, refTarget, lang, opts, 'object');
     return { ...typeInfoAndModels, isNested };
   });
 
@@ -285,7 +285,7 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
 }
 
 
-function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, lang, opts) {
+function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, lang, opts, source) {
   const ref = unresolvedSchema.$ref;
   const name = ref ? classNameFromRef(ref) : classNameFromComponents(defaultName);
   const specName = ref ? lastRefComponent(ref) : defaultName;
@@ -299,6 +299,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, l
     const model = {
       name,
       type: 'enum',
+      source,
       enumType: typeInfoAndModelsFromPrimitiveSchema(schema, refTarget, lang, opts).typeInfo.name,
       values: _.map(schema.enum, e => ({
         name: nameFromComponents(e, opts),
@@ -327,7 +328,7 @@ function typeInfoAndModelsFromSchema(unresolvedSchema, defaultName, refTarget, l
 function typeInfoAndModelsFromParam(param, methodName, refTarget, lang, opts) {
   const defaultName = classNameFromComponents([methodName, param.name || 'response']);
   assert(param.schema, `Found a param with no schema: ${describe(param)}`);
-  return typeInfoAndModelsFromSchema(param.schema, defaultName, refTarget, lang, opts);
+  return typeInfoAndModelsFromSchema(param.schema, defaultName, refTarget, lang, opts, 'param');
 }
 
 
@@ -399,7 +400,7 @@ function methodsFromPaths(paths, basePath, refTarget, lang, opts) {
 
 function modelsFromDefinitions(definitions, refTarget, lang, opts) {
   return _.flatMap(definitions, (unresolvedSchema, name) => (
-    typeInfoAndModelsFromSchema(unresolvedSchema, name, refTarget, lang, opts).models
+    typeInfoAndModelsFromSchema(unresolvedSchema, name, refTarget, lang, opts, 'definitions').models
   ));
 }
 
@@ -431,6 +432,58 @@ function resolveSubclasses(objectModelsWithoutResolvedSubclasses) {
   });
 }
 
+function replaceEnumsInMethods(methods, map) {
+  return methods.map(method => ({
+    ...method,
+    params: method.params?.map(p => ({
+      ...p,
+      type: map.get(p.type) || p.type,
+    })),
+  }));
+}
+
+function replaceEnumInProperties(properties, map) {
+  if (!properties) {
+    return properties;
+  }
+  return properties.map((property) => {
+    if (map.has(property.type)) {
+      return {
+        ...property,
+        type: map.get(property.type),
+      };
+    }
+    if (property.type === 'object' && property.properties) {
+      return {
+        ...property,
+        properties: replaceEnumInProperties(property.properties, map),
+      };
+    }
+    return property;
+  });
+}
+
+function replaceEnumsInObjects(objects, map) {
+  return objects.map(object => ({
+    ...object,
+    properties: replaceEnumInProperties(object.properties, map),
+    initializerProperties: replaceEnumInProperties(object.initializerProperties, map),
+  }));
+}
+
+function combineEnums(models, methods, objectModels) {
+  const mapped = new Map();
+  const defs = models.filter(e => e.source === 'definitions');
+  defs.forEach((def) => {
+    models
+      .filter(e => e.source !== 'definitions' && e.enumType === def.enumType)
+      .filter(e => !mapped.has(e.name))
+      .filter(e => _.isEqual(e.values, def.values))
+      .forEach((e) => { mapped.set(e.name, def.name); });
+  });
+  return [models.filter(m => !mapped.has(m.name)), replaceEnumsInMethods(methods, mapped), replaceEnumsInObjects(objectModels, mapped)];
+}
+
 function templateDataFromSpec(apiDetail, apiName, languageSpec, options) {
   const { spec } = apiDetail;
   const basePath = urlJoin(apiDetail.basePath || '', spec.basePath || '');
@@ -438,9 +491,24 @@ function templateDataFromSpec(apiDetail, apiName, languageSpec, options) {
   const { models, methods } = moveModelsOffMethods(methodsWithModels);
   const definitionModels = modelsFromDefinitions(spec.definitions, spec, languageSpec, options);
   const combinedModels = models.concat(definitionModels);
-  const uniqueModels = _.uniqWith(_.filter(combinedModels), isEqualIgnoringDescription);
+  const uniqueModels = _.uniqWith(_.filter(combinedModels), isEqualIgnoringDescriptionAndSource);
   const { objectModels, enumModels } = splitModels(uniqueModels);
-  return { methods, objectModels: resolveSubclasses(objectModels), enumModels, apiName };
+  if (options?.combineEnums) {
+    console.error('COMBINE ENUMS');
+    const [canonicalEnums, canonicalMethods, canonicalObjectModels] = combineEnums(enumModels, methods, objectModels);
+    return {
+      methods: canonicalMethods,
+      objectModels: resolveSubclasses(canonicalObjectModels),
+      enumModels: canonicalEnums,
+      apiName,
+    };
+  }
+  return {
+    methods,
+    objectModels: resolveSubclasses(objectModels),
+    enumModels,
+    apiName,
+  };
 }
 
 export default function templateDatasFromSpecs(apis, languageSpec, options) {
