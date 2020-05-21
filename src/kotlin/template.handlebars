@@ -69,7 +69,7 @@ class {{{apiClassName}}} : GBIORxWebServices() {
     {{#each enumModels}}
     enum class {{{name}}} {
         {{#each values}}
-        @SerializedName({{{value}}}) {{{uName}}}{{~#unless @last}},{{/unless}}
+        @SerializedName({{{kotlinString value}}}) {{{uName}}}{{~#unless @last}},{{/unless}}
         {{/each}}
     }
 

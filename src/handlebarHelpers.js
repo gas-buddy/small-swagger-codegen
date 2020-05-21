@@ -33,4 +33,6 @@ export default function setupHandlebars(handlebars) {
   handlebars.registerHelper('jsIdentifier', ident => new handlebars.SafeString(ident.replace(/[.]/g, '_')));
 
   handlebars.registerHelper('concat', (delim, ...args) => args.slice(0, args.length - 1).join(delim));
+
+  handlebars.registerHelper('kotlinString', str => str.replace(/\$/g, '\\$'));
 }
