@@ -60,7 +60,7 @@ export class FeatureAPIConfiguration {
   /**
    * For timeout support
    */
-  AbortController: () => AbortController,
+  AbortController: () => AbortController;
 
   /**
    * For streaming requests
