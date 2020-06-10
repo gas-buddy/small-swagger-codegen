@@ -1,23 +1,23 @@
 // tslint:disable
 interface {{{apiClassName}}}Promise<T> extends Promise<T>{
-  abort();
+  abort(): void;
   /**
    * Expect certain status codes and accept the promise rather than
    * throwing
    */
-  expect(...statusCodes) : {{{apiClassName}}}Promise<T>;
+  expect(...statusCodes: number[]) : {{{apiClassName}}}Promise<T>;
 }
 
 interface EventSource {
-  constructor(url: string, init?: any);
-  removeAllListeners();
-  addEventListener(name: string, handler: (data: any) => void);
-  close();
+  constructor(url: string, init?: any): this;
+  removeAllListeners(): this;
+  addEventListener(name: string, handler: (data: any) => void): this;
+  close(): this;
 }
 
 interface AbortController {
-  constructor();
-  abort();
+  constructor(): this;
+  abort(): void;
   signal: any;
 }
 
@@ -82,6 +82,10 @@ export class {{{apiClassName}}}Configuration {
    */
   responseInterceptor?: (response: any, parameters: any) => void;
 }
+
+{{#each enumModels}}
+type {{{name}}} = {{#each values}}{{{value}}}{{~#unless @last}} | {{/unless}}{{/each}};
+{{/each}}
 
 {{#each objectModels}}
 {{> modelClassTemplate}}

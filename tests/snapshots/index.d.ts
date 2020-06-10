@@ -1,23 +1,23 @@
 // tslint:disable
 interface FeatureAPIPromise<T> extends Promise<T>{
-  abort();
+  abort(): void;
   /**
    * Expect certain status codes and accept the promise rather than
    * throwing
    */
-  expect(...statusCodes) : FeatureAPIPromise<T>;
+  expect(...statusCodes: number[]) : FeatureAPIPromise<T>;
 }
 
 interface EventSource {
-  constructor(url: string, init?: any);
-  removeAllListeners();
-  addEventListener(name: string, handler: (data: any) => void);
-  close();
+  constructor(url: string, init?: any): this;
+  removeAllListeners(): this;
+  addEventListener(name: string, handler: (data: any) => void): this;
+  close(): this;
 }
 
 interface AbortController {
-  constructor();
-  abort();
+  constructor(): this;
+  abort(): void;
   signal: any;
 }
 
@@ -82,6 +82,8 @@ export class FeatureAPIConfiguration {
    */
   responseInterceptor?: (response: any, parameters: any) => void;
 }
+
+type GetFeaturesSampleQuery = "value1" | "value2";
 
 /**
  * @export
@@ -149,7 +151,7 @@ export interface FeaturesFeatures {
 
 export interface getFeaturesArguments {
   tag_name: string,
-  sample_query?: string,
+  sample_query?: GetFeaturesSampleQuery,
   client: ClientData,
 }
 
@@ -160,7 +162,7 @@ export class FeatureAPI {
    * Get a list of features and settings for a given device, user and app
    *
    * @parameter { string } tag_name: The tag (and its parents) for which features are being requested
-   * @parameter { string } sample_query: A query parameter
+   * @parameter { GetFeaturesSampleQuery } sample_query: A query parameter
    * @parameter { ClientData } client: Information about the client making the request
    */
   getFeatures(request: getFeaturesArguments, options?: FeatureAPIRequestOptions) : FeatureAPIPromise<FeatureAPIResponse<Features> | FeatureAPIErrorResponse>;

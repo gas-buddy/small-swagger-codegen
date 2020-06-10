@@ -8,7 +8,7 @@ open class FeatureAPIClass: SwaggerApi {
     /// - parameter client: Information about the client making the request
     open func getFeatures(
         tagName: String,
-        sampleQuery: String? = nil,
+        sampleQuery: GetFeaturesSampleQuery? = nil,
         client: ClientData,
         timeout: TimeInterval? = nil,
         completion: @escaping (Features?, ErrorResponse?) -> Void
@@ -285,4 +285,29 @@ open class FeaturesFeatures: SwaggerModel {
     }
 }
 
+
+public enum GetFeaturesSampleQuery: String, SwaggerEnum {
+    case value1 = "value1"
+    case value2 = "value2"
+    case _unknown = "_unknown"
+    public func serialize(format: String? = nil) throws -> Any? {
+        if SwaggerApi.debugMode && self == ._unknown {
+            fatalError("Attempting to serialize GetFeaturesSampleQuery._unknown! (This error will not happen in release mode.)")
+        }
+        return rawValue;
+    }
+    public func serializeToString(format: String? = nil) throws -> String? {
+        return try rawValue.serializeToString(format: format);
+    }
+    public static func deserialize(json: Any?, format: String? = nil, debugDescriptor: String = "GetFeaturesSampleQuery") throws -> GetFeaturesSampleQuery {
+        guard let asType = json as? String,
+            let asEnum = GetFeaturesSampleQuery(rawValue: asType) else {
+            if SwaggerApi.debugMode {
+                fatalError("Attempting to deserialize GetFeaturesSampleQuery._unknown for \(debugDescriptor)! (This error will not happen in release mode.)")
+            }
+            return ._unknown;
+        }
+        return asEnum
+    }
+}
 

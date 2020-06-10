@@ -42,7 +42,7 @@ class FeatureAPI : GBIORxWebServices() {
         @JvmSuppressWildcards
         fun getFeatures(
             @Path("tag_name") tagName: String,
-            @Query("sample_query") sampleQuery: String? = null,
+            @Query("sample_query") sampleQuery: GetFeaturesSampleQuery? = null,
             @Body client: ClientData
         ) : Single<Features>
 
@@ -258,6 +258,11 @@ class FeatureAPI : GBIORxWebServices() {
     //endregion
 
     //region Enums
+    enum class GetFeaturesSampleQuery {
+        @SerializedName("value1") VALUE_1,
+        @SerializedName("value2") VALUE_2
+    }
+
     //endregion
 
 }

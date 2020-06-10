@@ -42,7 +42,11 @@
             "in": "query",
             "description": "A query parameter",
             "required": false,
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "value1",
+              "value2"
+            ]
           },
           {
             "name": "client",

@@ -1,6 +1,6 @@
 {
   "name": "small-swagger-codegen",
-  "version": "1.21.3",
+  "version": "1.22.0",
   "description": "A small version of swagger-codegen. Does fewer things with less code.",
   "main": "./build/small-swagger-codegen.js",
   "scripts": {

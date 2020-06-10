@@ -33,7 +33,7 @@ export class FeatureAPI {
    * Get a list of features and settings for a given device, user and app
    *
    * @parameter { string } tag_name: The tag (and its parents) for which features are being requested
-   * @parameter { string } sample_query: A query parameter
+   * @parameter { GetFeaturesSampleQuery } sample_query: A query parameter
    * @parameter { ClientData } client: Information about the client making the request
    */
   getFeatures({
