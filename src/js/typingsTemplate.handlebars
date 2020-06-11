@@ -60,12 +60,12 @@ export class {{{apiClassName}}}Configuration {
   /**
    * For timeout support
    */
-  AbortController: () => AbortController;
+  AbortController: new () => AbortController;
 
   /**
    * For streaming requests
    */
-  EventSource: (url: string, init?: any) => EventSource;
+  EventSource: new (url: string, init?: any) => EventSource;
 
   /**
    * For non-streaming requests
