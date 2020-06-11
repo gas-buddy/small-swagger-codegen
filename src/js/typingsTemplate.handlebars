@@ -25,6 +25,13 @@ interface {{{apiClassName}}}ResponseHeaders {
   get(header: string) : any;
 }
 
+interface {{{apiClassName}}}FetchResponse {
+  status: number;
+  headers?: {{{apiClassName}}}ResponseHeaders;
+  blob(): Promise<any>;
+  json(): Promise<any>;
+}
+
 interface {{{apiClassName}}}Response<T> {
   body: T;
   status: number;
@@ -70,7 +77,7 @@ export class {{{apiClassName}}}Configuration {
   /**
    * For non-streaming requests
    */
-  fetch: (url: string, init?: any) => Promise<Response>;
+  fetch: (url: string, init?: any) => Promise<{{{apiClassName}}}FetchResponse>;
 
   /**
    * Run before the request goes out with the parameters that will be used

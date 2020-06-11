@@ -25,6 +25,13 @@ interface FeatureAPIResponseHeaders {
   get(header: string) : any;
 }
 
+interface FeatureAPIFetchResponse {
+  status: number;
+  headers?: FeatureAPIResponseHeaders;
+  blob(): Promise<any>;
+  json(): Promise<any>;
+}
+
 interface FeatureAPIResponse<T> {
   body: T;
   status: number;
@@ -70,7 +77,7 @@ export class FeatureAPIConfiguration {
   /**
    * For non-streaming requests
    */
-  fetch: (url: string, init?: any) => Promise<Response>;
+  fetch: (url: string, init?: any) => Promise<FeatureAPIFetchResponse>;
 
   /**
    * Run before the request goes out with the parameters that will be used
