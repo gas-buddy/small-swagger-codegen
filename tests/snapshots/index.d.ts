@@ -90,7 +90,7 @@ export class FeatureAPIConfiguration {
   responseInterceptor?: (response: any, parameters: any) => void;
 }
 
-type GetFeaturesSampleQuery = "value1" | "value2";
+export type GetFeaturesSampleQuery = "value1" | "value2";
 
 /**
  * @export

@@ -91,7 +91,7 @@ export class {{{apiClassName}}}Configuration {
 }
 
 {{#each enumModels}}
-type {{{name}}} = {{#each values}}{{{value}}}{{~#unless @last}} | {{/unless}}{{/each}};
+export type {{{name}}} = {{#each values}}{{{value}}}{{~#unless @last}} | {{/unless}}{{/each}};
 {{/each}}
 
 {{#each objectModels}}
