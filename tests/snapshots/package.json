@@ -16,7 +16,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "rest-api-support": "^1.6.1"
+    "rest-api-support": "^1.7.6"
   },
   "devDependencies": {
     "@babel/cli": "^7.8.4",
