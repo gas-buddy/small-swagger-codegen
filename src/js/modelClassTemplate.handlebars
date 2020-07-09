@@ -6,7 +6,7 @@
  * @export
  * @class {{{jsIdentifier name}}}
  */
-export interface {{{jsIdentifier name}}} {
+export interface {{{jsIdentifier name}}}{{#if superclass}} extends {{superclass}}{{/if}} {
 	{{#each properties}}
   {{{name}}}{{~#unless isRequired}}?{{/unless}}: {{{jsIdentifier type}}};
   {{/each}}

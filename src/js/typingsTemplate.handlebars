@@ -36,7 +36,7 @@ interface {{{apiClassName}}}Response<T> {
   body: T;
   status: number;
   headers: {{{apiClassName}}}ResponseHeaders;
-  type: 'response';
+  responseType: 'response';
 }
 
 interface {{{apiClassName}}}ErrorResponse {
@@ -44,7 +44,7 @@ interface {{{apiClassName}}}ErrorResponse {
   message: string;
   domain: string;
   display_message?: string;
-  type: 'error';
+  responseType: 'error';
 }
 
 interface {{{apiClassName}}}RequestOptions {
