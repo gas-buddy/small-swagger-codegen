@@ -39,11 +39,17 @@ interface {{{apiClassName}}}Response<T> {
   responseType: 'response';
 }
 
-interface {{{apiClassName}}}ErrorResponse {
+interface {{{apiClassName}}}ErrorBody {
   code: string;
   message: string;
   domain: string;
   display_message?: string;
+}
+
+interface {{{apiClassName}}}ErrorResponse {
+  body?: {{{apiClassName}}}ErrorBody;
+  status: number;
+  headers: {{{apiClassName}}}ResponseHeaders;
   responseType: 'error';
 }
 

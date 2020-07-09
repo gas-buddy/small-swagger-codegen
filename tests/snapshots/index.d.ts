@@ -39,11 +39,17 @@ interface FeatureAPIResponse<T> {
   responseType: 'response';
 }
 
-interface FeatureAPIErrorResponse {
+interface FeatureAPIErrorBody {
   code: string;
   message: string;
   domain: string;
   display_message?: string;
+}
+
+interface FeatureAPIErrorResponse {
+  body?: FeatureAPIErrorBody;
+  status: number;
+  headers: FeatureAPIResponseHeaders;
   responseType: 'error';
 }
 
