@@ -20,6 +20,11 @@ export class FeatureAPI {
     this[CONFIG_PROPERTY].baseUrl = this[CONFIG_PROPERTY].baseUrl || '';
   }
 
+  get baseUrl() {
+    return this[CONFIG_PROPERTY].baseUrl;
+  }
+
+
   /**
    * Get a list of features and settings for a given device, user and app
    *

@@ -19,6 +19,11 @@ export class {{{apiClassName}}} {
     this[CONFIG_PROPERTY] = config;
     this[CONFIG_PROPERTY].baseUrl = this[CONFIG_PROPERTY].baseUrl || '';
   }
+
+  get baseUrl() {
+    return this[CONFIG_PROPERTY].baseUrl;
+  }
+
 {{#each methods}}
 
   /**
