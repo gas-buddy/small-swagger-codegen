@@ -3,6 +3,7 @@
 import { parameterBuilder, fetchHelper, eventSourceHelper } from 'rest-api-support';
 
 const CONFIG_FUNCTION = Symbol.for('small-swagger-codegen::configurationGenerator');
+export const CONFIG_PROPERTY = Symbol.for('small-swagger-codegen::configuration');
 
 /**
  *
@@ -15,18 +16,8 @@ export class FeatureAPI {
     if (typeof config === 'function') {
       config = config(FeatureAPI);
     }
-    const {
-      baseUrl = '',
-      fetch,
-      FormData,
-      AbortController,
-      timeout,
-      EventSource,
-      requestInterceptor,
-      responseInterceptor,
-      onRetry,
-    } = config || {}
-    Object.assign(this, { baseUrl, fetch, requestInterceptor, responseInterceptor, onRetry, AbortController, EventSource, timeout, FormData });
+    this[CONFIG_PROPERTY] = config;
+    this[CONFIG_PROPERTY].baseUrl = this[CONFIG_PROPERTY].baseUrl || '';
   }
 
   /**
@@ -44,12 +35,12 @@ export class FeatureAPI {
     // Build parameters, run request interceptors, fetch, and then run response interceptors
     // eslint-disable-next-line prefer-rest-params
     const $$source = { method: 'getFeatures', client: '', arguments: arguments[0] };
-    const $$fetchArgs = parameterBuilder('POST', this.baseUrl, '/feature/features/{tag_name}', this, $$fetchOptions)
+    const $$fetchArgs = parameterBuilder('POST', this.baseUrl, '/feature/features/{tag_name}', this[CONFIG_PROPERTY])
       .path('tag_name', tag_name)
       .query('sample_query', sample_query)
       .body('client', client)
       .build();
-    return fetchHelper(this, $$fetchArgs, $$fetchOptions, $$source);
+    return fetchHelper(this[CONFIG_PROPERTY], $$fetchArgs, $$fetchOptions, $$source);
   }
 
   /**
@@ -60,9 +51,9 @@ export class FeatureAPI {
     // Build parameters, run request interceptors, fetch, and then run response interceptors
     // eslint-disable-next-line prefer-rest-params
     const $$source = { method: 'get_noargs', client: '', arguments: arguments[0] };
-    const $$fetchArgs = parameterBuilder('GET', this.baseUrl, '/feature/noargs', this, $$fetchOptions)
+    const $$fetchArgs = parameterBuilder('GET', this.baseUrl, '/feature/noargs', this[CONFIG_PROPERTY])
       .build();
-    return fetchHelper(this, $$fetchArgs, $$fetchOptions, $$source);
+    return fetchHelper(this[CONFIG_PROPERTY], $$fetchArgs, $$fetchOptions, $$source);
   }
 }
 
