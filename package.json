@@ -1,6 +1,6 @@
 {
   "name": "small-swagger-codegen",
-  "version": "1.23.1",
+  "version": "1.24.0",
   "description": "A small version of swagger-codegen. Does fewer things with less code.",
   "main": "./build/small-swagger-codegen.js",
   "scripts": {
@@ -29,7 +29,7 @@
     "lodash": "^4.17.19",
     "minimist": "^1.2.2",
     "mkdirp": "^1.0.4",
-    "rest-api-support": "^1.7.7",
+    "rest-api-support": "^1.8.1",
     "url-join": "^4.0.1"
   },
   "devDependencies": {
