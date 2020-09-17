@@ -2,7 +2,7 @@
 import type {
   EventSource,
   ResponseHeaders,
-  ServicePromise,
+  ServiceCallPromise,
   SystemFetchResponse,
   AbortController,
   FetchConfig,
@@ -93,13 +93,13 @@ export class FeatureAPI {
    * @parameter { GetFeaturesSampleQuery } sample_query: A query parameter
    * @parameter { ClientData } client: Information about the client making the request
    */
-  getFeatures(request: getFeaturesArguments, options?: FetchPerRequestOptions) : ServicePromise<RestApiSuccessResponse<Features> | RestApiErrorResponse>;
+  getFeatures(request: getFeaturesArguments, options?: FetchPerRequestOptions) : ServiceCallPromise<RestApiSuccessResponse<Features> | RestApiErrorResponse>;
 
   /**
    * A method with no parameters
    *
    */
-  get_noargs(request?: null | undefined, options?: FetchPerRequestOptions) : ServicePromise<RestApiSuccessResponse<Features> | RestApiErrorResponse>;
+  get_noargs(request?: null | undefined, options?: FetchPerRequestOptions) : ServiceCallPromise<RestApiSuccessResponse<Features> | RestApiErrorResponse>;
 }
 
 export default FeatureAPI;

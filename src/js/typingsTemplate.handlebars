@@ -2,7 +2,7 @@
 import type {
   EventSource,
   ResponseHeaders,
-  ServicePromise,
+  ServiceCallPromise,
   SystemFetchResponse,
   AbortController,
   FetchConfig,
@@ -37,7 +37,7 @@ export class {{{apiClassName}}} {
    * @parameter { {{{type}}} } {{{name}}}: {{{description}}}
   {{/each}}
    */
-  {{{name}}}(request{{#unless params.length}}?{{/unless}}: {{#if params.length}}{{{name}}}Arguments{{else}}null | undefined{{/if}}, options?: FetchPerRequestOptions) : {{#if streaming}}EventSource{{else}}ServicePromise<RestApiSuccessResponse<{{{response.type}}}> | RestApiErrorResponse>{{/if}};
+  {{{name}}}(request{{#unless params.length}}?{{/unless}}: {{#if params.length}}{{{name}}}Arguments{{else}}null | undefined{{/if}}, options?: FetchPerRequestOptions) : {{#if streaming}}EventSource{{else}}ServiceCallPromise<RestApiSuccessResponse<{{{response.type}}}> | RestApiErrorResponse>{{/if}};
 {{/each}}
 }
 
