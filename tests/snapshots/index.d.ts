@@ -1,100 +1,15 @@
 // tslint:disable
-interface FeatureAPIPromise<T> extends Promise<T>{
-  abort(): void;
-  /**
-   * Expect certain status codes and accept the promise rather than
-   * throwing
-   */
-  expect(...statusCodes: number[]) : FeatureAPIPromise<T>;
-}
-
-interface EventSource {
-  constructor(url: string, init?: any): this;
-  removeAllListeners(): this;
-  addEventListener(name: string, handler: (data: any) => void): this;
-  close(): this;
-}
-
-interface AbortController {
-  constructor(): this;
-  abort(): void;
-  signal: any;
-}
-
-interface FeatureAPIResponseHeaders {
-  get(header: string) : any;
-}
-
-interface FeatureAPIFetchResponse {
-  status: number;
-  headers?: FeatureAPIResponseHeaders;
-  blob(): Promise<any>;
-  json(): Promise<any>;
-}
-
-interface FeatureAPIResponse<T> {
-  body: T;
-  status: number;
-  headers: FeatureAPIResponseHeaders;
-  responseType: 'response';
-}
-
-interface FeatureAPIErrorBody {
-  code: string;
-  message: string;
-  domain: string;
-  display_message?: string;
-}
-
-interface FeatureAPIErrorResponse {
-  body?: FeatureAPIErrorBody;
-  status: number;
-  headers: FeatureAPIResponseHeaders;
-  responseType: 'error';
-}
-
-interface FeatureAPIRequestOptions {
-  /**
-   * Run before the request goes out with the parameters that will be used
-   */
-  requestInterceptor?: (parameters: any) => void;
-  /**
-   * Run after the request comes back
-   */
-  responseInterceptor?: (response: any, parameters: any) => void;
-}
-
-export class FeatureAPIConfiguration {
-  /**
-   * Will be prepended to the path defined in the Swagger spec
-   */
-  baseUrl?: string;
-
-  /**
-   * For timeout support
-   */
-  AbortController: new () => AbortController;
-
-  /**
-   * For streaming requests
-   */
-  EventSource: new (url: string, init?: any) => EventSource;
-
-  /**
-   * For non-streaming requests
-   */
-  fetch: (url: string, init?: any) => Promise<FeatureAPIFetchResponse>;
-
-  /**
-   * Run before the request goes out with the parameters that will be used
-   */
-  requestInterceptor?: (parameters: any) => void;
-
-  /**
-   * Run after the request comes back
-   */
-  responseInterceptor?: (response: any, parameters: any) => void;
-}
+import type {
+  EventSource,
+  ResponseHeaders,
+  ServicePromise,
+  SystemFetchResponse,
+  AbortController,
+  FetchConfig,
+  FetchPerRequestOptions,
+  RestApiErrorResponse,
+  RestApiSuccessResponse,
+} from 'rest-api-support';
 
 export type GetFeaturesSampleQuery = "value1" | "value2";
 
@@ -169,7 +84,7 @@ export interface getFeaturesArguments {
 }
 
 export class FeatureAPI {
-  constructor(configOrFunctionGeneratingConfig: FeatureAPIConfiguration);
+  constructor(configOrFunctionGeneratingConfig: FetchConfig);
 
   /**
    * Get a list of features and settings for a given device, user and app
@@ -178,13 +93,13 @@ export class FeatureAPI {
    * @parameter { GetFeaturesSampleQuery } sample_query: A query parameter
    * @parameter { ClientData } client: Information about the client making the request
    */
-  getFeatures(request: getFeaturesArguments, options?: FeatureAPIRequestOptions) : FeatureAPIPromise<FeatureAPIResponse<Features> | FeatureAPIErrorResponse>;
+  getFeatures(request: getFeaturesArguments, options?: FetchPerRequestOptions) : ServicePromise<RestApiSuccessResponse<Features> | RestApiErrorResponse>;
 
   /**
    * A method with no parameters
    *
    */
-  get_noargs(request?: null | undefined, options?: FeatureAPIRequestOptions) : FeatureAPIPromise<FeatureAPIResponse<Features> | FeatureAPIErrorResponse>;
+  get_noargs(request?: null | undefined, options?: FetchPerRequestOptions) : ServicePromise<RestApiSuccessResponse<Features> | RestApiErrorResponse>;
 }
 
 export default FeatureAPI;

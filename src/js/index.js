@@ -28,7 +28,7 @@ export default {
     file: 'string',
     object: additionalType => `Map<string, ${additionalType}>`,
     integer: 'number',
-    string: { date: 'Date', 'date-time': 'Date', default: 'string' },
+    string: 'string',
     array: typeName => `Array<${typeName}>`,
   },
 };

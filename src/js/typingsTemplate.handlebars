@@ -1,100 +1,15 @@
 // tslint:disable
-interface {{{apiClassName}}}Promise<T> extends Promise<T>{
-  abort(): void;
-  /**
-   * Expect certain status codes and accept the promise rather than
-   * throwing
-   */
-  expect(...statusCodes: number[]) : {{{apiClassName}}}Promise<T>;
-}
-
-interface EventSource {
-  constructor(url: string, init?: any): this;
-  removeAllListeners(): this;
-  addEventListener(name: string, handler: (data: any) => void): this;
-  close(): this;
-}
-
-interface AbortController {
-  constructor(): this;
-  abort(): void;
-  signal: any;
-}
-
-interface {{{apiClassName}}}ResponseHeaders {
-  get(header: string) : any;
-}
-
-interface {{{apiClassName}}}FetchResponse {
-  status: number;
-  headers?: {{{apiClassName}}}ResponseHeaders;
-  blob(): Promise<any>;
-  json(): Promise<any>;
-}
-
-interface {{{apiClassName}}}Response<T> {
-  body: T;
-  status: number;
-  headers: {{{apiClassName}}}ResponseHeaders;
-  responseType: 'response';
-}
-
-interface {{{apiClassName}}}ErrorBody {
-  code: string;
-  message: string;
-  domain: string;
-  display_message?: string;
-}
-
-interface {{{apiClassName}}}ErrorResponse {
-  body?: {{{apiClassName}}}ErrorBody;
-  status: number;
-  headers: {{{apiClassName}}}ResponseHeaders;
-  responseType: 'error';
-}
-
-interface {{{apiClassName}}}RequestOptions {
-  /**
-   * Run before the request goes out with the parameters that will be used
-   */
-  requestInterceptor?: (parameters: any) => void;
-  /**
-   * Run after the request comes back
-   */
-  responseInterceptor?: (response: any, parameters: any) => void;
-}
-
-export class {{{apiClassName}}}Configuration {
-  /**
-   * Will be prepended to the path defined in the Swagger spec
-   */
-  baseUrl?: string;
-
-  /**
-   * For timeout support
-   */
-  AbortController: new () => AbortController;
-
-  /**
-   * For streaming requests
-   */
-  EventSource: new (url: string, init?: any) => EventSource;
-
-  /**
-   * For non-streaming requests
-   */
-  fetch: (url: string, init?: any) => Promise<{{{apiClassName}}}FetchResponse>;
-
-  /**
-   * Run before the request goes out with the parameters that will be used
-   */
-  requestInterceptor?: (parameters: any) => void;
-
-  /**
-   * Run after the request comes back
-   */
-  responseInterceptor?: (response: any, parameters: any) => void;
-}
+import type {
+  EventSource,
+  ResponseHeaders,
+  ServicePromise,
+  SystemFetchResponse,
+  AbortController,
+  FetchConfig,
+  FetchPerRequestOptions,
+  RestApiErrorResponse,
+  RestApiSuccessResponse,
+} from 'rest-api-support';
 
 {{#each enumModels}}
 export type {{{name}}} = {{#each values}}{{{value}}}{{~#unless @last}} | {{/unless}}{{/each}};
@@ -112,7 +27,7 @@ export interface {{{name}}}Arguments {
 }
 {{/if}}{{/each}}
 export class {{{apiClassName}}} {
-  constructor(configOrFunctionGeneratingConfig: {{{apiClassName}}}Configuration);
+  constructor(configOrFunctionGeneratingConfig: FetchConfig);
 {{#each methods}}
 
   /**
@@ -122,7 +37,7 @@ export class {{{apiClassName}}} {
    * @parameter { {{{type}}} } {{{name}}}: {{{description}}}
   {{/each}}
    */
-  {{{name}}}(request{{#unless params.length}}?{{/unless}}: {{#if params.length}}{{{name}}}Arguments{{else}}null | undefined{{/if}}, options?: {{{../apiClassName}}}RequestOptions) : {{#if streaming}}EventSource{{else}}{{{../apiClassName}}}Promise<{{{../apiClassName}}}Response<{{{response.type}}}> | {{{../apiClassName}}}ErrorResponse>{{/if}};
+  {{{name}}}(request{{#unless params.length}}?{{/unless}}: {{#if params.length}}{{{name}}}Arguments{{else}}null | undefined{{/if}}, options?: FetchPerRequestOptions) : {{#if streaming}}EventSource{{else}}ServicePromise<RestApiSuccessResponse<{{{response.type}}}> | RestApiErrorResponse>{{/if}};
 {{/each}}
 }
 
