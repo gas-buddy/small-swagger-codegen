@@ -95,7 +95,7 @@
             "os": {
               "type": "string"
             },
-            "ver": {
+            "Ver": {
               "type": "string"
             }
           }

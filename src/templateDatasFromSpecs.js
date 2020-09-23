@@ -60,9 +60,12 @@ function escapeName(name) {
   return ['default', 'internal', 'as'].includes(escaped) ? `\`${escaped}\`` : escaped;
 }
 
-function nameFromComponents(components, { snake } = {}) {
+function nameFromComponents(components, { snake, noModify } = {}) {
   const joined = _.castArray(components).join('/');
   // Dollar sign is allowed in all languages, so leave it alone
+  if (noModify) {
+    return escapeName(joined);
+  }
   const name = joined.split('$').map(snake ? _.snakeCase : _.camelCase).join('$');
   return escapeName(name);
 }
@@ -246,8 +249,9 @@ function typeInfoAndModelsFromObjectSchema(schema, name, specName, unresolvedSup
     isNested ? _.tail(models) : models
   ));
 
+  const propOpts = lang.doNotModifyPropertyNames ? { ...opts, noModify: true } : opts;
   const properties = _.map(propertyTypeInfoAndModels, ({ typeInfo, isNested }, propertyName) => ({
-    name: nameFromComponents(propertyName, opts),
+    name: nameFromComponents(propertyName, propOpts),
     description: schema.properties[propertyName].description,
     type: isNested ? `${name}.${typeInfo.name}` : typeInfo.name,
     format: typeInfo.format,

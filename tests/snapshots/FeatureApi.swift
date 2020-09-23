@@ -108,7 +108,7 @@ open class ClientData: SwaggerModel {
             let retVal: [String: Any?] = [
                 "id": try id?.serialize(format: nil),
                 "os": try os?.serialize(format: nil),
-                "ver": try ver?.serialize(format: nil),
+                "Ver": try ver?.serialize(format: nil),
             ]
             return retVal.filter { (_: String, val: Any?) -> Bool in return val != nil }
         }
@@ -120,7 +120,7 @@ open class ClientData: SwaggerModel {
             let object = Dev(
                 id: try Optional<String>.deserialize(json: dictionary["id"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".id")),
                 os: try Optional<String>.deserialize(json: dictionary["os"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".os")),
-                ver: try Optional<String>.deserialize(json: dictionary["ver"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".ver"))
+                ver: try Optional<String>.deserialize(json: dictionary["Ver"], format: nil, debugDescriptor: combineDebugDescriptors(debugDescriptor, ".Ver"))
             )
             return try cast(object)
         }

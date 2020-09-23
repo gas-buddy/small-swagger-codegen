@@ -20,6 +20,7 @@ export default {
     source: ({ spec }) => JSON.stringify(spec, null, '  '),
     filename: () => 'spec.json',
   }],
+  doNotModifyPropertyNames: true,
   typeMap: {
     any: 'any',
     undefined: 'void',

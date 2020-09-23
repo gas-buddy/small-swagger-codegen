@@ -32,7 +32,7 @@ export interface ClientData {
 export interface ClientData_Dev {
   id?: string;
   os?: string;
-  ver?: string;
+  Ver?: string;
 }
 
 /**

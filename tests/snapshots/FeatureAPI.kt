@@ -100,7 +100,7 @@ class FeatureAPI : GBIORxWebServices() {
             open class Dev (
                 @SerializedName("id") val id: String? = null,  // A unique identifier for the device 
                 @SerializedName("os") val os: String? = null, 
-                @SerializedName("ver") val ver: String? = null 
+                @SerializedName("Ver") val ver: String? = null 
             ) : Jsonable {
             
                 override fun toString() = "Dev(id=$id, os=$os, ver=$ver)"
