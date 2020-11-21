@@ -26,7 +26,8 @@ export default {
     undefined: 'void',
     boolean: 'boolean',
     number: 'number',
-    file: 'string',
+    // Different platforms handle FormData differently, so let's just let it be
+    file: 'any',
     object: additionalType => `Map<string, ${additionalType}>`,
     integer: 'number',
     string: 'string',

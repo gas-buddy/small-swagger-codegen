@@ -1,6 +1,6 @@
 {
   "name": "small-swagger-codegen",
-  "version": "1.27.0",
+  "version": "1.28.0",
   "description": "A small version of swagger-codegen. Does fewer things with less code.",
   "main": "./build/small-swagger-codegen.js",
   "scripts": {
@@ -29,16 +29,16 @@
     "lodash": "^4.17.20",
     "minimist": "^1.2.2",
     "mkdirp": "^1.0.4",
-    "rest-api-support": "^1.10.0",
+    "rest-api-support": "^1.10.1",
     "url-join": "^4.0.1"
   },
   "devDependencies": {
-    "@babel/cli": "^7.11.6",
-    "@babel/register": "^7.11.5",
+    "@babel/cli": "^7.12.7",
+    "@babel/register": "^7.12.1",
     "@gasbuddy/gbapi-spec": "^94.0.0",
     "babel-preset-gasbuddy": "^6.0.0",
     "eslint-config-gasbuddy": "^5.3.0",
     "eslint-plugin-immutable": "^1.0.0",
-    "tap": "^14.10.8"
+    "tap": "^14.11.0"
   }
 }
