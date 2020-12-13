@@ -28,7 +28,7 @@ export default {
     number: 'number',
     // Different platforms handle FormData differently, so let's just let it be
     file: 'any',
-    object: additionalType => `Map<string, ${additionalType}>`,
+    object: additionalType => `Record<string, ${additionalType}>`,
     integer: 'number',
     string: 'string',
     array: typeName => `Array<${typeName}>`,

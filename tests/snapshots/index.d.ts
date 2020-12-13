@@ -23,7 +23,7 @@ export interface ClientData {
   dev: ClientData_Dev;
   app: ClientData_App;
   user?: ClientData_User;
-  ctx?: Map<string, any>;
+  ctx?: Record<string, any>;
 }
 /**
  * @export
@@ -72,8 +72,8 @@ export interface FeaturesFeatures {
   n: string;
   r?: boolean;
   v?: string;
-  p?: Map<string, any>;
-  l?: Map<string, any>;
+  p?: Record<string, any>;
+  l?: Record<string, any>;
 }
 
 
