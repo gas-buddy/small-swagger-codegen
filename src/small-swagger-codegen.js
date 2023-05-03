@@ -20,11 +20,13 @@ function safeConfigRead() {
   }
 }
 
-const { language, apis, output, opts } = safeConfigRead();
+const { language, apis, output, opts, exclude } = safeConfigRead();
 const parts = render(language, apis, opts);
 
 Object.entries(parts).forEach(([filename, content]) => {
   const fullPath = path.join(output, filename);
-  mkdirp.sync(path.dirname(fullPath));
-  fs.writeFileSync(fullPath, content);
+  if (!exclude || !exclude.includes(filename)) {
+    mkdirp.sync(path.dirname(fullPath));
+    fs.writeFileSync(fullPath, content);
+  }
 });

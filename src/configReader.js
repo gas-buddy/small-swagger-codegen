@@ -32,8 +32,17 @@ function resolveSpec(fullPath) {
   return JSON.parse(data);
 }
 
+function toArray(args, config) {
+  const result = config || [];
+  if (typeof args === 'string') {
+    result.push(args);
+  } else if (Array.isArray(args)) {
+    result.push(...result);
+  }
+}
+
 export function readConfig(argv) {
-  const { language, apis, output, opts, configDir } = readFromPath(argv._?.[0]);
+  const { language, apis, output, opts, configDir, exclude } = readFromPath(argv._?.[0]);
 
   if (!language && !argv.language) {
     throw new Error('Missing language: Please add "language": "swift", "language": "js" or "language": "kotlin" to the top level of your config file.');
@@ -62,6 +71,7 @@ export function readConfig(argv) {
       spec: resolveSpec(api.spec),
     })),
     output: argv.output || resolvedOutput || 'client',
+    exclude: toArray(argv.exclude, exclude),
     opts: opts || argv,
   };
 
