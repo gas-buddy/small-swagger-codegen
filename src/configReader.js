@@ -37,8 +37,9 @@ function toArray(args, config) {
   if (typeof args === 'string') {
     result.push(args);
   } else if (Array.isArray(args)) {
-    result.push(...result);
+    result.push(...args);
   }
+  return result;
 }
 
 export function readConfig(argv) {
