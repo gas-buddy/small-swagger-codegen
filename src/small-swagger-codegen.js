@@ -25,7 +25,7 @@ const parts = render(language, apis, opts);
 
 Object.entries(parts).forEach(([filename, content]) => {
   const fullPath = path.join(output, filename);
-  if (!exclude || !exclude.includes(filename)) {
+  if (!exclude.includes(filename)) {
     mkdirp.sync(path.dirname(fullPath));
     fs.writeFileSync(fullPath, content);
   }
